@@ -14,7 +14,7 @@
 	const orgName = $derived(data.user.organization.name ?? '');
 </script>
 
-<div class="flex min-h-screen bg-[#F8F9FA]">
+<div class="flex h-screen bg-[#F8F9FA]">
 	<Sidebar user={data.user} />
 
 	<main class="flex-1 overflow-y-auto">

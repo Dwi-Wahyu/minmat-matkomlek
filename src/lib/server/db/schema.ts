@@ -32,6 +32,8 @@ export const equipment = mysqlTable(
 
 		warehouseId: varchar('warehouse_id', { length: 36 }).references(() => warehouse.id),
 
+		organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id),
+
 		itemId: varchar('item_id', { length: 36 })
 			.notNull()
 			.references(() => item.id),
@@ -203,6 +205,7 @@ export const lending = mysqlTable('lending', {
 	status: mysqlEnum('status', ['DRAFT', 'APPROVED', 'DIPINJAM', 'KEMBALI']).default('DRAFT'),
 
 	requestedBy: varchar('requested_by', { length: 36 }).references(() => user.id),
+	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id),
 
 	approvedBy: varchar('approved_by', { length: 36 }).references(() => user.id),
 
@@ -296,7 +299,27 @@ export const maintenanceRelations = relations(maintenance, ({ one }) => ({
 	})
 }));
 
-export const lendingRelations = relations(lending, ({ many }) => ({
+export const approvalRelations = relations(approval, ({ one }) => ({
+	approvedByUser: one(user, {
+		fields: [approval.approvedBy],
+		references: [user.id]
+	})
+}));
+
+export const lendingRelations = relations(lending, ({ many, one }) => ({
+	organization: one(organization, {
+		fields: [lending.organizationId],
+		references: [organization.id]
+	}),
+	requestedByUser: one(user, {
+		fields: [lending.requestedBy],
+		references: [user.id]
+	}),
+	approvedByUser: one(user, {
+		fields: [lending.approvedBy],
+		references: [user.id]
+	}),
+	approvals: many(approval),
 	items: many(lendingItem)
 }));
 
@@ -313,7 +336,15 @@ export const lendingItemRelations = relations(lendingItem, ({ one }) => ({
 
 export const itemRelations = relations(item, ({ many }) => ({
 	stocks: many(stock),
-	movements: many(stockMovement)
+	movements: many(stockMovement),
+	unitConversions: many(itemUnitConversion)
+}));
+
+export const itemUnitConversionRelations = relations(itemUnitConversion, ({ one }) => ({
+	item: one(item, {
+		fields: [itemUnitConversion.itemId],
+		references: [item.id]
+	})
 }));
 
 export const stockRelations = relations(stock, ({ one }) => ({

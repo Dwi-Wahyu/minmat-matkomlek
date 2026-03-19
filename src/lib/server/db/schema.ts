@@ -5,7 +5,9 @@ import {
 	timestamp,
 	int,
 	mysqlEnum,
-	index
+	index,
+	uniqueIndex,
+	unique
 } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { organization, user } from './auth.schema';
@@ -14,7 +16,6 @@ export const warehouse = mysqlTable('warehouse', {
 	id: varchar('id', { length: 36 }).primaryKey(),
 	name: varchar('name', { length: 255 }).notNull(),
 	location: text('location'),
-	category: mysqlEnum('category', ['KOMUNITY', 'TRANSITO', 'BALKIR']).notNull(),
 	createdAt: timestamp('created_at').defaultNow().notNull(),
 	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id, {
 		onDelete: 'restrict'
@@ -31,6 +32,10 @@ export const equipment = mysqlTable(
 
 		warehouseId: varchar('warehouse_id', { length: 36 }).references(() => warehouse.id),
 
+		itemId: varchar('item_id', { length: 36 })
+			.notNull()
+			.references(() => item.id),
+
 		type: mysqlEnum('type', ['ALKOMLEK', 'PERNIKA_LEK']).notNull(),
 
 		category: varchar('category', { length: 100 }).notNull(),
@@ -38,6 +43,8 @@ export const equipment = mysqlTable(
 		condition: mysqlEnum('condition', ['BAIK', 'RUSAK_RINGAN', 'RUSAK_BERAT'])
 			.default('BAIK')
 			.notNull(),
+
+		status: mysqlEnum('status', ['READY', 'IN_USE', 'TRANSIT', 'MAINTENANCE']).default('READY'),
 
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').onUpdateNow()
@@ -47,6 +54,128 @@ export const equipment = mysqlTable(
 		index('equipment_condition_idx').on(table.condition)
 	]
 );
+
+export const item = mysqlTable('item', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+
+	name: varchar('name', { length: 255 }).notNull(),
+
+	type: mysqlEnum('type', ['ASSET', 'CONSUMABLE']).notNull(),
+
+	baseUnit: mysqlEnum('base_unit', ['PCS', 'BOX', 'METER', 'ROLL', 'UNIT']).notNull(),
+
+	description: text('description'),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const itemUnitConversion = mysqlTable(
+	'item_unit_conversion',
+	{
+		id: varchar('id', { length: 36 }).primaryKey(),
+
+		itemId: varchar('item_id', { length: 36 }).references(() => item.id, { onDelete: 'cascade' }),
+
+		fromUnit: varchar('from_unit', { length: 20 }).notNull(), // BOX
+		toUnit: varchar('to_unit', { length: 20 }).notNull(), // PCS
+
+		multiplier: int('multiplier').notNull() // 10
+	},
+	(table) => [unique().on(table.itemId, table.fromUnit, table.toUnit)]
+);
+
+export const stock = mysqlTable(
+	'stock',
+	{
+		id: varchar('id', { length: 36 }).primaryKey(),
+
+		itemId: varchar('item_id', { length: 36 }).references(() => item.id, { onDelete: 'cascade' }),
+
+		warehouseId: varchar('warehouse_id', { length: 36 }).references(() => warehouse.id, {
+			onDelete: 'cascade'
+		}),
+
+		qty: int('qty').default(0).notNull(),
+
+		updatedAt: timestamp('updated_at').defaultNow().onUpdateNow()
+	},
+
+	(table) => [
+		index('stock_item_idx').on(table.itemId),
+		uniqueIndex('stock_unique_idx').on(table.itemId, table.warehouseId)
+	]
+);
+
+export const stockMovement = mysqlTable(
+	'stock_movement',
+	{
+		id: varchar('id', { length: 36 }).primaryKey(),
+
+		itemId: varchar('item_id', { length: 36 }).references(() => item.id),
+
+		warehouseId: varchar('warehouse_id', { length: 36 }).references(() => warehouse.id),
+
+		fromWarehouseId: varchar('from_warehouse_id', { length: 36 }).references(() => warehouse.id),
+
+		toWarehouseId: varchar('to_warehouse_id', { length: 36 }).references(() => warehouse.id),
+
+		movementType: mysqlEnum('movement_type', ['IN', 'OUT', 'ADJUSTMENT', 'TRANSFER']).notNull(),
+
+		qty: int('qty').notNull(),
+
+		unit: varchar('unit', { length: 20 }).notNull(), // PCS / BOX
+
+		referenceId: varchar('reference_id', { length: 36 }), // link ke transaksi
+
+		note: text('note'),
+
+		createdBy: varchar('created_by', { length: 36 }),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => [index('stock_movement_item_idx').on(table.itemId)]
+);
+
+export const inventoryMovement = mysqlTable('inventory_movement', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+
+	equipmentId: varchar('equipment_id', { length: 36 }).references(() => equipment.id, {
+		onDelete: 'cascade'
+	}),
+
+	fromWarehouseId: varchar('from_warehouse_id', { length: 36 }).references(() => warehouse.id),
+
+	toWarehouseId: varchar('to_warehouse_id', { length: 36 }).references(() => warehouse.id),
+
+	movementType: mysqlEnum('movement_type', [
+		'MASUK',
+		'KELUAR',
+		'PINJAM',
+		'KEMBALI',
+		'DISTRIBUSI'
+	]).notNull(),
+
+	referenceId: varchar('reference_id', { length: 36 }), // link ke lending
+
+	handledBy: varchar('handled_by', { length: 36 }).references(() => user.id),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const distribution = mysqlTable('distribution', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+
+	fromOrganizationId: varchar('from_org_id', { length: 36 }).references(() => organization.id),
+
+	toOrganizationId: varchar('to_org_id', { length: 36 }).references(() => organization.id),
+
+	status: mysqlEnum('status', ['DRAFT', 'APPROVED', 'SHIPPED', 'RECEIVED']).default('DRAFT'),
+
+	requestedBy: varchar('requested_by', { length: 36 }).references(() => user.id),
+
+	approvedBy: varchar('approved_by', { length: 36 }).references(() => user.id),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
 
 export const maintenance = mysqlTable('maintenance', {
 	id: varchar('id', { length: 36 }).primaryKey(),
@@ -60,28 +189,87 @@ export const maintenance = mysqlTable('maintenance', {
 	completionDate: timestamp('completion_date'),
 
 	status: mysqlEnum('status', ['PENDING', 'IN_PROGRESS', 'COMPLETED']).default('PENDING').notNull(),
-	technicianId: varchar('technician_id', { length: 36 }).references(() => user.id), // Relasi ke user dari auth.schema
+	technicianId: varchar('technician_id', { length: 36 }).references(() => user.id),
 
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
 export const lending = mysqlTable('lending', {
 	id: varchar('id', { length: 36 }).primaryKey(),
-	equipmentId: varchar('equipment_id', { length: 36 }).references(() => equipment.id, {
+
+	unit: varchar('unit', { length: 100 }).notNull(),
+	purpose: mysqlEnum('purpose', ['OPERASI', 'LATIHAN']).notNull(),
+
+	status: mysqlEnum('status', ['DRAFT', 'APPROVED', 'DIPINJAM', 'KEMBALI']).default('DRAFT'),
+
+	requestedBy: varchar('requested_by', { length: 36 }).references(() => user.id),
+
+	approvedBy: varchar('approved_by', { length: 36 }).references(() => user.id),
+
+	startDate: timestamp('start_date').notNull(),
+	endDate: timestamp('end_date'),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const lendingItem = mysqlTable('lending_item', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+
+	lendingId: varchar('lending_id', { length: 36 }).references(() => lending.id, {
 		onDelete: 'cascade'
 	}),
 
-	purpose: mysqlEnum('purpose', ['OPERASI_MILITER', 'LATIHAN_MILITER']).notNull(),
-	purposeDetail: text('purpose_detail'),
+	equipmentId: varchar('equipment_id', { length: 36 }).references(() => equipment.id),
 
-	borrowerName: varchar('borrower_name', { length: 255 }).notNull(),
-	unit: varchar('unit', { length: 100 }).notNull(),
+	qty: int('qty').default(1)
+});
 
-	departureDate: timestamp('departure_date').notNull(),
-	expectedReturnDate: timestamp('expected_return_date').notNull(),
-	actualReturnDate: timestamp('actual_return_date'),
+export const approval = mysqlTable('approval', {
+	id: varchar('id', { length: 36 }).primaryKey(),
 
-	status: mysqlEnum('status', ['DIPINJAM', 'KEMBALI', 'TERLAMBAT']).default('DIPINJAM').notNull(),
+	referenceType: mysqlEnum('reference_type', ['LENDING', 'DISTRIBUTION', 'MAINTENANCE']),
+
+	referenceId: varchar('reference_id', { length: 36 }),
+
+	approvedBy: varchar('approved_by', { length: 36 }).references(() => user.id),
+
+	status: mysqlEnum('status', ['PENDING', 'APPROVED', 'REJECTED']).default('PENDING'),
+
+	note: text('note'),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const auditLog = mysqlTable('audit_log', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+
+	userId: varchar('user_id', { length: 36 }).references(() => user.id),
+
+	action: varchar('action', { length: 50 }),
+	tableName: varchar('table_name', { length: 50 }),
+
+	recordId: varchar('record_id', { length: 36 }),
+
+	oldValue: text('old_value'),
+	newValue: text('new_value'),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const reportBtk16 = mysqlTable('report_btk16', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+
+	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id),
+
+	periodStart: timestamp('period_start'),
+	periodEnd: timestamp('period_end'),
+
+	itemName: varchar('item_name', { length: 255 }),
+
+	openingBalance: int('opening_balance'),
+	incoming: int('incoming'),
+	outgoing: int('outgoing'),
+	closingBalance: int('closing_balance'),
 
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
@@ -92,9 +280,13 @@ export const warehouseRelations = relations(warehouse, ({ many, one }) => ({
 }));
 
 export const equipmentRelations = relations(equipment, ({ many, one }) => ({
+	item: one(item, {
+		fields: [equipment.itemId],
+		references: [item.id]
+	}),
 	warehouse: one(warehouse, { fields: [equipment.warehouseId], references: [warehouse.id] }),
 	maintenances: many(maintenance),
-	lendings: many(lending)
+	lendingItems: many(lendingItem)
 }));
 
 export const maintenanceRelations = relations(maintenance, ({ one }) => ({
@@ -104,10 +296,61 @@ export const maintenanceRelations = relations(maintenance, ({ one }) => ({
 	})
 }));
 
-export const lendingRelations = relations(lending, ({ one }) => ({
+export const lendingRelations = relations(lending, ({ many }) => ({
+	items: many(lendingItem)
+}));
+
+export const lendingItemRelations = relations(lendingItem, ({ one }) => ({
+	lending: one(lending, {
+		fields: [lendingItem.lendingId],
+		references: [lending.id]
+	}),
 	equipment: one(equipment, {
-		fields: [lending.equipmentId],
+		fields: [lendingItem.equipmentId],
 		references: [equipment.id]
+	})
+}));
+
+export const itemRelations = relations(item, ({ many }) => ({
+	stocks: many(stock),
+	movements: many(stockMovement)
+}));
+
+export const stockRelations = relations(stock, ({ one }) => ({
+	item: one(item, {
+		fields: [stock.itemId],
+		references: [item.id]
+	}),
+	warehouse: one(warehouse, {
+		fields: [stock.warehouseId],
+		references: [warehouse.id]
+	})
+}));
+
+export const stockMovementRelations = relations(stockMovement, ({ one }) => ({
+	item: one(item, {
+		fields: [stockMovement.itemId],
+		references: [item.id]
+	}),
+	warehouse: one(warehouse, {
+		fields: [stockMovement.warehouseId],
+		references: [warehouse.id]
+	})
+}));
+
+export const inventoryMovementRelations = relations(inventoryMovement, ({ one }) => ({
+	equipment: one(equipment, {
+		fields: [inventoryMovement.equipmentId],
+		references: [equipment.id]
+	}),
+	handler: one(user, { fields: [inventoryMovement.handledBy], references: [user.id] }),
+	fromWarehouse: one(warehouse, {
+		fields: [inventoryMovement.fromWarehouseId],
+		references: [warehouse.id]
+	}),
+	toWarehouse: one(warehouse, {
+		fields: [inventoryMovement.toWarehouseId],
+		references: [warehouse.id]
 	})
 }));
 

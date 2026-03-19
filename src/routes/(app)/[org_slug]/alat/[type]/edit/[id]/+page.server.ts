@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { warehouse, equipment } from '$lib/server/db/schema';
+import { warehouse, equipment, item } from '$lib/server/db/schema';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { eq } from 'drizzle-orm';
@@ -48,6 +48,18 @@ export const actions: Actions = {
 					.where(eq(warehouse.id, warehouseId))
 					.limit(1);
 
+				const findEq = await db.query.equipment.findFirst({
+					where: (equipment, { eq }) => eq(equipment.id, id),
+
+					columns: {
+						id: true,
+						name: true,
+						itemId: true
+					}
+				});
+
+				if (!findEq) throw new Error('Alat tidak ditemukan');
+
 				if (!targetWarehouse) throw new Error('Gudang tidak ditemukan');
 
 				await tx
@@ -62,6 +74,13 @@ export const actions: Actions = {
 						updatedAt: new Date()
 					})
 					.where(eq(equipment.id, id));
+
+				await tx
+					.update(item)
+					.set({
+						name
+					})
+					.where(eq(equipment.id, findEq.itemId));
 			});
 
 			return { success: true, message: 'Data alat berhasil diperbarui' };

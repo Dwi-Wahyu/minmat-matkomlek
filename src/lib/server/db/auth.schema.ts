@@ -119,8 +119,13 @@ export const member = mysqlTable('member', {
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const organizationRelations = relations(organization, ({ many }) => ({
-	warehouses: many(warehouse)
+export const organizationRelations = relations(organization, ({ many, one }) => ({
+	warehouses: many(warehouse),
+	parent: one(organization, {
+		fields: [organization.parentId],
+		references: [organization.id]
+	}),
+	children: many(organization)
 }));
 
 export const userRelations = relations(user, ({ many }) => ({

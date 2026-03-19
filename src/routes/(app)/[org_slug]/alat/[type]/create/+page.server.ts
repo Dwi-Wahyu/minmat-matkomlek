@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { warehouse, equipment } from '$lib/server/db/schema';
+import { warehouse, equipment, item } from '$lib/server/db/schema';
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 import { v4 as uuidv4 } from 'uuid';
@@ -40,6 +40,14 @@ export const actions: Actions = {
 			// Jalankan transaksi database
 			await db.transaction(async (tx) => {
 				const equipmentId = uuidv4();
+				const itemId = uuidv4();
+
+				await tx.insert(item).values({
+					id: itemId,
+					name,
+					baseUnit: 'UNIT',
+					type: 'ASSET'
+				});
 
 				// Insert ke tabel equipment
 				await tx.insert(equipment).values({
@@ -49,7 +57,8 @@ export const actions: Actions = {
 					brand,
 					type,
 					category,
-					condition
+					condition,
+					itemId
 				});
 
 				// Ambil data gudang untuk mendapatkan 'category' sebagai 'stockStatus'

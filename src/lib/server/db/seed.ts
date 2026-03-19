@@ -145,12 +145,11 @@ async function main() {
 			.set({ parentId: puskomlekad.id })
 			.where(eq(schema.organization.id, orgWilayah.id));
 
-		// Opsional: Buat 1 Warehouse default untuk setiap satuan
+		// Buat 1 Warehouse default untuk setiap satuan
 		await db.insert(schema.warehouse).values({
 			id: uuidv4(),
 			name: `Gudang Matbek ${namaSatuan}`,
 			location: `Markas ${namaSatuan}`,
-			category: 'KOMUNITY',
 			organizationId: orgWilayah.id
 		});
 
@@ -205,15 +204,24 @@ async function main() {
 		id: warehouseId,
 		name: 'Gudang Pusat Makassar',
 		location: 'Jl. Hasanuddin No. 14, Makassar',
-		category: 'KOMUNITY',
 		createdAt: new Date(),
 		organizationId: hasanuddinOrg.id
+	});
+
+	// Seed Item
+	const itemId = uuidv4();
+	await db.insert(schema.item).values({
+		id: itemId,
+		baseUnit: 'UNIT',
+		name: 'Radio HF IC-718',
+		type: 'ASSET'
 	});
 
 	// Seed Equipment
 	const equipmentId = uuidv4();
 	await db.insert(schema.equipment).values({
 		id: equipmentId,
+		itemId,
 		name: 'Radio HF IC-718',
 		serialNumber: 'SN-HF-2024-001',
 		brand: 'Icom',
@@ -237,17 +245,23 @@ async function main() {
 	});
 
 	// Seed Lending
+	const lendingId = uuidv4();
 	await db.insert(schema.lending).values({
-		id: uuidv4(),
-		equipmentId: equipmentId,
-		purpose: 'LATIHAN_MILITER',
-		purposeDetail: 'Latihan Bersama Antar Satuan Semester I',
-		borrowerName: 'Sertu Budi',
+		id: lendingId,
+		startDate: new Date(Date.now()),
+		purpose: 'LATIHAN',
 		unit: 'Hubdam XIV/Hasanuddin',
-		departureDate: new Date(),
-		expectedReturnDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 hari kedepan
-		status: 'DIPINJAM',
+		endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 hari kedepan
+		status: 'DRAFT',
 		createdAt: new Date()
+	});
+
+	// Seed Lending Item
+	const lendingItemId = uuidv4();
+	await db.insert(schema.lendingItem).values({
+		id: lendingItemId,
+		equipmentId,
+		lendingId
 	});
 
 	console.log('Seeding selesai!');

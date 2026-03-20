@@ -3,6 +3,7 @@ config();
 
 import mysql from 'mysql2/promise';
 import * as schema from './schema';
+import * as authSchema from './auth.schema'; // Import auth schema as well
 import { drizzle } from 'drizzle-orm/mysql2';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -10,12 +11,12 @@ import { betterAuth } from 'better-auth/minimal';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 const client = mysql.createPool(process.env.DATABASE_URL ?? '');
-const db = drizzle(client, { schema, mode: 'default' });
+const db = drizzle(client, { schema: { ...schema, ...authSchema }, mode: 'default' }); // Use both schemas
 
 import { organization } from 'better-auth/plugins';
 
 import {
-	accessControl,
+	accessControl, // Import accessControl to get role names
 	kakomlek,
 	operatorBinmatDanBekharrah,
 	operatorPusatDanDaerah,
@@ -46,225 +47,214 @@ export const auth = betterAuth({
 async function main() {
 	console.log('Sedang melakukan seeding...');
 
+	console.log('Menghapus data lama...');
 	// Hapus data lama untuk menghindari duplikasi (Urutan penting karena Foreign Key)
-	await db.delete(schema.warehouse);
+	// Delete from child tables first, then parent tables
+	await db.delete(schema.approval);
+	await db.delete(schema.lendingItem);
 	await db.delete(schema.lending);
 	await db.delete(schema.maintenance);
-	await db.delete(schema.organization);
+	await db.delete(schema.distributionItem);
+	await db.delete(schema.distribution);
+	await db.delete(schema.movement);
+	await db.delete(schema.stock);
 	await db.delete(schema.equipment);
-	await db.delete(schema.user);
+	await db.delete(schema.itemUnitConversion);
+	await db.delete(schema.item);
+	await db.delete(schema.warehouse);
+	await db.delete(authSchema.member);
+	await db.delete(authSchema.session);
+	await db.delete(authSchema.apiKey);
+	await db.delete(authSchema.account);
+	await db.delete(authSchema.user);
+	await db.delete(authSchema.organization);
+	console.log('Data lama berhasil dihapus.');
 
-	const adminResponse = await auth.api.signUpEmail({
+	// --- Global Superadmin User ---
+	const globalSuperadminResponse = await auth.api.signUpEmail({
 		body: {
-			email: 'admin@gmail.com',
+			email: 'global.superadmin@gmail.com',
 			password: 'password123',
-			name: 'Admin User'
+			name: 'Global Superadmin'
 		}
 	});
+	const globalSuperadminId = globalSuperadminResponse.user.id;
 
-	const kapuskomlekadResponse = await auth.api.signUpEmail({
-		body: {
-			email: 'kapus@gmail.com',
-			password: 'password123',
-			name: 'Kapuskomlekad'
-		}
-	});
-
-	const adminId = adminResponse.user.id;
-
-	// Buat Organisasi Induk: PUSKOMLEKAD
-	const puskomlekad = await auth.api.createOrganization({
+	// --- PUSKOMLEKAD Organization ---
+	const puskomlekadOrg = await auth.api.createOrganization({
 		body: {
 			name: 'PUSKOMLEKAD',
 			slug: 'puskomlekad',
-			userId: adminResponse.user.id
+			userId: globalSuperadminId
 		}
 	});
 
-	if (!puskomlekad) return;
+	if (!puskomlekadOrg) {
+		console.error('Failed to create PUSKOMLEKAD organization. Seeding stopped.');
+		process.exit(1);
+	}
+	console.log(`Created organization: ${puskomlekadOrg.name}`);
 
-	await auth.api.addMember({
-		body: {
-			organizationId: puskomlekad.id,
-			userId: kapuskomlekadResponse.user.id,
-			role: 'pimpinan'
-		}
+	// Create a warehouse for PUSKOMLEKAD
+	const puskomlekadWarehouseId = uuidv4();
+	await db.insert(schema.warehouse).values({
+		id: puskomlekadWarehouseId,
+		name: `Gudang Matbek PUSKOMLEKAD`,
+		location: `Markas PUSKOMLEKAD`,
+		organizationId: puskomlekadOrg.id
 	});
+	console.log(`Created warehouse: Gudang Matbek PUSKOMLEKAD`);
 
-	// Daftar 24 Satuan Wilayah dari gambar
+
+	const allOrganizations = [];
+	allOrganizations.push({ ...puskomlekadOrg, warehouseId: puskomlekadWarehouseId });
+
+	// --- Daftar Satuan Wilayah ---
 	const daftarSatuan = [
-		'ISKDR MDA',
-		'BUKIT BRSN',
-		'SRIWIJAYA',
-		'SILIWANGI',
-		'DIPENOGORO',
-		'BRAWIJAYA',
-		'MULAWARMN',
-		'UDAYANA',
-		'TANJUNG PR',
-		'MERDRKA',
-		'HASANUDDIN',
-		'PATTIMURA',
-		'CENDRAWASIH',
-		'KASUARI',
-		'TUANGKU TMBSI',
-		'TUANGKU IB',
-		'RADEN INTEN',
-		'TAMBUN BUNGAI',
-		'PALAKA WIRA',
-		'MANDALA TRIKORA',
-		'KOPASSUS',
-		'KOSTRAD',
-		'AKMIL'
+		'ISKDR MDA', 'BUKIT BRSN', 'SRIWIJAYA', 'SILIWANGI', 'DIPENOGORO', 'BRAWIJAYA',
+		'MULAWARMN', 'UDAYANA', 'TANJUNG PR', 'MERDRKA', 'HASANUDDIN', 'PATTIMURA',
+		'CENDRAWASIH', 'KASUARI', 'TUANGKU TMBSI', 'TUANGKU IB', 'RADEN INTEN',
+		'TAMBUN BUNGAI', 'PALAKA WIRA', 'MANDALA TRIKORA', 'KOPASSUS', 'KOSTRAD', 'AKMIL'
 	];
 
-	if (!puskomlekad) {
-		return;
-	}
-
-	// Seeding Satuan Wilayah
+	// --- Seeding Satuan Wilayah ---
 	for (const namaSatuan of daftarSatuan) {
 		const slug = namaSatuan.toLowerCase().replace(/\s+/g, '-');
 
-		// Buat Organisasi Wilayah
 		const orgWilayah = await auth.api.createOrganization({
 			body: {
 				name: namaSatuan,
 				slug: slug,
-				userId: adminId // Sementara menggunakan admin pusat sebagai owner
+				userId: globalSuperadminId // Superadmin pusat sebagai owner sementara
 			}
 		});
 
 		if (!orgWilayah) {
+			console.warn(`Failed to create organization: ${namaSatuan}. Skipping.`);
 			continue;
 		}
+		console.log(`Created organization: ${orgWilayah.name}`);
 
-		// Update parentId ke PUSKOMLEKAD agar menjadi hierarki 1 induk
+
 		await db
-			.update(schema.organization)
-			.set({ parentId: puskomlekad.id })
-			.where(eq(schema.organization.id, orgWilayah.id));
+			.update(authSchema.organization)
+			.set({ parentId: puskomlekadOrg.id })
+			.where(eq(authSchema.organization.id, orgWilayah.id));
 
-		// Buat 1 Warehouse default untuk setiap satuan
+		const orgWarehouseId = uuidv4();
 		await db.insert(schema.warehouse).values({
-			id: uuidv4(),
+			id: orgWarehouseId,
 			name: `Gudang Matbek ${namaSatuan}`,
 			location: `Markas ${namaSatuan}`,
 			organizationId: orgWilayah.id
 		});
+		console.log(`Created warehouse: Gudang Matbek ${namaSatuan}`);
 
+
+		allOrganizations.push({ ...orgWilayah, warehouseId: orgWarehouseId });
 		console.log(`─── Satuan ${namaSatuan} berhasil disinkronkan.`);
 	}
 
-	const adminHasanuddin = await auth.api.signUpEmail({
-		body: {
-			email: 'adminhasanuddin@gmail.com',
-			password: 'password123',
-			name: 'Admin Hasanuddin User'
-		}
-	});
+	// --- Create Users for Each Role and Assign to Organizations, then Seed Items ---
+	const roles = Object.keys(accessControl.roles); // Get role names from accessControl
+	for (const org of allOrganizations) {
+		console.log(`\n--- Seeding users and items for organization: ${org.name} ---`);
 
-	const kakomlekHasanuddin = await auth.api.signUpEmail({
-		body: {
-			email: 'kakomlekhasanuddin@gmail.com',
-			password: 'password123',
-			name: 'Kakomlek Hasanuddin User'
+		// Ensure the warehouseId is available from the extended organization object
+		const orgWarehouseId = org.warehouseId;
+		if (!orgWarehouseId) {
+			console.error(`No warehouseId found for organization ${org.name}. Skipping item seeding.`);
+			continue;
 		}
-	});
 
-	const hasanuddinOrg = await db.query.organization.findFirst({
-		where({ name }, { eq }) {
-			return eq(name, 'HASANUDDIN');
+		for (const roleName of roles) {
+			const email = `${roleName.toLowerCase()}.${org.slug.replace(/-/g, '')}@example.com`;
+			const name = `${roleName} ${org.name}`;
+
+			// Check if user already exists (e.g., global superadmin user for 'superadmin' role)
+			let userRecord = await db.query.user.findFirst({
+				where: eq(authSchema.user.email, email)
+			});
+
+			if (!userRecord) {
+				const userResponse = await auth.api.signUpEmail({
+					body: {
+						email: email,
+						password: 'password123',
+						name: name
+					}
+				});
+				userRecord = userResponse.user;
+			}
+
+			if (userRecord) {
+				await auth.api.addMember({
+					body: {
+						organizationId: org.id,
+						userId: userRecord.id,
+						role: roleName // Use the actual role name from the loop
+					}
+				});
+				console.log(`   - User '${name}' (${roleName}) created and added to ${org.name}.`);
+			} else {
+				console.error(`Failed to create user for role ${roleName} in ${org.name}`);
+			}
 		}
-	});
 
-	if (!hasanuddinOrg) {
-		return;
+		// --- Seed 5 Consumable Items and 5 Asset Items per Organization ---
+		// Consumable Items
+		for (let i = 1; i <= 5; i++) {
+			const itemId = uuidv4();
+			const itemName = `Consumable Item ${i} (${org.name})`;
+			await db.insert(schema.item).values({
+				id: itemId,
+				baseUnit: 'PCS',
+				name: itemName,
+				type: 'CONSUMABLE',
+				description: `Description for ${itemName}`
+			});
+
+			// Add stock for consumable item
+			await db.insert(schema.stock).values({
+				id: uuidv4(),
+				itemId: itemId,
+				warehouseId: orgWarehouseId,
+				qty: Math.floor(Math.random() * 100) + 10 // Random qty between 10-109
+			});
+			console.log(`   - Consumable item '${itemName}' created with stock.`);
+		}
+
+		// Asset Items (2 ALKOMLEK, 3 PERNIKA_LEK - distributed)
+		const assetTypes: ('ALKOMLEK' | 'PERNIKA_LEK')[] = ['ALKOMLEK', 'ALKOMLEK', 'PERNIKA_LEK', 'PERNIKA_LEK', 'PERNIKA_LEK'];
+		for (let i = 0; i < 5; i++) {
+			const itemId = uuidv4();
+			const equipmentType = assetTypes[i];
+			const itemName = `Asset Item ${i + 1} (${equipmentType} - ${org.name})`;
+			await db.insert(schema.item).values({
+				id: itemId,
+				baseUnit: 'UNIT',
+				name: itemName,
+				type: 'ASSET',
+				equipmentType: equipmentType,
+				description: `Description for ${itemName}`
+			});
+
+			// Create equipment for this asset item
+			await db.insert(schema.equipment).values({
+				id: uuidv4(),
+				itemId: itemId,
+				serialNumber: `SN-${org.slug.substring(0, 5)}-${equipmentType.substring(0, 4)}-${i + 1}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+				brand: `Brand ${i + 1}`,
+				warehouseId: orgWarehouseId,
+				organizationId: org.id,
+				condition: i % 3 === 0 ? 'RUSAK_RINGAN' : 'BAIK', // Vary condition
+				status: 'READY'
+			});
+			console.log(`   - Asset item '${itemName}' created with equipment.`);
+		}
 	}
 
-	await auth.api.addMember({
-		body: {
-			organizationId: hasanuddinOrg.id,
-			userId: adminHasanuddin.user.id,
-			role: 'operatorPusatDanDaerah'
-		}
-	});
-
-	await auth.api.addMember({
-		body: {
-			organizationId: hasanuddinOrg.id,
-			userId: kakomlekHasanuddin.user.id,
-			role: 'kakomlek'
-		}
-	});
-
-	// Seed Warehouse
-	const warehouseId = uuidv4();
-	await db.insert(schema.warehouse).values({
-		id: warehouseId,
-		name: 'Gudang Pusat Makassar',
-		location: 'Jl. Hasanuddin No. 14, Makassar',
-		createdAt: new Date(),
-		organizationId: hasanuddinOrg.id
-	});
-
-	// Seed Item
-	const itemId = uuidv4();
-	await db.insert(schema.item).values({
-		id: itemId,
-		baseUnit: 'UNIT',
-		name: 'Radio HF IC-718',
-		type: 'ASSET'
-	});
-
-	// Seed Equipment
-	const equipmentId = uuidv4();
-	await db.insert(schema.equipment).values({
-		id: equipmentId,
-		itemId,
-		name: 'Radio HF IC-718',
-		serialNumber: 'SN-HF-2024-001',
-		brand: 'Icom',
-		type: 'ALKOMLEK',
-		warehouseId: warehouseId,
-		category: 'Radio Komunikasi',
-		condition: 'BAIK',
-		createdAt: new Date()
-	});
-
-	// Seed Maintenance
-	await db.insert(schema.maintenance).values({
-		id: uuidv4(),
-		equipmentId: equipmentId,
-		maintenanceType: 'PERAWATAN',
-		description: 'Pengecekan rutin antena dan daya pancar.',
-		scheduledDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 hari kedepan
-		status: 'PENDING',
-		technicianId: adminId,
-		createdAt: new Date()
-	});
-
-	// Seed Lending
-	const lendingId = uuidv4();
-	await db.insert(schema.lending).values({
-		id: lendingId,
-		startDate: new Date(Date.now()),
-		purpose: 'LATIHAN',
-		unit: 'Hubdam XIV/Hasanuddin',
-		endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 hari kedepan
-		status: 'DRAFT',
-		createdAt: new Date()
-	});
-
-	// Seed Lending Item
-	const lendingItemId = uuidv4();
-	await db.insert(schema.lendingItem).values({
-		id: lendingItemId,
-		equipmentId,
-		lendingId
-	});
-
-	console.log('Seeding selesai!');
+	console.log('\nSeeding selesai!');
 	process.exit(0);
 }
 

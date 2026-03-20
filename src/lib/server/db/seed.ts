@@ -25,6 +25,15 @@ import {
 } from '../auth.roles';
 import { eq } from 'drizzle-orm';
 
+// Define the roles object once to easily get its keys
+const allAuthRoles = {
+	pimpinan,
+	superadmin,
+	kakomlek,
+	operatorPusatDanDaerah,
+	operatorBinmatDanBekharrah
+};
+
 export const auth = betterAuth({
 	baseURL: process.env.ORIGIN,
 	secret: process.env.BETTER_AUTH_SECRET,
@@ -33,13 +42,7 @@ export const auth = betterAuth({
 	plugins: [
 		organization({
 			ac: accessControl,
-			roles: {
-				pimpinan,
-				superadmin,
-				kakomlek,
-				operatorPusatDanDaerah,
-				operatorBinmatDanBekharrah
-			}
+			roles: allAuthRoles // Use the defined object
 		})
 	]
 });
@@ -156,7 +159,7 @@ async function main() {
 	}
 
 	// --- Create Users for Each Role and Assign to Organizations, then Seed Items ---
-	const roles = Object.keys(accessControl.roles); // Get role names from accessControl
+	const roleNames = Object.keys(allAuthRoles); // Get role names from the defined object
 	for (const org of allOrganizations) {
 		console.log(`\n--- Seeding users and items for organization: ${org.name} ---`);
 
@@ -167,7 +170,7 @@ async function main() {
 			continue;
 		}
 
-		for (const roleName of roles) {
+		for (const roleName of roleNames) {
 			const email = `${roleName.toLowerCase()}.${org.slug.replace(/-/g, '')}@example.com`;
 			const name = `${roleName} ${org.name}`;
 
@@ -192,7 +195,7 @@ async function main() {
 					body: {
 						organizationId: org.id,
 						userId: userRecord.id,
-						role: roleName as keyof typeof accessControl.roles // Cast roleName to the expected type
+						role: roleName as keyof typeof allAuthRoles // Cast roleName to the expected type
 					}
 				});
 				console.log(`   - User '${name}' (${roleName}) created and added to ${org.name}.`);

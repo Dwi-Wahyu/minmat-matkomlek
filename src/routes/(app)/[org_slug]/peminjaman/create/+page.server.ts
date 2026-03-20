@@ -20,12 +20,7 @@ const lendingSchema = z.object({
 });
 
 export const load: PageServerLoad = async ({ locals, params }) => {
-	const { user } = locals;
 	const { org_slug } = params;
-
-	if (!user) {
-		throw new Error('User tidak ditemukan');
-	}
 
 	// Ambil equipment yang tersedia (READY) di organisasi ini
 	const availableEquipment = await db.query.equipment.findMany({

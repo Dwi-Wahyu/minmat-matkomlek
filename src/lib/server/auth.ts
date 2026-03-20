@@ -21,6 +21,10 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	database: drizzleAdapter(db, { provider: 'mysql', schema }),
 	emailAndPassword: { enabled: true },
+	session: {
+		expiresIn: 60 * 60 * 24 * 7, // 7 days
+		updateAge: 60 * 60 * 24 // 1 day (every 1 day the session expiration is updated)
+	},
 	plugins: [
 		organization({
 			ac: accessControl,
@@ -32,6 +36,6 @@ export const auth = betterAuth({
 				operatorBinmatDanBekharrah
 			}
 		}),
-		sveltekitCookies(getRequestEvent)
-	] // make sure this is the last plugin in the array
+		sveltekitCookies(getRequestEvent) // make sure this is the last plugin in the array
+	]
 });

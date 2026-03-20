@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { lending, lendingItem, equipment, user, organization } from '$lib/server/db/schema';
+import { lending } from '$lib/server/db/schema';
 import { eq, and, inArray, desc } from 'drizzle-orm';
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';

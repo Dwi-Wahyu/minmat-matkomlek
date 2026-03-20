@@ -43,6 +43,20 @@
       "when": 1773905159634,
       "tag": "0005_overjoyed_iron_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1773906362184,
+      "tag": "0006_tranquil_agent_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1773913708008,
+      "tag": "0007_fancy_firebrand",
+      "breakpoints": true
     }
   ]
 }

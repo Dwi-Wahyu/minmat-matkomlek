@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Sidebar from '$lib/components/Sidebar.svelte';
+	import { LogOut } from '@lucide/svelte';
 
 	let { data, children } = $props();
 
@@ -42,6 +43,9 @@
 						r="10"
 					/></svg
 				>
+				<a href="/logout">
+					<LogOut />
+				</a>
 			</div>
 		</header>
 

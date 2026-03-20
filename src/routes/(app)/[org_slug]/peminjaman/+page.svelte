@@ -24,7 +24,7 @@
 	let notificationActionLabel = $state('OK');
 
 	// Helper untuk status badge
-	function getStatusBadge(status: string) {
+	function getStatusBadge(status: string | null) {
 		const variants: Record<string, { class: string; label: string }> = {
 			DRAFT: { class: 'bg-gray-100 text-gray-800', label: 'Draft' },
 			APPROVED: { class: 'bg-green-100 text-green-800', label: 'Disetujui' },
@@ -32,6 +32,11 @@
 			KEMBALI: { class: 'bg-purple-100 text-purple-800', label: 'Kembali' },
 			REJECTED: { class: 'bg-red-100 text-red-800', label: 'Ditolak' }
 		};
+
+		if (!status) {
+			return variants.DRAFT;
+		}
+
 		return variants[status] || variants.DRAFT;
 	}
 

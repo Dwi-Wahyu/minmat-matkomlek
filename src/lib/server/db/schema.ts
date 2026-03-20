@@ -137,28 +137,42 @@ export const stockMovement = mysqlTable(
 	(table) => [index('stock_movement_item_idx').on(table.itemId)]
 );
 
+export const movementClassificationEnum = mysqlEnum('movement_classification', [
+	'BALKIR', // Barang Terkirim (dalam pengiriman/ekspedisi)
+	'KOMUNITY', // Masuk ke komunitas/satuan pemakai (serah terima)
+	'TRANSITO' // Gudang Transit / Penyimpanan Sementara (seperti di UI)
+]);
+
 export const inventoryMovement = mysqlTable('inventory_movement', {
-	id: varchar('id', { length: 36 }).primaryKey(),
+	id: varchar('id', { length: 36 })
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	equipmentId: varchar('equipment_id', { length: 36 }).notNull(), // UUID ke equipment
 
-	equipmentId: varchar('equipment_id', { length: 36 }).references(() => equipment.id, {
-		onDelete: 'cascade'
-	}),
+	// Klasifikasi utama: BALKIR, KOMUNITY, atau TRANSITO
+	classification: movementClassificationEnum.notNull(),
 
-	fromWarehouseId: varchar('from_warehouse_id', { length: 36 }).references(() => warehouse.id),
+	// Detail nama lokasi (misal: "Gudang Transit 2" di UI, "Truk Ekspedisi A", "Yonif 201")
+	specificLocationName: varchar('specific_location_name', { length: 255 }).notNull(),
 
-	toWarehouseId: varchar('to_warehouse_id', { length: 36 }).references(() => warehouse.id),
-
+	// Tipe pergerakan teknis (Sesuai Dokumen MINMAT poin 3.1)
 	movementType: mysqlEnum('movement_type', [
 		'MASUK',
 		'KELUAR',
+		'DISTRIBUSI',
 		'PINJAM',
-		'KEMBALI',
-		'DISTRIBUSI'
+		'KEMBALI'
 	]).notNull(),
 
-	referenceId: varchar('reference_id', { length: 36 }), // link ke lending
+	// Gudang asal/tujuan fisik (jika relevan, misal untuk Transito)
+	fromWarehouseId: varchar('from_warehouse_id', { length: 36 }),
+	toWarehouseId: varchar('to_warehouse_id', { length: 36 }),
 
-	handledBy: varchar('handled_by', { length: 36 }).references(() => user.id),
+	quantity: int('quantity').notNull().default(1), // Untuk asset biasanya 1
+	keterangan: text('keterangan'), // Contoh di UI: "Robek kecil", "Normal"
+
+	// Info Penanggung Jawab dari UI
+	penanggungJawab: varchar('penanggung_jawab', { length: 255 }),
 
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
@@ -175,6 +189,31 @@ export const distribution = mysqlTable('distribution', {
 	requestedBy: varchar('requested_by', { length: 36 }).references(() => user.id),
 
 	approvedBy: varchar('approved_by', { length: 36 }).references(() => user.id),
+
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const distributionItem = mysqlTable('distribution_item', {
+	id: varchar('id', { length: 36 })
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+
+	distributionId: varchar('distribution_id', { length: 36 })
+		.notNull()
+		.references(() => distribution.id, { onDelete: 'cascade' }),
+
+	// Jika yang dikirim adalah ALAT
+	equipmentId: varchar('equipment_id', { length: 36 }).references(() => equipment.id),
+
+	// Jika yang dikirim adalah BAHAN
+	itemId: varchar('item_id', { length: 36 }).references(() => item.id),
+
+	// Kuantitas & Satuan (Penting untuk Consumable)
+	quantity: int('quantity').notNull().default(1),
+	unit: varchar('unit', { length: 20 }), // misal: "PCS", "BOX", "UNIT"
+
+	// Catatan kondisi spesifik barang saat akan dikirim
+	note: text('note'),
 
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
@@ -306,6 +345,25 @@ export const approvalRelations = relations(approval, ({ one }) => ({
 	})
 }));
 
+export const distributionRelations = relations(distribution, ({ many }) => ({
+	items: many(distributionItem)
+}));
+
+export const distributionItemRelations = relations(distributionItem, ({ one }) => ({
+	distribution: one(distribution, {
+		fields: [distributionItem.distributionId],
+		references: [distribution.id]
+	}),
+	equipment: one(equipment, {
+		fields: [distributionItem.equipmentId],
+		references: [equipment.id]
+	}),
+	item: one(item, {
+		fields: [distributionItem.itemId],
+		references: [item.id]
+	})
+}));
+
 export const lendingRelations = relations(lending, ({ many, one }) => ({
 	organization: one(organization, {
 		fields: [lending.organizationId],
@@ -374,14 +432,15 @@ export const inventoryMovementRelations = relations(inventoryMovement, ({ one })
 		fields: [inventoryMovement.equipmentId],
 		references: [equipment.id]
 	}),
-	handler: one(user, { fields: [inventoryMovement.handledBy], references: [user.id] }),
 	fromWarehouse: one(warehouse, {
 		fields: [inventoryMovement.fromWarehouseId],
-		references: [warehouse.id]
+		references: [warehouse.id],
+		relationName: 'from_warehouse_movement'
 	}),
 	toWarehouse: one(warehouse, {
 		fields: [inventoryMovement.toWarehouseId],
-		references: [warehouse.id]
+		references: [warehouse.id],
+		relationName: 'to_warehouse_movement'
 	})
 }));
 

@@ -187,7 +187,11 @@ async function main() {
 						name: name
 					}
 				});
-				userRecord = userResponse.user;
+				// Ensure userResponse.user.image is string | null, not undefined, to match Drizzle schema
+				userRecord = {
+					...userResponse.user,
+					image: userResponse.user.image === undefined ? null : userResponse.user.image
+				};
 			}
 
 			if (userRecord) {

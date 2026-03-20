@@ -192,7 +192,7 @@ async function main() {
 					body: {
 						organizationId: org.id,
 						userId: userRecord.id,
-						role: roleName // Use the actual role name from the loop
+						role: roleName as keyof typeof accessControl.roles // Cast roleName to the expected type
 					}
 				});
 				console.log(`   - User '${name}' (${roleName}) created and added to ${org.name}.`);

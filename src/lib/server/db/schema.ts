@@ -4,6 +4,7 @@ import {
 	text,
 	timestamp,
 	int,
+	boolean,
 	mysqlEnum,
 	index,
 	uniqueIndex,
@@ -249,7 +250,10 @@ export const lending = mysqlTable('lending', {
 	unit: varchar('unit', { length: 100 }).notNull(),
 	purpose: mysqlEnum('purpose', ['OPERASI', 'LATIHAN']).notNull(),
 
-	status: mysqlEnum('status', ['DRAFT', 'APPROVED', 'DIPINJAM', 'KEMBALI']).default('DRAFT'),
+	status: mysqlEnum('status', ['DRAFT', 'APPROVED', 'REJECTED', 'DIPINJAM', 'KEMBALI']).default(
+		'DRAFT'
+	),
+	rejectedReason: text('rejected_reason'),
 
 	requestedBy: varchar('requested_by', { length: 36 }).references(() => user.id),
 	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id),
@@ -324,9 +328,53 @@ export const reportBtk16 = mysqlTable('report_btk16', {
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
+export const notificationPriorityEnum = mysqlEnum('notification_priority', ['LOW', 'MEDIUM', 'HIGH']);
+
+export const notification = mysqlTable(
+	'notification',
+	{
+		id: varchar('id', { length: 36 }).primaryKey(),
+
+		// Target: can be specific user OR specific organization
+		userId: varchar('user_id', { length: 36 }).references(() => user.id, { onDelete: 'cascade' }),
+		organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id, {
+			onDelete: 'cascade'
+		}),
+
+		title: varchar('title', { length: 255 }).notNull(),
+		body: text('body').notNull(),
+
+		priority: notificationPriorityEnum.default('MEDIUM').notNull(),
+
+		read: boolean('read').default(false).notNull(),
+
+		// Action metadata (JSON)
+		// Example: { "type": "PEMINJAMAN_DETAIL", "resourceId": "...", "webPath": "...", "mobilePath": "..." }
+		action: text('action'),
+
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('notification_userId_idx').on(table.userId),
+		index('notification_organizationId_idx').on(table.organizationId),
+		index('notification_read_idx').on(table.read)
+	]
+);
+
 export const warehouseRelations = relations(warehouse, ({ many, one }) => ({
 	equipments: many(equipment),
 	organization: one(organization)
+}));
+
+export const notificationRelations = relations(notification, ({ one }) => ({
+	user: one(user, {
+		fields: [notification.userId],
+		references: [user.id]
+	}),
+	organization: one(organization, {
+		fields: [notification.organizationId],
+		references: [organization.id]
+	})
 }));
 
 export const equipmentRelations = relations(equipment, ({ many, one }) => ({
@@ -351,6 +399,18 @@ export const approvalRelations = relations(approval, ({ one }) => ({
 	approvedByUser: one(user, {
 		fields: [approval.approvedBy],
 		references: [user.id]
+	}),
+	lending: one(lending, {
+		fields: [approval.referenceId],
+		references: [lending.id]
+	}),
+	distribution: one(distribution, {
+		fields: [approval.referenceId],
+		references: [distribution.id]
+	}),
+	maintenance: one(maintenance, {
+		fields: [approval.referenceId],
+		references: [maintenance.id]
 	})
 }));
 

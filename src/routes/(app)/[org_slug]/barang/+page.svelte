@@ -1,133 +1,279 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import * as Table from '$lib/components/ui/table';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
+	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
+	import {
+		Search,
+		Plus,
+		MoreHorizontal,
+		Pencil,
+		Trash2,
+		ArrowRightLeft,
+		Package
+	} from '@lucide/svelte';
 
 	let { data } = $props();
+
+	// State Dialogs
+	let notificationOpen = $state(false);
+	let notificationMsg = $state('');
+	let notificationType = $state<'success' | 'error' | 'info'>('success');
+
+	let deleteDialogOpen = $state(false);
+	let deleteLoading = $state(false);
+	let selectedId = $state('');
+
+	let mutateDialogOpen = $state(false);
+	let mutateLoading = $state(false);
+	let mutateQty = $state(1);
+	let mutateType = $state('ADJUSTMENT');
+	let mutateNotes = $state('');
+
+	function confirmDelete(id: string) {
+		selectedId = id;
+		deleteDialogOpen = true;
+	}
+
+	function openMutate(id: string) {
+		selectedId = id;
+		mutateDialogOpen = true;
+	}
 </script>
 
-<div class="space-y-6 p-6">
+<div class="flex flex-col gap-6 p-6">
 	<header class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
 		<div>
-			<h1 class="text-2xl font-bold text-gray-900">Data Barang Habis Pakai</h1>
-			<p class="text-sm text-gray-500">Total {data.pagination.totalItems} barang ditemukan</p>
+			<h1 class="text-3xl font-bold tracking-tight text-foreground">Barang Habis Pakai</h1>
+			<p class="text-sm text-muted-foreground">
+				Total {data.pagination.totalItems} jenis barang ditemukan di organisasi Anda.
+			</p>
 		</div>
-		<a
-			href={resolve('/(app)/[org_slug]/barang/create', {
-				org_slug: data.user.organization.slug
-			})}
-			class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-		>
-			+ Tambah Barang
-		</a>
+		<Button href="/{page.params.org_slug}/barang/create" class="gap-2">
+			<Plus class="size-4" />
+			Tambah Barang
+		</Button>
 	</header>
 
-	<section class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-		<form method="GET" class="grid grid-cols-1 gap-4 md:grid-cols-4">
-			<div class="md:col-span-3">
-				<label for="name" class="mb-1 block text-xs font-medium text-gray-700"
-					>Cari Nama Barang</label
-				>
-				<input
-					type="text"
+	<div class="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm">
+		<div class="relative flex-1">
+			<Search class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+			<form method="GET" class="w-full">
+				<Input
 					name="name"
-					id="name"
-					placeholder="Contoh: Baterai, Kabel..."
+					placeholder="Cari nama barang..."
+					class="pl-10"
 					value={data.filters.name}
-					class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
 				/>
-			</div>
-
-			<div class="flex items-end">
-				<button
-					type="submit"
-					class="w-full rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-				>
-					Terapkan Filter
-				</button>
-			</div>
-		</form>
-	</section>
-
-	<div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-		<div class="overflow-x-auto">
-			<table class="w-full text-left text-sm">
-				<thead class="bg-gray-50 text-xs font-semibold text-gray-600 uppercase">
-					<tr>
-						<th class="px-6 py-4 text-center">No</th>
-						<th class="px-6 py-4">Nama Barang</th>
-						<th class="px-6 py-4">Satuan</th>
-						<th class="px-6 py-4">Deskripsi</th>
-						<th class="px-6 py-4 text-right">Aksi</th>
-					</tr>
-				</thead>
-				<tbody class="divide-y divide-gray-200">
-					{#each data.consumables as item, i}
-						<tr class="transition hover:bg-gray-50">
-							<td class="px-6 py-4 text-center text-gray-500">
-								{i + 1 + (data.pagination.currentPage - 1) * 10}
-							</td>
-							<td class="px-6 py-4">
-								<div class="font-medium text-gray-900">{item.name}</div>
-								<div class="text-xs text-gray-400">ID: {item.id.slice(0, 8)}...</div>
-							</td>
-							<td class="px-6 py-4">
-								<span class="rounded bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">
-									{item.baseUnit}
-								</span>
-							</td>
-							<td class="px-6 py-4 text-gray-500 italic">
-								{item.description || '-'}
-							</td>
-							<td class="px-6 py-4 text-right">
-								<a
-									href={resolve('/(app)/[org_slug]/barang/edit/[id]', {
-										id: item.id,
-										org_slug: data.user.organization.slug
-									})}
-									class="font-medium text-blue-600 hover:underline">Edit</a
-								>
-								<form method="POST" use:enhance action="?/delete">
-									<input type="text" name="id" hidden value={item.id} />
-									<button>Hapus barang</button>
-								</form>
-							</td>
-						</tr>
-					{:else}
-						<tr>
-							<td colspan="5" class="px-6 py-10 text-center text-gray-500">
-								Tidak ada data barang ditemukan.
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
+			</form>
 		</div>
+	</div>
 
-		<footer class="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
-			<div class="text-xs text-gray-500">
-				Halaman <span class="font-bold text-gray-900">{data.pagination.currentPage}</span> dari
-				<span class="font-bold text-gray-900">{data.pagination.totalPages}</span>
-			</div>
-			<div class="flex gap-2">
-				<a
-					href="?page={data.pagination.currentPage - 1}&name={data.filters.name}"
-					class="rounded border bg-white px-3 py-1 text-xs font-medium hover:bg-gray-50 {data
-						.pagination.currentPage <= 1
-						? 'pointer-events-none opacity-50'
-						: ''}"
-				>
-					Sebelumnya
-				</a>
-				<a
-					href="?page={data.pagination.currentPage + 1}&name={data.filters.name}"
-					class="rounded border bg-white px-3 py-1 text-xs font-medium hover:bg-gray-50 {data
-						.pagination.currentPage >= data.pagination.totalPages
-						? 'pointer-events-none opacity-50'
-						: ''}"
-				>
-					Selanjutnya
-				</a>
-			</div>
-		</footer>
+	<div class="overflow-hidden rounded-lg border bg-card shadow-sm">
+		<Table.Root>
+			<Table.Header>
+				<Table.Row class="bg-muted/50">
+					<Table.Head class="w-[50px] text-center">No</Table.Head>
+					<Table.Head>Nama Barang</Table.Head>
+					<Table.Head>Satuan</Table.Head>
+					<Table.Head>Deskripsi</Table.Head>
+					<Table.Head class="text-right">Aksi</Table.Head>
+				</Table.Row>
+			</Table.Header>
+			<Table.Body>
+				{#each data.consumables as item, i (item.id)}
+					<Table.Row class="transition-colors hover:bg-muted/30">
+						<Table.Cell class="text-center font-medium text-muted-foreground">
+							{i + 1 + (data.pagination.currentPage - 1) * 10}
+						</Table.Cell>
+						<Table.Cell>
+							<div class="flex items-center gap-3">
+								<div class="rounded-md bg-blue-50 p-2 text-blue-600">
+									<Package class="size-4" />
+								</div>
+								<div class="flex flex-col">
+									<span class="font-semibold text-foreground">{item.name}</span>
+									<span class="font-mono text-[10px] text-muted-foreground"
+										>ID: {item.id.slice(0, 8)}</span
+									>
+								</div>
+							</div>
+						</Table.Cell>
+						<Table.Cell>
+							<span
+								class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
+							>
+								{item.baseUnit}
+							</span>
+						</Table.Cell>
+						<Table.Cell class="max-w-xs truncate text-xs text-muted-foreground italic">
+							{item.description || '-'}
+						</Table.Cell>
+						<Table.Cell class="text-right">
+							<DropdownMenu.Root>
+								<DropdownMenu.Trigger asChild>
+									<MoreHorizontal class="size-4" />
+								</DropdownMenu.Trigger>
+								<DropdownMenu.Content align="end" class="w-40">
+									<DropdownMenu.Item onclick={() => openMutate(item.id)} class="gap-2">
+										<ArrowRightLeft class="size-4" /> Mutasi Stok
+									</DropdownMenu.Item>
+									<DropdownMenu.Item>
+										<a class="flex gap-2" href="/{page.params.org_slug}/barang/edit/{item.id}">
+											<Pencil class="size-4" /> Edit Data
+										</a>
+									</DropdownMenu.Item>
+									<DropdownMenu.Separator />
+									<DropdownMenu.Item
+										onclick={() => confirmDelete(item.id)}
+										class="gap-2 text-red-600"
+									>
+										<Trash2 class="size-4" /> Hapus
+									</DropdownMenu.Item>
+								</DropdownMenu.Content>
+							</DropdownMenu.Root>
+						</Table.Cell>
+					</Table.Row>
+				{:else}
+					<Table.Row>
+						<Table.Cell colspan={5} class="h-32 text-center text-muted-foreground italic">
+							Tidak ada data barang ditemukan.
+						</Table.Cell>
+					</Table.Row>
+				{/each}
+			</Table.Body>
+		</Table.Root>
+
+		{#if data.pagination.totalPages > 1}
+			<footer class="flex items-center justify-between border-t bg-muted/20 px-6 py-4">
+				<div class="text-xs font-medium text-muted-foreground">
+					Halaman <span class="font-bold text-foreground">{data.pagination.currentPage}</span> dari {data
+						.pagination.totalPages}
+				</div>
+				<div class="flex gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						href="?page={data.pagination.currentPage - 1}&name={data.filters.name}"
+						disabled={data.pagination.currentPage <= 1}
+					>
+						Sebelumnya
+					</Button>
+					<Button
+						variant="outline"
+						size="sm"
+						href="?page={data.pagination.currentPage + 1}&name={data.filters.name}"
+						disabled={data.pagination.currentPage >= data.pagination.totalPages}
+					>
+						Selanjutnya
+					</Button>
+				</div>
+			</footer>
+		{/if}
 	</div>
 </div>
+
+<!-- HIDDEN FORMS -->
+<form
+	id="delete-form"
+	method="POST"
+	action="?/delete"
+	use:enhance={() => {
+		deleteLoading = true;
+		return ({ result }) => {
+			deleteLoading = false;
+			deleteDialogOpen = false;
+			if (result.type === 'success') {
+				notificationMsg = result.data?.message || 'Barang berhasil dihapus';
+				notificationType = 'success';
+				notificationOpen = true;
+			} else {
+				notificationMsg = result.data?.message || 'Gagal menghapus barang';
+				notificationType = 'error';
+				notificationOpen = true;
+			}
+		};
+	}}
+	hidden
+>
+	<input type="hidden" name="id" value={selectedId} />
+</form>
+
+<form
+	id="mutate-form"
+	method="POST"
+	action="?/mutate"
+	use:enhance={() => {
+		mutateLoading = true;
+		return ({ result }) => {
+			mutateLoading = false;
+			mutateDialogOpen = false;
+			if (result.type === 'success') {
+				notificationMsg = result.data?.message;
+				notificationType = 'success';
+				notificationOpen = true;
+			}
+		};
+	}}
+	hidden
+>
+	<input type="hidden" name="itemId" value={selectedId} />
+	<input type="hidden" name="qty" value={mutateQty} />
+	<input type="hidden" name="type" value={mutateType} />
+	<input type="hidden" name="notes" value={mutateNotes} />
+</form>
+
+<!-- DIALOGS -->
+<ConfirmationDialog
+	bind:open={deleteDialogOpen}
+	loading={deleteLoading}
+	type="error"
+	title="Hapus Barang"
+	description="Apakah Anda yakin? Barang yang dihapus tidak dapat dipulihkan."
+	actionLabel="Hapus Permanen"
+	onAction={() => document.getElementById('delete-form').requestSubmit()}
+/>
+
+<ConfirmationDialog
+	bind:open={mutateDialogOpen}
+	loading={mutateLoading}
+	type="info"
+	title="Mutasi / Penyesuaian Stok"
+	description="Catat pergerakan stok manual untuk barang ini."
+	actionLabel="Simpan Mutasi"
+	onAction={() => document.getElementById('mutate-form').requestSubmit()}
+>
+	<div class="mt-4 grid gap-4 text-left">
+		<div class="space-y-2">
+			<Label>Jenis Pergerakan</Label>
+			<select
+				bind:value={mutateType}
+				class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+			>
+				<option value="ADJUSTMENT">Penyesuaian (Adjustment)</option>
+				<option value="ISSUE">Keluar (Issue)</option>
+				<option value="RECEIVE">Masuk (Receive)</option>
+			</select>
+		</div>
+		<div class="space-y-2">
+			<Label>Jumlah (Qty)</Label>
+			<Input type="number" bind:value={mutateQty} min="1" />
+		</div>
+		<div class="space-y-2">
+			<Label>Catatan / Keterangan</Label>
+			<Input bind:value={mutateNotes} placeholder="Contoh: Barang rusak saat pengiriman..." />
+		</div>
+	</div>
+</ConfirmationDialog>
+
+<NotificationDialog
+	bind:open={notificationOpen}
+	type={notificationType}
+	title={notificationType === 'success' ? 'Berhasil' : 'Gagal'}
+	description={notificationMsg}
+/>

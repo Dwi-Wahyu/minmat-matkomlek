@@ -64,6 +64,27 @@
       "when": 1773977866921,
       "tag": "0008_elite_wrecking_crew",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1774157177486,
+      "tag": "0009_talented_pete_wisdom",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1774157616165,
+      "tag": "0010_skinny_toad",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1774184001694,
+      "tag": "0011_brown_korg",
+      "breakpoints": true
     }
   ]
 }

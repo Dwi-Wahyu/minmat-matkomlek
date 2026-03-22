@@ -1,0 +1,1 @@
+ALTER TABLE `lending` ADD `rejected_reason` text;

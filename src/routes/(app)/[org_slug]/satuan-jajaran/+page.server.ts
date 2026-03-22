@@ -1,6 +1,6 @@
 import { db } from '$lib/server/db';
 import { organization } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ne, and } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -14,9 +14,9 @@ export const load: PageServerLoad = async ({ params }) => {
 		throw error(404, 'Organisasi tidak ditemukan');
 	}
 
-	// 2. Ambil semua satuan (child organizations) di bawahnya
-	// Asumsi: tabel organization memiliki kolom parentId sesuai dokumen konteks
+	// 2. Ambil semua satuan kecuali satuan sendiri
 	const units = await db.query.organization.findMany({
+		where: ne(organization.id, currentOrg.id),
 		orderBy: (org, { asc }) => [asc(org.name)]
 	});
 

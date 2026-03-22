@@ -1,80 +1,85 @@
 import { db } from '$lib/server/db';
-import { warehouse, equipment, item } from '$lib/server/db/schema';
-import { fail } from '@sveltejs/kit';
+import { equipment, item, warehouse, organization } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
-import { v4 as uuidv4 } from 'uuid';
-import { eq } from 'drizzle-orm';
+import { fail } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	// Ambil data gudang berdasarkan organisasi user untuk select di frontend
-	const warehouses = await db
-		.select()
-		.from(warehouse)
-		.where(eq(warehouse.organizationId, locals.user.organization.id));
+export const load: PageServerLoad = async ({ params }) => {
+	const { org_slug } = params;
+
+	const [warehouses, org] = await Promise.all([
+		db
+			.select()
+			.from(warehouse)
+			.innerJoin(organization, eq(warehouse.organizationId, organization.id))
+			.where(eq(organization.slug, org_slug)),
+		db.query.organization.findFirst({ where: eq(organization.slug, org_slug) })
+	]);
 
 	return {
-		warehouses
+		warehouses: warehouses.map((w) => w.warehouse),
+		org
 	};
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, params }) => {
+		const { org_slug, type } = params;
 		const formData = await request.formData();
 
-		// Ekstraksi data dari form
-		const name = formData.get('name') as string;
+		const itemName = formData.get('itemName') as string;
 		const serialNumber = formData.get('serialNumber') as string;
 		const brand = formData.get('brand') as string;
-		const type = formData.get('type') as 'ALKOMLEK' | 'PERNIKA_LEK';
-		const category = formData.get('category') as string;
-		const condition = formData.get('condition') as 'BAIK' | 'RUSAK_RINGAN' | 'RUSAK_BERAT';
 		const warehouseId = formData.get('warehouseId') as string;
-		const quantity = parseInt(formData.get('quantity') as string);
+		const condition = formData.get('condition') as 'BAIK' | 'RUSAK_RINGAN' | 'RUSAK_BERAT';
+		const status = formData.get('status') as 'READY' | 'IN_USE' | 'TRANSIT' | 'MAINTENANCE';
 
-		// Validasi sederhana
-		if (!name || !warehouseId || isNaN(quantity)) {
-			return fail(400, { message: 'Data tidak lengkap' });
-		}
+		if (!itemName) return fail(400, { message: 'Nama Alat harus diisi' });
+
+		// Map URL type to database equipmentType
+		const equipmentType = type.toUpperCase() === 'ALPERNIKA' ? 'PERNIKA_LEK' : 'ALKOMLEK';
 
 		try {
-			// Jalankan transaksi database
-			await db.transaction(async (tx) => {
-				const equipmentId = uuidv4();
-				const itemId = uuidv4();
+			const org = await db.query.organization.findFirst({ where: eq(organization.slug, org_slug) });
+			if (!org) return fail(404, { message: 'Organisasi tidak ditemukan' });
 
-				await tx.insert(item).values({
+			// Create or Find Item
+			let itemId: string;
+			const existingItem = await db.query.item.findFirst({
+				where: and(eq(item.name, itemName), eq(item.equipmentType, equipmentType))
+			});
+
+			if (existingItem) {
+				itemId = existingItem.id;
+			} else {
+				itemId = crypto.randomUUID();
+				await db.insert(item).values({
 					id: itemId,
-					name,
-					baseUnit: 'UNIT',
-					type: 'ASSET'
+					name: itemName,
+					type: 'ASSET',
+					equipmentType: equipmentType,
+					baseUnit: 'UNIT'
 				});
+			}
 
-				// Insert ke tabel equipment
-				await tx.insert(equipment).values({
-					id: equipmentId,
-					name,
-					serialNumber,
-					brand,
-					type,
-					category,
-					condition,
-					itemId
-				});
-
-				// Ambil data gudang untuk mendapatkan 'category' sebagai 'stockStatus'
-				const [targetWarehouse] = await tx
-					.select()
-					.from(warehouse)
-					.where(eq(warehouse.id, warehouseId))
-					.limit(1);
-
-				if (!targetWarehouse) throw new Error('Gudang tidak ditemukan');
+			await db.insert(equipment).values({
+				id: crypto.randomUUID(),
+				itemId,
+				serialNumber: serialNumber || null,
+				brand: brand || null,
+				warehouseId: warehouseId || null,
+				organizationId: org.id,
+				condition: condition || 'BAIK',
+				status: status || 'READY'
 			});
 
 			return { success: true, message: 'Alat berhasil ditambahkan' };
-		} catch (e) {
-			console.error(e);
-			return fail(500, { message: 'Gagal menyimpan data ke database' });
+		} catch (error: any) {
+			console.error(error);
+			if (error.code === 'ER_DUP_ENTRY') {
+				return fail(400, { message: 'Serial Number sudah terdaftar' });
+			}
+			return fail(500, { message: 'Gagal menambahkan alat' });
 		}
 	}
 };

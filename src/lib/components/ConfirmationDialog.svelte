@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 	import { buttonVariants } from '$lib/components/ui/button/index.js';
-	import { Check, X, Info } from '@lucide/svelte';
+	import { Check, X, Info, Loader2 } from '@lucide/svelte';
 	import { cn } from '$lib/utils.js';
 
 	let {
@@ -9,8 +9,10 @@
 		type = 'success',
 		title = '',
 		description = '',
-		cancelLabel = 'Continue shopping',
-		actionLabel = 'Confirm',
+		cancelLabel = 'Batal',
+		actionLabel = 'Konfirmasi',
+		loading = false,
+		children,
 		onAction = () => {},
 		onCancel = () => {}
 	}: {
@@ -20,6 +22,8 @@
 		description?: string;
 		cancelLabel?: string;
 		actionLabel?: string;
+		loading?: boolean;
+		children?: import('svelte').Snippet;
 		onAction?: () => void;
 		onCancel?: () => void;
 	} = $props();
@@ -74,6 +78,12 @@
 				</AlertDialog.Description>
 			</AlertDialog.Header>
 
+			{#if children}
+				<div class="mt-4 text-left">
+					{@render children()}
+				</div>
+			{/if}
+
 			<AlertDialog.Footer class="mt-8 gap-2 sm:justify-center">
 				<AlertDialog.Cancel class={buttonVariants({ variant: 'outline' })} onclick={onCancel}>
 					{cancelLabel}
@@ -81,9 +91,18 @@
 
 				<AlertDialog.Action
 					class={cn('min-w-[120px]', config.bg, 'hover:opacity-90')}
-					onclick={onAction}
+					onclick={(e) => {
+						e.preventDefault();
+						onAction();
+					}}
+					disabled={loading}
 				>
-					{actionLabel}
+					{#if loading}
+						<Loader2 class="mr-2 size-4 animate-spin" />
+						Memproses...
+					{:else}
+						{actionLabel}
+					{/if}
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</div>

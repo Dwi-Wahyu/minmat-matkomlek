@@ -1,148 +1,139 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	let { data, form } = $props();
+	import { page } from '$app/state';
+	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { ChevronLeft, Save, Loader2 } from '@lucide/svelte';
 
-	let isLoading = $state(false);
+	let { data } = $props();
+
+	let loading = $state(false);
+	let notificationOpen = $state(false);
+	let notificationMsg = $state('');
+	let notificationType = $state<'success' | 'error' | 'info'>('success');
+
+	const typeLabel = $derived(data.type === 'alpernika' ? 'Pernika & Lek' : 'Alkomlek');
+
+	function handleAction() {
+		if (notificationType === 'success') {
+			window.location.href = `/${page.params.org_slug}/alat/${data.type}`;
+		}
+	}
 </script>
 
-<div class="mx-auto max-w-4xl">
-	<div class="mb-4">
-		<h1 class="text-2xl font-bold text-gray-800">Input Data Alat Baru</h1>
-		<p class="text-sm text-gray-500">Tambahkan peralatan baru ke dalam inventaris gudang.</p>
-	</div>
-
-	{#if form?.success}
-		<div class="mb-6 rounded-lg border border-green-200 bg-green-100 p-4 text-green-700">
-			{form.message}
+<div class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
+	<div class="flex items-center gap-4">
+		<Button variant="outline" size="icon" href="/{page.params.org_slug}/alat/{data.type}">
+			<ChevronLeft class="size-4" />
+		</Button>
+		<div>
+			<h1 class="text-3xl font-bold tracking-tight text-foreground">Tambah {typeLabel}</h1>
+			<p class="text-muted-foreground">Masukkan informasi peralatan baru ke dalam sistem.</p>
 		</div>
-	{/if}
+	</div>
 
 	<form
 		method="POST"
 		use:enhance={() => {
-			isLoading = true;
-			return async ({ update }) => {
-				isLoading = false;
-				update();
+			loading = true;
+			return ({ result }) => {
+				loading = false;
+				if (result.type === 'success') {
+					notificationMsg = result.data?.message || 'Berhasil';
+					notificationType = 'success';
+					notificationOpen = true;
+				} else if (result.type === 'failure') {
+					notificationMsg = result.data?.message || 'Terjadi kesalahan';
+					notificationType = 'error';
+					notificationOpen = true;
+				}
 			};
 		}}
-		class="grid grid-cols-1 gap-6 rounded-xl border border-gray-100 bg-white p-8 shadow-sm md:grid-cols-2"
+		class="grid gap-8 rounded-lg border bg-card p-8 shadow-sm"
 	>
-		<div class="flex flex-col gap-2">
-			<label for="name" class="text-sm font-semibold text-gray-700">Nama Alat</label>
-			<input
-				type="text"
-				name="name"
-				id="name"
-				required
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-				placeholder="Contoh: Radio HT Motorola"
-			/>
+		<div class="grid gap-6 md:grid-cols-2">
+			<div class="space-y-2">
+				<Label for="itemName">Nama Alat</Label>
+				<Input name="itemName" id="itemName" required placeholder="Contoh: Radio HT, Jammer..." />
+				<p class="text-xs text-muted-foreground">Nama spesifik atau model peralatan.</p>
+			</div>
+
+			<div class="space-y-2">
+				<Label for="serialNumber">Serial Number (SN)</Label>
+				<Input name="serialNumber" id="serialNumber" placeholder="Contoh: SN-12345678" />
+				<p class="text-xs text-muted-foreground">Nomor seri unik untuk alat ini (opsional).</p>
+			</div>
+
+			<div class="space-y-2">
+				<Label for="brand">Brand / Merek</Label>
+				<Input name="brand" id="brand" placeholder="Contoh: Motorola, Kenwood..." />
+			</div>
+
+			<div class="space-y-2">
+				<Label for="warehouseId">Gudang Penyimpanan</Label>
+				<select
+					name="warehouseId"
+					id="warehouseId"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				>
+					<option value="">Tanpa Gudang (Langsung ke Satuan)</option>
+					{#each data.warehouses as warehouse (warehouse.id)}
+						<option value={warehouse.id}>{warehouse.name}</option>
+					{/each}
+				</select>
+			</div>
+
+			<div class="space-y-2">
+				<Label for="condition">Kondisi Alat</Label>
+				<select
+					name="condition"
+					id="condition"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				>
+					<option value="BAIK">Baik</option>
+					<option value="RUSAK_RINGAN">Rusak Ringan</option>
+					<option value="RUSAK_BERAT">Rusak Berat</option>
+				</select>
+			</div>
+
+			<div class="space-y-2">
+				<Label for="status">Status Aset</Label>
+				<select
+					name="status"
+					id="status"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+				>
+					<option value="READY">Ready (Tersedia)</option>
+					<option value="IN_USE">In Use (Digunakan)</option>
+					<option value="TRANSIT">Transit (Dalam Pengiriman)</option>
+					<option value="MAINTENANCE">Maintenance (Perbaikan)</option>
+				</select>
+			</div>
 		</div>
 
-		<div class="flex flex-col gap-2">
-			<label for="serialNumber" class="text-sm font-semibold text-gray-700">Nomor Seri (S/N)</label>
-			<input
-				type="text"
-				name="serialNumber"
-				id="serialNumber"
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-				placeholder="Masukkan S/N unik"
-			/>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="brand" class="text-sm font-semibold text-gray-700">Merk/Brand</label>
-			<input
-				type="text"
-				name="brand"
-				id="brand"
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-				placeholder="Contoh: Harris, Motorola"
-			/>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="warehouseId" class="text-sm font-semibold text-gray-700">Pilih Gudang</label>
-			<select
-				name="warehouseId"
-				id="warehouseId"
-				required
-				class="rounded-lg border bg-white p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			>
-				<option value="">-- Pilih Gudang Tujuan --</option>
-				{#each data.warehouses as wh}
-					<option value={wh.id}>{wh.name} ({wh.category})</option>
-				{/each}
-			</select>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="type" class="text-sm font-semibold text-gray-700">Tipe Alat</label>
-			<select
-				name="type"
-				id="type"
-				required
-				class="rounded-lg border bg-white p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			>
-				<option value="ALKOMLEK">ALKOMLEK</option>
-				<option value="PERNIKA_LEK">PERNIKA_LEK</option>
-			</select>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="category" class="text-sm font-semibold text-gray-700">Kategori Spesifik</label>
-			<input
-				type="text"
-				name="category"
-				id="category"
-				required
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-				placeholder="Contoh: Alat Komunikasi"
-			/>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="condition" class="text-sm font-semibold text-gray-700">Kondisi Barang</label>
-			<select
-				name="condition"
-				id="condition"
-				class="rounded-lg border bg-white p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			>
-				<option value="BAIK">BAIK</option>
-				<option value="RUSAK_RINGAN">RUSAK RINGAN</option>
-				<option value="RUSAK_BERAT">RUSAK BERAT</option>
-			</select>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="quantity" class="text-sm font-semibold text-gray-700">Jumlah (Quantity)</label>
-			<input
-				type="number"
-				name="quantity"
-				id="quantity"
-				min="1"
-				value="1"
-				required
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			/>
-		</div>
-
-		<div class="mt-4 flex w-full justify-end gap-4">
-			<button
-				onclick={() => history.back()}
-				class="hover:bg-opacity-90 w-full rounded-lg bg-[#2D5A43] py-3 font-bold text-white"
-			>
-				Kembali
-			</button>
-
-			<button
-				disabled={isLoading}
-				type="submit"
-				class="hover:bg-opacity-90 w-full rounded-lg bg-[#2D5A43] py-3 font-bold text-white transition disabled:opacity-50"
-			>
-				{isLoading ? 'Menyimpan...' : 'Simpan Data Alat'}
-			</button>
+		<div class="flex justify-end gap-3 border-t pt-6">
+			<Button variant="outline" href="/{page.params.org_slug}/alat/{data.type}" disabled={loading}>
+				Batal
+			</Button>
+			<Button type="submit" class="min-w-[120px] gap-2" disabled={loading}>
+				{#if loading}
+					<Loader2 class="size-4 animate-spin" />
+					Menyimpan...
+				{:else}
+					<Save class="size-4" />
+					Simpan Alat
+				{/if}
+			</Button>
 		</div>
 	</form>
 </div>
+
+<NotificationDialog
+	bind:open={notificationOpen}
+	type={notificationType}
+	title={notificationType === 'success' ? 'Berhasil' : 'Gagal'}
+	description={notificationMsg}
+	onAction={handleAction}
+/>

@@ -3,29 +3,27 @@ config();
 
 import mysql from 'mysql2/promise';
 import * as schema from './schema';
-import * as authSchema from './auth.schema'; // Import auth schema as well
+import * as authSchema from './auth.schema';
 import { drizzle } from 'drizzle-orm/mysql2';
 import { v4 as uuidv4 } from 'uuid';
 
 import { betterAuth } from 'better-auth/minimal';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-
-const client = mysql.createPool(process.env.DATABASE_URL ?? '');
-const db = drizzle(client, { schema: { ...schema, ...authSchema }, mode: 'default' }); // Use both schemas
-
 import { organization } from 'better-auth/plugins';
+import { eq } from 'drizzle-orm';
 
 import {
-	accessControl, // Import accessControl to get role names
+	accessControl,
 	kakomlek,
 	operatorBinmatDanBekharrah,
 	operatorPusatDanDaerah,
 	pimpinan,
 	superadmin
 } from '../auth.roles';
-import { eq } from 'drizzle-orm';
 
-// Define the roles object once to easily get its keys
+const client = mysql.createPool(process.env.DATABASE_URL ?? '');
+const db = drizzle(client, { schema: { ...schema, ...authSchema }, mode: 'default' });
+
 const allAuthRoles = {
 	pimpinan,
 	superadmin,
@@ -42,17 +40,40 @@ export const auth = betterAuth({
 	plugins: [
 		organization({
 			ac: accessControl,
-			roles: allAuthRoles // Use the defined object
+			roles: allAuthRoles
 		})
 	]
 });
+
+const alatList: string[] = [
+	'Server Rack',
+	'UPS (Uninterruptible Power Supply)',
+	'Router Jaringan',
+	'Switch Managed',
+	'Access Point',
+	'Laptop Operator',
+	'PC Workstation',
+	'Printer Laser',
+	'Scanner Dokumen'
+];
+
+const bhpList: string[] = [
+	'Kabel LAN (UTP Cat6)',
+	'Konektor RJ45',
+	'Thermal Paste CPU',
+	'Label Stiker Inventaris',
+	'Kabel Power Cadangan',
+	'Tinta Printer',
+	'Kertas A4',
+	'Baterai CMOS',
+	'Cable Tie (Pengikat Kabel)',
+	'Isolasi Listrik'
+];
 
 async function main() {
 	console.log('Sedang melakukan seeding...');
 
 	console.log('Menghapus data lama...');
-	// Hapus data lama untuk menghindari duplikasi (Urutan penting karena Foreign Key)
-	// Delete from child tables first, then parent tables
 	await db.delete(schema.approval);
 	await db.delete(schema.lendingItem);
 	await db.delete(schema.lending);
@@ -73,7 +94,6 @@ async function main() {
 	await db.delete(authSchema.organization);
 	console.log('Data lama berhasil dihapus.');
 
-	// --- Global Superadmin User ---
 	const globalSuperadminResponse = await auth.api.signUpEmail({
 		body: {
 			email: 'global.superadmin@gmail.com',
@@ -83,7 +103,6 @@ async function main() {
 	});
 	const globalSuperadminId = globalSuperadminResponse.user.id;
 
-	// --- PUSKOMLEKAD Organization ---
 	const puskomlekadOrg = await auth.api.createOrganization({
 		body: {
 			name: 'PUSKOMLEKAD',
@@ -93,12 +112,10 @@ async function main() {
 	});
 
 	if (!puskomlekadOrg) {
-		console.error('Failed to create PUSKOMLEKAD organization. Seeding stopped.');
+		console.error('Failed to create PUSKOMLEKAD organization.');
 		process.exit(1);
 	}
-	console.log(`Created organization: ${puskomlekadOrg.name}`);
 
-	// Create a warehouse for PUSKOMLEKAD
 	const puskomlekadWarehouseId = uuidv4();
 	await db.insert(schema.warehouse).values({
 		id: puskomlekadWarehouseId,
@@ -106,13 +123,10 @@ async function main() {
 		location: `Markas PUSKOMLEKAD`,
 		organizationId: puskomlekadOrg.id
 	});
-	console.log(`Created warehouse: Gudang Matbek PUSKOMLEKAD`);
-
 
 	const allOrganizations = [];
 	allOrganizations.push({ ...puskomlekadOrg, warehouseId: puskomlekadWarehouseId });
 
-	// --- Daftar Satuan Wilayah ---
 	const daftarSatuan = [
 		'ISKDR MDA', 'BUKIT BRSN', 'SRIWIJAYA', 'SILIWANGI', 'DIPENOGORO', 'BRAWIJAYA',
 		'MULAWARMN', 'UDAYANA', 'TANJUNG PR', 'MERDRKA', 'HASANUDDIN', 'PATTIMURA',
@@ -120,29 +134,15 @@ async function main() {
 		'TAMBUN BUNGAI', 'PALAKA WIRA', 'MANDALA TRIKORA', 'KOPASSUS', 'KOSTRAD', 'AKMIL'
 	];
 
-	// --- Seeding Satuan Wilayah ---
 	for (const namaSatuan of daftarSatuan) {
 		const slug = namaSatuan.toLowerCase().replace(/\s+/g, '-');
-
 		const orgWilayah = await auth.api.createOrganization({
-			body: {
-				name: namaSatuan,
-				slug: slug,
-				userId: globalSuperadminId // Superadmin pusat sebagai owner sementara
-			}
+			body: { name: namaSatuan, slug: slug, userId: globalSuperadminId }
 		});
 
-		if (!orgWilayah) {
-			console.warn(`Failed to create organization: ${namaSatuan}. Skipping.`);
-			continue;
-		}
-		console.log(`Created organization: ${orgWilayah.name}`);
+		if (!orgWilayah) continue;
 
-
-		await db
-			.update(authSchema.organization)
-			.set({ parentId: puskomlekadOrg.id })
-			.where(eq(authSchema.organization.id, orgWilayah.id));
+		await db.update(authSchema.organization).set({ parentId: puskomlekadOrg.id }).where(eq(authSchema.organization.id, orgWilayah.id));
 
 		const orgWarehouseId = uuidv4();
 		await db.insert(schema.warehouse).values({
@@ -151,113 +151,57 @@ async function main() {
 			location: `Markas ${namaSatuan}`,
 			organizationId: orgWilayah.id
 		});
-		console.log(`Created warehouse: Gudang Matbek ${namaSatuan}`);
-
 
 		allOrganizations.push({ ...orgWilayah, warehouseId: orgWarehouseId });
-		console.log(`─── Satuan ${namaSatuan} berhasil disinkronkan.`);
+		console.log(`Created organization: ${orgWilayah.name}`);
 	}
 
-	// --- Create Users for Each Role and Assign to Organizations, then Seed Items ---
-	const roleNames = Object.keys(allAuthRoles); // Get role names from the defined object
 	for (const org of allOrganizations) {
-		console.log(`\n--- Seeding users and items for organization: ${org.name} ---`);
+		console.log(`\n--- Seeding for ${org.name} ---`);
 
-		// Ensure the warehouseId is available from the extended organization object
-		const orgWarehouseId = org.warehouseId;
-		if (!orgWarehouseId) {
-			console.error(`No warehouseId found for organization ${org.name}. Skipping item seeding.`);
-			continue;
-		}
-
-		for (const roleName of roleNames) {
+		// Seed Users
+		for (const roleName of Object.keys(allAuthRoles)) {
 			const email = `${roleName.toLowerCase()}.${org.slug.replace(/-/g, '')}@example.com`;
-			const name = `${roleName} ${org.name}`;
-
-			// Check if user already exists (e.g., global superadmin user for 'superadmin' role)
-			let userRecord = await db.query.user.findFirst({
-				where: eq(authSchema.user.email, email)
-			});
-
-			if (!userRecord) {
-				const userResponse = await auth.api.signUpEmail({
-					body: {
-						email: email,
-						password: 'password123',
-						name: name
-					}
-				});
-				// Ensure userResponse.user.image is string | null, not undefined, to match Drizzle schema
-				userRecord = {
-					...userResponse.user,
-					image: userResponse.user.image === undefined ? null : userResponse.user.image
-				};
-			}
-
-			if (userRecord) {
-				await auth.api.addMember({
-					body: {
-						organizationId: org.id,
-						userId: userRecord.id,
-						role: roleName as keyof typeof allAuthRoles // Cast roleName to the expected type
-					}
-				});
-				console.log(`   - User '${name}' (${roleName}) created and added to ${org.name}.`);
-			} else {
-				console.error(`Failed to create user for role ${roleName} in ${org.name}`);
-			}
+			try {
+				await auth.api.signUpEmail({ body: { email, password: 'password123', name: `${roleName} ${org.name}` } });
+				const userRec = await db.query.user.findFirst({ where: eq(authSchema.user.email, email) });
+				if (userRec) await auth.api.addMember({ body: { organizationId: org.id, userId: userRec.id, role: roleName as any } });
+			} catch (e) {}
 		}
 
-		// --- Seed 5 Consumable Items and 5 Asset Items per Organization ---
-		// Consumable Items
-		for (let i = 1; i <= 5; i++) {
+		// Seed BHP (Consumable)
+		for (const name of bhpList) {
 			const itemId = uuidv4();
-			const itemName = `Consumable Item ${i} (${org.name})`;
 			await db.insert(schema.item).values({
-				id: itemId,
-				baseUnit: 'PCS',
-				name: itemName,
-				type: 'CONSUMABLE',
-				description: `Description for ${itemName}`
+				id: itemId, baseUnit: 'PCS', name: `${name} (${org.name})`, type: 'CONSUMABLE', description: `Bahan habis pakai untuk ${org.name}`
 			});
-
-			// Add stock for consumable item
 			await db.insert(schema.stock).values({
-				id: uuidv4(),
-				itemId: itemId,
-				warehouseId: orgWarehouseId,
-				qty: Math.floor(Math.random() * 100) + 10 // Random qty between 10-109
+				id: uuidv4(), itemId: itemId, warehouseId: org.warehouseId, qty: Math.floor(Math.random() * 200) + 50
 			});
-			console.log(`   - Consumable item '${itemName}' created with stock.`);
 		}
 
-		// Asset Items (2 ALKOMLEK, 3 PERNIKA_LEK - distributed)
-		const assetTypes: ('ALKOMLEK' | 'PERNIKA_LEK')[] = ['ALKOMLEK', 'ALKOMLEK', 'PERNIKA_LEK', 'PERNIKA_LEK', 'PERNIKA_LEK'];
-		for (let i = 0; i < 5; i++) {
+		// Seed Alat (Asset)
+		for (let i = 0; i < alatList.length; i++) {
+			const name = alatList[i];
 			const itemId = uuidv4();
-			const equipmentType = assetTypes[i];
-			const itemName = `Asset Item ${i + 1} (${equipmentType} - ${org.name})`;
+			const equipmentType = i % 2 === 0 ? 'ALKOMLEK' : 'PERNIKA_LEK';
+			
 			await db.insert(schema.item).values({
-				id: itemId,
-				baseUnit: 'UNIT',
-				name: itemName,
-				type: 'ASSET',
-				equipmentType: equipmentType,
-				description: `Description for ${itemName}`
+				id: itemId, baseUnit: 'UNIT', name: `${name} (${org.name})`, type: 'ASSET', equipmentType: equipmentType, description: `Peralatan ${equipmentType} untuk ${org.name}`
 			});
 
-			// Create equipment for this asset item
-			await db.insert(schema.equipment).values({
-				id: uuidv4(),
-				itemId: itemId,
-				serialNumber: `SN-${org.slug.substring(0, 5)}-${equipmentType.substring(0, 4)}-${i + 1}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-				brand: `Brand ${i + 1}`,
-				warehouseId: orgWarehouseId,
-				organizationId: org.id,
-				condition: i % 3 === 0 ? 'RUSAK_RINGAN' : 'BAIK', // Vary condition
-				status: 'READY'
-			});
-			console.log(`   - Asset item '${itemName}' created with equipment.`);
+			for (let j = 1; j <= 2; j++) {
+				await db.insert(schema.equipment).values({
+					id: uuidv4(),
+					itemId: itemId,
+					serialNumber: `SN-${org.slug.substring(0, 3).toUpperCase()}-${i}-${j}-${uuidv4().substring(0, 4).toUpperCase()}`,
+					brand: 'Generic Brand',
+					warehouseId: org.warehouseId,
+					organizationId: org.id,
+					condition: 'BAIK',
+					status: j === 1 ? 'READY' : 'IN_USE'
+				});
+			}
 		}
 	}
 

@@ -54,7 +54,7 @@
 							</div>
 
 							<Button
-								href="/{unit.slug}/dashboard"
+								href="satuan-jajaran/{unit.id}/"
 								variant="secondary"
 								class="flex h-8 items-center gap-2 rounded-md bg-emerald-700 px-3 text-xs text-white hover:bg-emerald-800"
 							>

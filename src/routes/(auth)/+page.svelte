@@ -1,8 +1,26 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance, applyAction } from '$app/forms';
 	import type { ActionData } from './$types';
+	import { toast } from 'svelte-sonner';
 
 	let { form }: { form: ActionData } = $props();
+
+	function handleSignIn() {
+		return async ({ result }: { result: any }) => {
+			if (result.type === 'redirect') {
+				toast.success('Login Berhasil', {
+					description: 'Selamat datang kembali di sistem MINMAT.'
+				});
+			} else if (result.type === 'failure') {
+				toast.error('Login Gagal', {
+					description: result.data?.message || 'Periksa kembali email dan password Anda.'
+				});
+			}
+			
+			// Menjalankan aksi bawaan SvelteKit (termasuk redirect)
+			await applyAction(result);
+		};
+	}
 </script>
 
 <div
@@ -39,7 +57,7 @@
 				</p>
 			</div>
 
-			<form method="post" action="?/signInEmail" use:enhance class="space-y-6">
+			<form method="post" action="?/signInEmail" use:enhance={handleSignIn} class="space-y-6">
 				<div class="space-y-1.5">
 					<label
 						for="email"

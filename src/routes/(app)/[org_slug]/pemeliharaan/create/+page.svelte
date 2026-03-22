@@ -93,7 +93,7 @@
 				<option value="" disabled>Pilih alat</option>
 				{#each data.equipment as eq}
 					<option value={eq.id}>
-						{eq.name}
+						{eq.item.name}
 						{eq.serialNumber ? `(${eq.serialNumber})` : ''}
 					</option>
 				{/each}

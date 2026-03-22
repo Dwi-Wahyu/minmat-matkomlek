@@ -10,7 +10,7 @@
 		type = 'success',
 		title = '',
 		description = '',
-		actionLabel = 'Continue',
+		actionLabel = 'Tutup',
 		onAction = () => {}
 	}: {
 		open?: boolean;
@@ -72,9 +72,9 @@
 			</Dialog.Header>
 
 			<div class="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
-				<Dialog.Close class={buttonVariants({ variant: 'outline' })}>
+				<!-- <Dialog.Close class={buttonVariants({ variant: 'outline' })}>
 					Continue shopping
-				</Dialog.Close>
+				</Dialog.Close> -->
 				<Button class={cn('min-w-[120px]', config.bg, 'hover:opacity-90')} onclick={onAction}>
 					{actionLabel}
 				</Button>

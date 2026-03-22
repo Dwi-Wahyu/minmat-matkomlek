@@ -2,63 +2,61 @@
 	import { page } from '$app/state';
 	import { slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
+	import type { Component } from 'svelte';
+	import { ChevronDown } from '@lucide/svelte';
+	import { getSidebarState } from '$lib/components/ui/sidebar/context.svelte.ts';
 
-	let { name, icon, children, activePrefix } = $props<{
+	let { name, icon: Icon, children, activePrefix } = $props<{
 		name: string;
-		icon: string;
+		icon: Component;
 		activePrefix: string;
 		children: Array<{ name: string; path: string }>;
 	}>();
 
+	const sidebar = getSidebarState();
+
 	let isGroupActive = $derived(page.url.pathname.startsWith(activePrefix));
-	let isOpen = $state();
+	let isOpen = $state(false);
 
 	$effect(() => {
-		if (isGroupActive) isOpen = true;
+		if (isGroupActive && sidebar.open) isOpen = true;
+		if (!sidebar.open) isOpen = false;
 	});
+
+	function handleToggle() {
+		if (!sidebar.open) {
+			sidebar.setOpen(true);
+			isOpen = true;
+		} else {
+			isOpen = !isOpen;
+		}
+	}
 </script>
 
 <li>
 	<button
 		type="button"
-		onclick={() => (isOpen = !isOpen)}
+		onclick={handleToggle}
 		class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all hover:bg-white/10
         {isGroupActive ? 'text-yellow-400' : 'opacity-80'}"
 	>
-		<div class="flex items-center gap-3">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="opacity-70"
-			>
-				{@html icon}
-			</svg>
-			{name}
+		<div class="flex items-center gap-3 shrink-0">
+			<Icon size={18} strokeWidth={2} class="opacity-70" />
+			{#if sidebar.open}
+				<span class="whitespace-nowrap transition-opacity duration-300">{name}</span>
+			{/if}
 		</div>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="14"
-			height="14"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="transition-transform duration-300 {isOpen ? 'rotate-180' : ''}"
-		>
-			<path d="m6 9 6 6 6-6" />
-		</svg>
+		
+		{#if sidebar.open}
+			<ChevronDown
+				size={14}
+				strokeWidth={2}
+				class="transition-transform duration-300 {isOpen ? 'rotate-180' : ''}"
+			/>
+		{/if}
 	</button>
 
-	{#if isOpen}
+	{#if isOpen && sidebar.open}
 		<ul
 			transition:slide={{ duration: 300, easing: cubicOut }}
 			class="mt-1 ml-9 space-y-1 overflow-hidden border-l border-white/20 pl-2"

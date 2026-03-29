@@ -4,7 +4,7 @@ import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { env } from '$env/dynamic/private';
 import { getRequestEvent } from '$app/server';
 import { db } from '$lib/server/db';
-import { organization, admin } from 'better-auth/plugins';
+import { organization, admin, username, customSession, bearer } from 'better-auth/plugins';
 import {
 	accessControl,
 	kakomlek,
@@ -51,6 +51,8 @@ export const auth = betterAuth({
 	},
 	plugins: [
 		admin(),
+		username(),
+		bearer(),
 		apiKey(),
 		organization({
 			ac: accessControl,
@@ -61,6 +63,36 @@ export const auth = betterAuth({
 				operatorPusatDanDaerah,
 				operatorBinmatDanBekharrah
 			}
+		}),
+		customSession(async ({ user, session }) => {
+			// Ambil relasi organisasi & role dari DB berdasarkan userId
+			const userWithOrgs = await db.query.user.findFirst({
+				where: (u, { eq }) => eq(u.id, user.id),
+				with: {
+					members: {
+						with: { organization: true }
+					}
+				}
+			});
+
+			const firstMember = userWithOrgs?.members?.[0];
+
+			return {
+				user: {
+					...user,
+					role: firstMember?.role ?? 'user',
+					organization: firstMember?.organization
+						? {
+								id: firstMember.organization.id,
+								parentId: firstMember.organization.parentId,
+								slug: firstMember.organization.slug,
+								name: firstMember.organization.name,
+								logo: firstMember.organization.logo ?? ''
+							}
+						: null
+				},
+				session
+			};
 		}),
 		sveltekitCookies(getRequestEvent) // make sure this is the last plugin in the array
 	]

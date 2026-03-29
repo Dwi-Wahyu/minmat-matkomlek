@@ -61,7 +61,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold tracking-tight text-foreground">Tracking Peminjaman</h1>
-			<p class="text-muted-foreground">Pantau status pengajuan dan penggunaan alat antar satuan.</p>
+			<p class="text-muted-foreground">Pantau status pengajuan.</p>
 		</div>
 		<Button href="/{page.params.org_slug}/peminjaman/create" class="gap-2">
 			<Plus class="size-4" />

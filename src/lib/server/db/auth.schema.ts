@@ -5,6 +5,8 @@ import { warehouse } from './schema';
 export const user = mysqlTable('user', {
 	id: varchar('id', { length: 36 }).primaryKey(),
 	name: varchar('name', { length: 255 }).notNull(),
+	username: varchar('username', { length: 255 }).notNull().unique(),
+	displayUsername: varchar('display_username', { length: 255 }),
 	email: varchar('email', { length: 255 }).notNull().unique(),
 	emailVerified: boolean('email_verified').default(false).notNull(),
 	image: text('image'),

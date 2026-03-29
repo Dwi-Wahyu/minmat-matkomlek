@@ -16,7 +16,7 @@
 					description: result.data?.message || 'Periksa kembali email dan password Anda.'
 				});
 			}
-			
+
 			// Menjalankan aksi bawaan SvelteKit (termasuk redirect)
 			await applyAction(result);
 		};
@@ -57,18 +57,17 @@
 				</p>
 			</div>
 
-			<form method="post" action="?/signInEmail" use:enhance={handleSignIn} class="space-y-6">
+			<form method="post" action="?/signIn" use:enhance={handleSignIn} class="space-y-6">
 				<div class="space-y-1.5">
 					<label
-						for="email"
+						for="username"
 						class="ml-1 block text-xs font-bold tracking-wider text-gray-400 uppercase"
 					>
 						Username
 					</label>
 					<input
-						type="email"
-						id="email"
-						name="email"
+						id="username"
+						name="username"
 						placeholder="Jonathan_Reichert07"
 						class="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3.5 text-gray-900 transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10 focus:outline-none"
 						required

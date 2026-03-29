@@ -315,7 +315,7 @@
 			>
 		</a>
 		<a
-			href="/{data.org_slug}/barang"
+			href="/{data.org_slug}/gudang/transito?movementEvent=['TRANSFER_IN', 'LOAN_IN', 'DISTRIBUTE_IN', 'MAINTENANCE_IN']"
 			class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/30"
 		>
 			<ArrowDownToLine size={22} class="text-slate-400 group-hover:text-blue-500" />
@@ -325,7 +325,7 @@
 			>
 		</a>
 		<a
-			href="/{data.org_slug}/barang"
+			href="/{data.org_slug}/gudang/transito?movementEvent=['TRANSFER_OUT', 'LOAN_OUT', 'DISTRIBUTE_OUT', 'MAINTENANCE_OUT']"
 			class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/30"
 		>
 			<ArrowUpFromLine size={22} class="text-slate-400 group-hover:text-blue-500" />
@@ -344,15 +344,17 @@
 				>Laporan</span
 			>
 		</a>
-		<a
-			href="/{data.org_slug}/monitoring"
-			class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/30"
-		>
-			<BarChart2 size={22} class="text-slate-400 group-hover:text-blue-500" />
-			<span
-				class="text-[10px] font-bold tracking-widest text-slate-500 uppercase group-hover:text-slate-900"
-				>Monitoring</span
+		{#if data.user.role === 'superadmin'}
+			<a
+				href="/{data.org_slug}/pengaturan/audit-log"
+				class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50/30"
 			>
-		</a>
+				<BarChart2 size={22} class="text-slate-400 group-hover:text-blue-500" />
+				<span
+					class="text-[10px] font-bold tracking-widest text-slate-500 uppercase group-hover:text-slate-900"
+					>Monitoring</span
+				>
+			</a>
+		{/if}
 	</div>
 </div>

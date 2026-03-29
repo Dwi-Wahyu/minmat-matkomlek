@@ -47,7 +47,7 @@
 
 	<!-- Unit Info Card -->
 	<Card.Root>
-		<Card.Header class="flex flex-row items-center gap-4 pb-4">
+		<Card.Header class="flex flex-row items-center gap-4">
 			<div class="rounded-full bg-blue-100 p-3 text-blue-600">
 				<Building2 class="size-6" />
 			</div>
@@ -56,7 +56,7 @@
 				<Card.Description>Slug: {data.targetOrg.slug}</Card.Description>
 			</div>
 		</Card.Header>
-		<Card.Content>
+		<!-- <Card.Content>
 			<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
 				<div class="flex flex-col gap-1">
 					<span class="text-xs font-semibold text-muted-foreground uppercase">ID Satuan</span>
@@ -73,7 +73,7 @@
 					<span class="text-sm">{new Date().toLocaleDateString('id-ID')}</span>
 				</div>
 			</div>
-		</Card.Content>
+		</Card.Content> -->
 	</Card.Root>
 
 	<!-- Inventory Section -->
@@ -145,7 +145,7 @@
 						<Table.Head>Gudang</Table.Head>
 						<Table.Head>Kondisi</Table.Head>
 						<Table.Head>Status</Table.Head>
-						<Table.Head class="text-right">Aksi</Table.Head>
+						<!-- <Table.Head class="text-right">Aksi</Table.Head> -->
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -195,7 +195,7 @@
 							</Table.Cell>
 							<Table.Cell class="text-right">
 								<div class="flex justify-end gap-2">
-									{#if item.type === 'ASSET'}
+									<!-- {#if item.type === 'ASSET'}
 										<Button
 											size="sm"
 											variant="outline"
@@ -218,7 +218,7 @@
 									>
 										<Info class="size-3.5" />
 										Detail
-									</Button>
+									</Button> -->
 								</div>
 							</Table.Cell>
 						</Table.Row>

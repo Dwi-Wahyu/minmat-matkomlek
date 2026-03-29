@@ -13,15 +13,15 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
-	signInEmail: async (event) => {
+	signIn: async (event) => {
 		const formData = await event.request.formData();
-		const email = formData.get('email')?.toString() ?? '';
+		const username = formData.get('username')?.toString() ?? '';
 		const password = formData.get('password')?.toString() ?? '';
 
 		try {
-			await auth.api.signInEmail({
+			await auth.api.signInUsername({
 				body: {
-					email,
+					username,
 					password,
 					callbackURL: '/dashboard'
 				},
@@ -38,7 +38,7 @@ export const actions: Actions = {
 		}
 
 		const userResult = await db.query.user.findFirst({
-			where: (user, { eq }) => eq(user.email, email),
+			where: (user, { eq }) => eq(user.username, username),
 			with: {
 				members: {
 					with: {

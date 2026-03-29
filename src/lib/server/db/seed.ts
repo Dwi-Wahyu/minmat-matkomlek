@@ -12,7 +12,7 @@ const faker = new Faker({ locale: [id_ID] });
 
 import { betterAuth } from 'better-auth/minimal';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { organization } from 'better-auth/plugins';
+import { organization, username } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
 
 import {
@@ -41,6 +41,7 @@ export const auth = betterAuth({
 	database: drizzleAdapter(db, { provider: 'mysql' }),
 	emailAndPassword: { enabled: true },
 	plugins: [
+		username(),
 		organization({
 			ac: accessControl,
 			roles: allAuthRoles
@@ -102,6 +103,8 @@ async function main() {
 	const globalSuperadminResponse = await auth.api.signUpEmail({
 		body: {
 			email: 'global.superadmin@gmail.com',
+			username: 'global.superadmin',
+			displayUsername: 'Global Superadmin',
 			password: 'password123',
 			name: 'Global Superadmin'
 		}
@@ -192,10 +195,19 @@ async function main() {
 				.email({ firstName: name.split(' ')[0], lastName: name.split(' ')[1] })
 				.toLowerCase();
 			try {
-				const res = await auth.api.signUpEmail({
-					body: { email, password: 'password123', name }
+				// Create user and add to organization with role
+				await auth.api.signUpEmail({
+					body: {
+						email,
+						password: roleName,
+						name,
+						username: `${roleName}.${org.slug}`,
+						displayUsername: name
+					}
 				});
-				const userRec = await db.query.user.findFirst({ where: eq(authSchema.user.email, email) });
+				const userRec = await db.query.user.findFirst({
+					where: eq(authSchema.user.username, `${roleName}.${org.slug}`)
+				});
 				if (userRec) {
 					await auth.api.addMember({
 						body: { organizationId: org.id, userId: userRec.id, role: roleName as any }

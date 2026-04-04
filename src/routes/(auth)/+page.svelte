@@ -24,13 +24,13 @@
 </script>
 
 <div
-	class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-100 p-6 md:p-16"
+	class="relative flex min-h-screen items-center justify-center overflow-hidden bg-gray-100 p-6 md:p-12"
 >
 	<div class="absolute inset-0 z-0 bg-[url('/backgrounds/login.png')] bg-cover bg-center">
 		<div class="absolute inset-0 bg-black/10"></div>
 	</div>
 
-	<div class="absolute top-10 left-10 z-10 hidden text-[#2D6A4F] md:block">
+	<div class="absolute top-14 left-10 z-10 hidden text-[#2D6A4F] md:block">
 		<h1 class="text-4xl font-black tracking-tight uppercase drop-shadow-sm">
 			Selamat Datang di PUSKOMLEKAD
 		</h1>
@@ -41,7 +41,7 @@
 
 	<div class="relative z-20 flex w-full max-w-7xl items-center justify-center md:justify-end">
 		<div
-			class="w-full max-w-lg rounded-[2.5rem] border border-white/20 bg-white/95 p-8 shadow-2xl backdrop-blur-md md:p-12"
+			class="w-full max-w-lg rounded-[2.5rem] border border-white/20 bg-white/95 p-4 shadow-2xl backdrop-blur-md md:p-8"
 		>
 			<div class="mb-10 flex flex-col items-center text-center">
 				<div

@@ -62,7 +62,7 @@
 			itemId: conv.itemId,
 			fromUnit: conv.fromUnit,
 			toUnit: conv.toUnit,
-			multiplier: conv.multiplier
+			multiplier: parseFloat(conv.multiplier.toString())
 		};
 		currentId = conv.id;
 		isEditing = true;
@@ -80,6 +80,16 @@
 		notificationType = type;
 		notificationOpen = true;
 	}
+
+	// Sinkronkan toUnit dengan baseUnit item terpilih
+	$effect(() => {
+		if (formData.itemId) {
+			const selectedItem = data.items.find((i) => i.id === formData.itemId);
+			if (selectedItem) {
+				formData.toUnit = selectedItem.baseUnit;
+			}
+		}
+	});
 
 	$effect(() => {
 		if (!showFormDialog) {
@@ -109,7 +119,7 @@
 	<Card.Root class="overflow-hidden border-none shadow-md">
 		<Card.Header class="bg-muted/30">
 			<Card.Title>Daftar Konversi Satuan</Card.Title>
-			<Card.Description>Daftar aturan konversi unit yang berlaku di sistem.</Card.Description>
+			<Card.Description>Daftar aturan konversi unit yang berlaku di sistem. Setiap konversi harus merujuk pada satuan dasar (Base Unit) barang.</Card.Description>
 		</Card.Header>
 		<Card.Content class="p-0">
 			<div class="overflow-x-auto">
@@ -120,7 +130,7 @@
 							<Table.Head>Item</Table.Head>
 							<Table.Head>Dari Satuan</Table.Head>
 							<Table.Head class="text-center">Konversi</Table.Head>
-							<Table.Head>Ke Satuan</Table.Head>
+							<Table.Head>Ke Satuan (Base)</Table.Head>
 							<Table.Head class="text-right">Aksi</Table.Head>
 						</Table.Row>
 					</Table.Header>
@@ -133,7 +143,10 @@
 										<div class="rounded-md bg-blue-50 p-2 text-blue-600">
 											<RefreshCcw class="size-4" />
 										</div>
-										<span class="font-semibold text-foreground">{conv.item?.name ?? 'Item Tidak Dikenal'}</span>
+										<div class="flex flex-col">
+											<span class="font-semibold text-foreground">{conv.item?.name ?? 'Item Tidak Dikenal'}</span>
+											<span class="text-[10px] text-muted-foreground uppercase">Base: {conv.item?.baseUnit}</span>
+										</div>
 									</div>
 								</Table.Cell>
 								<Table.Cell>
@@ -145,7 +158,7 @@
 									<span class="text-sm font-bold text-emerald-600">=</span>
 								</Table.Cell>
 								<Table.Cell>
-									<span class="font-bold">{conv.multiplier}</span>
+									<span class="font-bold">{parseFloat(conv.multiplier.toString())}</span>
 									<span class="text-xs text-muted-foreground ml-1">{conv.toUnit}</span>
 								</Table.Cell>
 								<Table.Cell class="text-right">
@@ -181,7 +194,7 @@
 	<DialogContent class="sm:max-w-[425px]">
 		<DialogHeader>
 			<DialogTitle>{isEditing ? 'Edit' : 'Tambah'} Konversi Unit</DialogTitle>
-			<DialogDescription>Atur perbandingan satuan untuk item terpilih.</DialogDescription>
+			<DialogDescription>Atur perbandingan satuan untuk item terpilih. Satuan tujuan otomatis menggunakan satuan dasar (Base Unit) item.</DialogDescription>
 		</DialogHeader>
 
 		<form
@@ -209,6 +222,7 @@
 			class="space-y-4 pt-4"
 		>
 			<input type="hidden" name="id" value={currentId ?? ''} />
+			<input type="hidden" name="toUnit" value={formData.toUnit} />
 
 			<div class="space-y-2">
 				<Label for="itemId">Pilih Item</Label>
@@ -221,7 +235,7 @@
 				>
 					<option value="" disabled>Pilih item...</option>
 					{#each data.items as item}
-						<option value={item.id}>{item.name}</option>
+						<option value={item.id}>{item.name} ({item.baseUnit})</option>
 					{/each}
 				</select>
 			</div>
@@ -243,19 +257,19 @@
 					</select>
 				</div>
 				<div class="space-y-2">
-					<Label for="toUnit">Ke Unit</Label>
+					<Label for="toUnit">Ke Unit (Base)</Label>
 					<select
 						id="toUnit"
-						name="toUnit"
 						bind:value={formData.toUnit}
-						required
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						disabled
+						class="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					>
 						<option value="" disabled>Unit...</option>
 						{#each unitOptions as unit}
 							<option value={unit}>{unit}</option>
 						{/each}
 					</select>
+					<p class="text-[10px] text-muted-foreground italic">Otomatis dari Base Unit</p>
 				</div>
 			</div>
 
@@ -266,7 +280,8 @@
 						id="multiplier"
 						name="multiplier"
 						type="number"
-						min="1"
+						min="0.0001"
+						step="any"
 						bind:value={formData.multiplier}
 						required
 						class="pl-10"

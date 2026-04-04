@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { equipment, item } from '$lib/server/db/schema';
-import { eq, and, like, exists } from 'drizzle-orm';
+import { equipment, item, warehouse } from '$lib/server/db/schema';
+import { eq, and, like } from 'drizzle-orm';
 
 export const GET = async ({ url, locals }) => {
 	// Validasi Organisasi
@@ -18,49 +18,42 @@ export const GET = async ({ url, locals }) => {
 	const offset = (page - 1) * limit;
 
 	try {
-		const results = await db.query.equipment.findMany({
-			where: (equip, { and, eq }) => {
-				const filters = [eq(equip.organizationId, organizationId)];
+		// Menggunakan select eksplisit untuk menghindari LEFT JOIN LATERAL
+		const query = db
+			.select({
+				equipment: equipment,
+				item: item,
+				warehouseName: warehouse.name
+			})
+			.from(equipment)
+			.innerJoin(item, eq(equipment.itemId, item.id))
+			.leftJoin(warehouse, eq(equipment.warehouseId, warehouse.id))
+			.where(
+				and(
+					eq(equipment.organizationId, organizationId),
+					conditionFilter ? eq(equipment.condition, conditionFilter as any) : undefined,
+					nameFilter ? like(item.name, `%${nameFilter}%`) : undefined
+				)
+			)
+			.limit(limit)
+			.offset(offset);
 
-				if (conditionFilter) {
-					filters.push(eq(equip.condition, conditionFilter as any));
-				}
+		const results = await query;
 
-				if (nameFilter) {
-					filters.push(
-						exists(
-							db.select()
-								.from(item)
-								.where(and(eq(item.id, equip.itemId), like(item.name, `%${nameFilter}%`)))
-						)
-					);
-				}
-
-				return and(...filters);
-			},
-			with: {
-				item: true, // Untuk mendapatkan nama barang
-				warehouse: {
-					columns: { name: true }
-				}
-			},
-			limit: limit,
-			offset: offset
-		});
-
-		const finalData = results.map((e) => ({
-			id: e.id,
-			nama: e.item.name,
-			sn: e.serialNumber,
-			brand: e.brand,
-			kondisi: e.condition,
-			status: e.status,
-			gudang: e.warehouse?.name,
-			tipe: e.item.equipmentType
+		const finalData = results.map((r) => ({
+			id: r.equipment.id,
+			nama: r.item.name,
+			sn: r.equipment.serialNumber,
+			brand: r.equipment.brand,
+			kondisi: r.equipment.condition,
+			status: r.equipment.status,
+			gudang: r.warehouseName,
+			tipe: r.item.equipmentType,
+			image: r.equipment.imagePath ? `/uploads/equipment/${r.equipment.imagePath}` : null
 		}));
 
-		return json({ 
-			success: true, 
+		return json({
+			success: true,
 			data: finalData,
 			pagination: {
 				page,

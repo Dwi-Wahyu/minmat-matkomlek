@@ -14,6 +14,26 @@
 	let notificationMsg = $state('');
 	let notificationType = $state<'success' | 'error' | 'info'>('success');
 
+	let imagePreview = $state<string | null>(
+		data.equipment.imagePath ? `/uploads/equipment/${data.equipment.imagePath}` : null
+	);
+
+	function handleImageChange(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				imagePreview = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			imagePreview = data.equipment.imagePath
+				? `/uploads/equipment/${data.equipment.imagePath}`
+				: null;
+		}
+	}
+
 	const typeLabel = $derived(data.type === 'alpernika' ? 'Pernika & Lek' : 'Alkomlek');
 
 	function handleAction() {
@@ -36,16 +56,17 @@
 
 	<form
 		method="POST"
+		enctype="multipart/form-data"
 		use:enhance={() => {
 			loading = true;
 			return ({ result }) => {
 				loading = false;
 				if (result.type === 'success') {
-					notificationMsg = result.data?.message || 'Berhasil';
+					notificationMsg = 'Berhasil';
 					notificationType = 'success';
 					notificationOpen = true;
 				} else if (result.type === 'failure') {
-					notificationMsg = result.data?.message || 'Terjadi kesalahan';
+					notificationMsg = 'Terjadi kesalahan';
 					notificationType = 'error';
 					notificationOpen = true;
 				}
@@ -91,7 +112,7 @@
 				<select
 					name="warehouseId"
 					id="warehouseId"
-					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 					value={data.equipment.warehouseId}
 				>
 					<option value="">Tanpa Gudang (Langsung ke Satuan)</option>
@@ -106,7 +127,7 @@
 				<select
 					name="condition"
 					id="condition"
-					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 					value={data.equipment.condition}
 				>
 					<option value="BAIK">Baik</option>
@@ -120,7 +141,7 @@
 				<select
 					name="status"
 					id="status"
-					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
 					value={data.equipment.status}
 				>
 					<option value="READY">Ready (Tersedia)</option>
@@ -128,6 +149,33 @@
 					<option value="TRANSIT">Transit (Dalam Pengiriman)</option>
 					<option value="MAINTENANCE">Maintenance (Perbaikan)</option>
 				</select>
+			</div>
+
+			<div class="space-y-2 md:col-span-2">
+				<Label for="image">Gambar Peralatan</Label>
+				<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+					<div
+						class="flex size-32 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted"
+					>
+						{#if imagePreview}
+							<img src={imagePreview} alt="Preview" class="size-full object-cover" />
+						{:else}
+							<div class="text-center text-xs text-muted-foreground">No Image</div>
+						{/if}
+					</div>
+					<div class="flex-1 space-y-2">
+						<Input
+							type="file"
+							name="image"
+							id="image"
+							accept="image/png, image/jpeg, image/jpg"
+							onchange={handleImageChange}
+						/>
+						<p class="text-xs text-muted-foreground">
+							Maksimal 5MB. Format: PNG, JPG, JPEG. (Kosongkan jika tidak ingin mengubah)
+						</p>
+					</div>
+				</div>
 			</div>
 		</div>
 

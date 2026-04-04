@@ -1,29 +1,35 @@
-<!-- <script lang="ts">
+<script lang="ts">
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
-	import Button from '@/components/ui/button/button.svelte';
-	import { ArrowLeft } from '@lucide/svelte';
-	let { data, form } = $props();
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Card from '$lib/components/ui/card';
-	import Input from '@/components/ui/input/input.svelte';
-	import Textarea from '@/components/ui/textarea/textarea.svelte';
-	import * as Select from '$lib/components/ui/select/index.js';
-	import { Label } from '@/components/ui/label';
+	import * as Select from '$lib/components/ui/select';
+	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
+	import { ArrowLeft } from '@lucide/svelte';
+
+	let { data } = $props();
 
 	let isLoading = $state(false);
 
 	// State untuk dialog notifikasi
 	let showNotification = $state(false);
-	let notificationType: 'success' | 'error' | 'info' = $state('success');
+	let notificationType = $state<'success' | 'error' | 'info'>('success');
 	let notificationTitle = $state('');
 	let notificationDescription = $state('');
 	let notificationActionLabel = $state('OK');
 
+	// State untuk form internal (hanya untuk Select)
+	let selectedBaseUnit = $state('');
+	let selectedWarehouseId = $state('');
+
 	// Handler untuk menampilkan notifikasi
-	function showSuccessNotification() {
+	function showSuccessNotification(message: string) {
 		notificationType = 'success';
 		notificationTitle = 'Berhasil!';
-		notificationDescription = 'Data pemeliharaan berhasil disimpan.';
+		notificationDescription = message;
 		notificationActionLabel = 'OK';
 		showNotification = true;
 	}
@@ -60,32 +66,36 @@
 				<h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
 					Tambah Barang Habis Pakai
 				</h1>
-				<p class="text-sm text-slate-500">Daftarkan definisi barang baru untuk</p>
+				<p class="text-sm text-slate-500">Daftarkan definisi barang baru untuk inventaris.</p>
 			</div>
 		</div>
 	</div>
 
 	<Card.Root class="overflow-hidden border-slate-200 shadow-sm">
-		<Card.Content>
+		<Card.Content class="p-8">
 			<form
 				method="POST"
 				use:enhance={() => {
-					return async ({ result, update }) => {
-						isLoading = true;
-
-						if (
-							result.type === 'success' ||
-							(result.type === 'redirect' && result.location.includes('pemeliharaan'))
-						) {
-							showSuccessNotification();
+					isLoading = true;
+					return async ({ result }) => {
+						isLoading = false;
+						if (result.type === 'success') {
+							showSuccessNotification('Data barang berhasil disimpan.');
 						} else if (result.type === 'failure') {
-							showErrorNotification(result.data?.message || 'Terjadi kesalahan');
+							showErrorNotification(
+								(result.data as any)?.message || 'Terjadi kesalahan saat menyimpan data.'
+							);
+						} else if (result.type === 'error') {
+							showErrorNotification('Terjadi kesalahan sistem.');
 						}
-						await update();
 					};
 				}}
 				class="grid grid-cols-1 gap-6 md:grid-cols-2"
 			>
+				<!-- Hidden Inputs for Select Values -->
+				<input type="hidden" name="baseUnit" value={selectedBaseUnit} />
+				<input type="hidden" name="warehouseId" value={selectedWarehouseId} />
+
 				<div class="flex flex-col gap-2">
 					<Label for="name">Nama Barang</Label>
 					<Input type="text" name="name" id="name" required placeholder="Contoh: Baterai AA" />
@@ -93,9 +103,14 @@
 
 				<div class="flex flex-col gap-2">
 					<Label for="baseUnit">Satuan Dasar</Label>
-
-					<Select.Root name="baseUnit" required type="single">
-						<Select.Trigger class="w-full">Pilih Satuan</Select.Trigger>
+					<Select.Root
+						type="single"
+						bind:value={selectedBaseUnit}
+						onValueChange={(v) => (selectedBaseUnit = v)}
+					>
+						<Select.Trigger class="w-full">
+							{selectedBaseUnit || 'Pilih Satuan'}
+						</Select.Trigger>
 						<Select.Content>
 							<Select.Item value="PCS">PCS</Select.Item>
 							<Select.Item value="BOX">BOX</Select.Item>
@@ -106,122 +121,63 @@
 					</Select.Root>
 				</div>
 
+				<div class="flex flex-col gap-2">
+					<Label for="qty">Stok Awal</Label>
+					<Input type="number" name="qty" id="qty" placeholder="0" min="0" step="0.01" />
+				</div>
+
+				<div class="flex flex-col gap-2">
+					<Label for="warehouseId">Pilih Gudang (Jika ada stok awal)</Label>
+					<Select.Root
+						type="single"
+						bind:value={selectedWarehouseId}
+						onValueChange={(v) => (selectedWarehouseId = v)}
+					>
+						<Select.Trigger class="w-full">
+							{data.warehouses.find((w: any) => w.id === selectedWarehouseId)?.name ||
+								'Pilih Gudang'}
+						</Select.Trigger>
+						<Select.Content>
+							{#each data.warehouses as warehouse}
+								<Select.Item value={warehouse.id}>{warehouse.name}</Select.Item>
+							{/each}
+						</Select.Content>
+					</Select.Root>
+				</div>
+
 				<div class="flex flex-col gap-2 md:col-span-2">
 					<Label for="description">Deskripsi / Keterangan</Label>
 					<Textarea
 						name="description"
 						id="description"
 						placeholder="Tambahkan catatan singkat tentang barang ini..."
-						class="min-h-20 rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
+						class="min-h-24 rounded-lg border p-2.5 outline-none"
 					/>
 				</div>
 
-				<div class="mt-4 flex gap-3 md:col-span-2">
-					<a
-						href="/{data.user.organization.slug}/barang"
-						class="flex-1 rounded-lg border border-gray-300 py-3 text-center font-medium transition hover:bg-gray-50"
+				<div class="mt-4 flex gap-4 md:col-span-2">
+					<Button
+						variant="outline"
+						class="flex-1 py-6"
+						href="/{data.org_slug}/barang"
+						disabled={isLoading}
 					>
 						Batal
-					</a>
-					<button
-						disabled={isLoading}
-						type="submit"
-						class="hover:bg-opacity-90 flex-2 rounded-lg bg-[#2D5A43] py-3 font-bold text-white transition disabled:opacity-50"
-					>
+					</Button>
+					<Button type="submit" class="flex-1 bg-[#2D5A43] py-6 hover:bg-[#2D5A43]/90" disabled={isLoading}>
 						{isLoading ? 'Menyimpan...' : 'Simpan Barang'}
-					</button>
+					</Button>
 				</div>
 			</form>
 		</Card.Content>
 	</Card.Root>
-</div> -->
-
-<script lang="ts">
-	import { enhance } from '$app/forms';
-	let { data, form } = $props();
-
-	let isLoading = $state(false);
-</script>
-
-<div class="mx-auto max-w-4xl p-6">
-	<div class="mb-8">
-		<h1 class="text-2xl font-bold text-gray-800">Tambah Barang Habis Pakai</h1>
-		<p class="text-sm text-gray-500">Daftarkan definisi barang baru untuk</p>
-	</div>
-
-	{#if form?.success}
-		<div class="mb-6 rounded-lg border border-green-200 bg-green-100 p-4 text-green-700">
-			Berhasil menambahkan barang baru.
-		</div>
-	{/if}
-
-	<form
-		method="POST"
-		use:enhance={() => {
-			isLoading = true;
-			return async ({ update }) => {
-				isLoading = false;
-				update();
-			};
-		}}
-		class="grid grid-cols-1 gap-6 rounded-xl border border-gray-100 bg-white p-8 shadow-sm md:grid-cols-2"
-	>
-		<div class="flex flex-col gap-2">
-			<label for="name" class="text-sm font-semibold text-gray-700">Nama Barang</label>
-			<input
-				type="text"
-				name="name"
-				id="name"
-				required
-				placeholder="Contoh: Baterai AA"
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			/>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="baseUnit" class="text-sm font-semibold text-gray-700">Satuan Dasar</label>
-			<select
-				name="baseUnit"
-				id="baseUnit"
-				required
-				class="rounded-lg border bg-white p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			>
-				<option value="" disabled selected>Pilih Satuan</option>
-				<option value="PCS">PCS</option>
-				<option value="BOX">BOX</option>
-				<option value="METER">METER</option>
-				<option value="ROLL">ROLL</option>
-				<option value="UNIT">UNIT</option>
-			</select>
-		</div>
-
-		<div class="flex flex-col gap-2 md:col-span-2">
-			<label for="description" class="text-sm font-semibold text-gray-700"
-				>Deskripsi / Keterangan</label
-			>
-			<textarea
-				name="description"
-				id="description"
-				rows="4"
-				placeholder="Tambahkan catatan singkat tentang barang ini..."
-				class="rounded-lg border p-2.5 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-			></textarea>
-		</div>
-
-		<div class="mt-4 flex gap-3 md:col-span-2">
-			<a
-				href="/{data.user.organization.slug}/barang"
-				class="flex-1 rounded-lg border border-gray-300 py-3 text-center font-medium transition hover:bg-gray-50"
-			>
-				Batal
-			</a>
-			<button
-				disabled={isLoading}
-				type="submit"
-				class="hover:bg-opacity-90 flex-2 rounded-lg bg-[#2D5A43] py-3 font-bold text-white transition disabled:opacity-50"
-			>
-				{isLoading ? 'Menyimpan...' : 'Simpan Barang'}
-			</button>
-		</div>
-	</form>
 </div>
+
+<NotificationDialog
+	bind:open={showNotification}
+	type={notificationType}
+	title={notificationTitle}
+	description={notificationDescription}
+	actionLabel={notificationActionLabel}
+	onAction={handleNotificationAction}
+/>

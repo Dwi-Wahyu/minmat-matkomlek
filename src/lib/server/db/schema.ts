@@ -3,12 +3,12 @@ import {
 	varchar,
 	text,
 	timestamp,
-	int,
 	boolean,
 	mysqlEnum,
 	index,
 	uniqueIndex,
-	unique
+	unique,
+	decimal
 } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { organization, user } from './auth.schema';
@@ -44,6 +44,8 @@ export const equipment = mysqlTable(
 
 		status: mysqlEnum('status', ['READY', 'IN_USE', 'TRANSIT', 'MAINTENANCE']).default('READY'),
 
+		imagePath: text('image_path'),
+
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').onUpdateNow()
 	},
@@ -78,11 +80,14 @@ export const itemUnitConversion = mysqlTable(
 		itemId: varchar('item_id', { length: 36 }).references(() => item.id, { onDelete: 'cascade' }),
 
 		fromUnit: varchar('from_unit', { length: 20 }).notNull(), // BOX
-		toUnit: varchar('to_unit', { length: 20 }).notNull(), // PCS
+		toUnit: varchar('to_unit', { length: 20 }).notNull(), // PCS (Harus selalu merujuk ke item.baseUnit)
 
-		multiplier: int('multiplier').notNull() // 10
+		multiplier: decimal('multiplier', { precision: 12, scale: 4 }).notNull() // 10.0000
 	},
-	(table) => [unique().on(table.itemId, table.fromUnit, table.toUnit)]
+	(table) => [
+		index('item_unit_conv_item_idx').on(table.itemId),
+		unique().on(table.itemId, table.fromUnit) // Mencegah duplikasi rasio untuk satuan yang sama
+	]
 );
 
 export const stock = mysqlTable(
@@ -96,7 +101,7 @@ export const stock = mysqlTable(
 			onDelete: 'cascade'
 		}),
 
-		qty: int('qty').default(0).notNull(),
+		qty: decimal('qty', { precision: 12, scale: 4 }).default('0.0000').notNull(),
 
 		updatedAt: timestamp('updated_at').defaultNow().onUpdateNow()
 	},
@@ -148,7 +153,7 @@ export const movement = mysqlTable(
 		eventType: movementEventTypeEnum.notNull(),
 
 		// Quantity for consumable items (default 1 for assets)
-		qty: int('qty').notNull().default(1),
+		qty: decimal('qty', { precision: 12, scale: 4 }).notNull().default('1.0000'),
 
 		// Unit for consumable items (e.g., "PCS", "BOX")
 		unit: varchar('unit', { length: 20 }),
@@ -193,7 +198,9 @@ export const distribution = mysqlTable('distribution', {
 
 	toOrganizationId: varchar('to_org_id', { length: 36 }).references(() => organization.id),
 
-	status: mysqlEnum('status', ['DRAFT', 'VALIDATED', 'APPROVED', 'SHIPPED', 'RECEIVED']).default('DRAFT'),
+	status: mysqlEnum('status', ['DRAFT', 'VALIDATED', 'APPROVED', 'SHIPPED', 'RECEIVED']).default(
+		'DRAFT'
+	),
 
 	requestedBy: varchar('requested_by', { length: 36 }).references(() => user.id),
 
@@ -218,7 +225,7 @@ export const distributionItem = mysqlTable('distribution_item', {
 	itemId: varchar('item_id', { length: 36 }).references(() => item.id),
 
 	// Kuantitas & Satuan (Penting untuk Consumable)
-	quantity: int('quantity').notNull().default(1),
+	quantity: decimal('quantity', { precision: 12, scale: 4 }).notNull().default('1.0000'),
 	unit: varchar('unit', { length: 20 }), // misal: "PCS", "BOX", "UNIT"
 
 	// Catatan kondisi spesifik barang saat akan dikirim
@@ -286,7 +293,7 @@ export const lendingItem = mysqlTable('lending_item', {
 
 	equipmentId: varchar('equipment_id', { length: 36 }).references(() => equipment.id),
 
-	qty: int('qty').default(1)
+	qty: decimal('qty', { precision: 12, scale: 4 }).default('1.0000')
 });
 
 export const approval = mysqlTable('approval', {
@@ -331,15 +338,19 @@ export const reportBtk16 = mysqlTable('report_btk16', {
 
 	itemName: varchar('item_name', { length: 255 }),
 
-	openingBalance: int('opening_balance'),
-	incoming: int('incoming'),
-	outgoing: int('outgoing'),
-	closingBalance: int('closing_balance'),
+	openingBalance: decimal('opening_balance', { precision: 12, scale: 4 }),
+	incoming: decimal('incoming', { precision: 12, scale: 4 }),
+	outgoing: decimal('outgoing', { precision: 12, scale: 4 }),
+	closingBalance: decimal('closing_balance', { precision: 12, scale: 4 }),
 
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
-export const notificationPriorityEnum = mysqlEnum('notification_priority', ['LOW', 'MEDIUM', 'HIGH']);
+export const notificationPriorityEnum = mysqlEnum('notification_priority', [
+	'LOW',
+	'MEDIUM',
+	'HIGH'
+]);
 
 export const notification = mysqlTable(
 	'notification',
@@ -374,7 +385,10 @@ export const notification = mysqlTable(
 
 export const warehouseRelations = relations(warehouse, ({ many, one }) => ({
 	equipments: many(equipment),
-	organization: one(organization)
+	organization: one(organization, {
+		fields: [warehouse.organizationId],
+		references: [organization.id]
+	})
 }));
 
 export const notificationRelations = relations(notification, ({ one }) => ({
@@ -495,7 +509,8 @@ export const lendingItemRelations = relations(lendingItem, ({ one }) => ({
 export const itemRelations = relations(item, ({ many }) => ({
 	stocks: many(stock),
 	movements: many(movement),
-	unitConversions: many(itemUnitConversion)
+	unitConversions: many(itemUnitConversion),
+	equipments: many(equipment)
 }));
 
 export const itemUnitConversionRelations = relations(itemUnitConversion, ({ one }) => ({

@@ -120,6 +120,13 @@
       "when": 1774769379668,
       "tag": "0016_sad_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1774791355574,
+      "tag": "0017_chunky_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

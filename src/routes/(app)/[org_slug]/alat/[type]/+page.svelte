@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { invalidateAll } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
 	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
 	import { Badge } from '$lib/components/ui/badge';
@@ -18,7 +18,8 @@
 		Package,
 		MoreHorizontal,
 		ArrowRightLeft,
-		Info
+		Info,
+		Ellipsis
 	} from '@lucide/svelte';
 
 	let { data } = $props();
@@ -94,9 +95,9 @@
 		<Table.Root>
 			<Table.Header>
 				<Table.Row class="bg-muted/50">
-					<Table.Head class="w-[50px] text-center">No</Table.Head>
+					<Table.Head class=" text-center">No</Table.Head>
+					<Table.Head class="">Gambar</Table.Head>
 					<Table.Head>Alat / Barang</Table.Head>
-					<Table.Head>Serial Number</Table.Head>
 					<Table.Head>Brand</Table.Head>
 					<Table.Head>Gudang</Table.Head>
 					<Table.Head>Kondisi</Table.Head>
@@ -111,15 +112,25 @@
 							{i + 1 + (data.pagination.currentPage - 1) * 10}
 						</Table.Cell>
 						<Table.Cell>
-							<div class="flex flex-col">
-								<span class="font-semibold text-foreground">{item.itemName}</span>
-								<span class="text-xs text-muted-foreground">ID: {item.id.slice(0, 8)}</span>
-							</div>
+							{#if item.imagePath}
+								<img
+									src="/uploads/equipment/{item.imagePath}"
+									alt={item.itemName}
+									class="size-10 rounded-md border object-cover shadow-sm"
+								/>
+							{:else}
+								<div class="flex size-10 items-center justify-center rounded-md border bg-muted">
+									<Package class="size-5 text-muted-foreground/50" />
+								</div>
+							{/if}
 						</Table.Cell>
 						<Table.Cell>
-							<code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-								{item.serialNumber || '-'}
-							</code>
+							<div class="flex flex-col">
+								<span class="font-semibold text-foreground">{item.itemName}</span>
+								<code class="w-fit rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+									{item.serialNumber || '-'}
+								</code>
+							</div>
 						</Table.Cell>
 						<Table.Cell>{item.brand || '-'}</Table.Cell>
 						<Table.Cell>
@@ -141,24 +152,24 @@
 						<Table.Cell class="text-right">
 							<DropdownMenu.Root>
 								<DropdownMenu.Trigger>
-									<MoreHorizontal class="size-4" />
+									<Ellipsis class="size-4" />
 								</DropdownMenu.Trigger>
 								<DropdownMenu.Content align="end" class="w-48">
-									<DropdownMenu.Item class="gap-2">
-										<a class="flex gap-2" href="/{page.params.org_slug}/alat/{data.type}/{item.id}">
-											<Info class="size-4" /> Lihat Detail
-										</a>
+									<DropdownMenu.Item
+										onclick={() => goto(`/${page.params.org_slug}/alat/${data.type}/${item.id}`)}
+										class="gap-2"
+									>
+										<Info class="size-4" /> Lihat Detail
 									</DropdownMenu.Item>
 									<DropdownMenu.Item onclick={() => openMutate(item.id)} class="gap-2">
 										<ArrowRightLeft class="size-4" /> Mutasi (Klasifikasi)
 									</DropdownMenu.Item>
-									<DropdownMenu.Item class="gap-2">
-										<a
-											class="flex gap-2"
-											href="/{page.params.org_slug}/alat/{data.type}/edit/{item.id}"
-										>
-											<Pencil class="size-4" /> Edit Data
-										</a>
+									<DropdownMenu.Item
+										onclick={() =>
+											goto(`/${page.params.org_slug}/alat/${data.type}/edit/${item.id}`)}
+										class="gap-2"
+									>
+										<Pencil class="size-4" /> Edit Data
 									</DropdownMenu.Item>
 									<DropdownMenu.Separator />
 									<DropdownMenu.Item
@@ -221,7 +232,7 @@
 			deleteLoading = false;
 			deleteDialogOpen = false;
 			if (result.type === 'success') {
-				notificationMsg = result.data?.message;
+				notificationMsg = 'Sukses menghapus alat';
 				notificationType = 'success';
 				notificationOpen = true;
 				invalidateAll();
@@ -243,7 +254,7 @@
 			mutateLoading = false;
 			mutateDialogOpen = false;
 			if (result.type === 'success') {
-				notificationMsg = result.data?.message;
+				notificationMsg = 'Sukses mutasi alat';
 				notificationType = 'success';
 				notificationOpen = true;
 				invalidateAll();
@@ -301,4 +312,5 @@
 	type={notificationType}
 	title={notificationType === 'success' ? 'Berhasil' : 'Gagal'}
 	description={notificationMsg}
+	onAction={() => (notificationOpen = false)}
 />

@@ -22,6 +22,7 @@
 
 	<form
 		method="POST"
+		enctype="multipart/form-data"
 		use:enhance={() => {
 			isLoading = true;
 			return async ({ update }) => {

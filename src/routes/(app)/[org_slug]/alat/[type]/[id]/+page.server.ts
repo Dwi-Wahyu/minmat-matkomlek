@@ -1,37 +1,67 @@
 import { db } from '$lib/server/db';
 import { equipment, item, warehouse, organization, movement } from '$lib/server/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/mysql-core';
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { id } = params;
 
-	const detail = await db.query.equipment.findFirst({
-		where: eq(equipment.id, id),
-		with: {
-			item: true,
-			warehouse: {
-				with: {
-					organization: true
+	// Use aliases for multiple joins to the same table if needed
+	const toWarehouse = alias(warehouse, 'to_warehouse');
+
+	// Use explicit select with joins to avoid LEFT JOIN LATERAL issues on some MySQL/MariaDB versions
+	const results = await db
+		.select({
+			equipment: equipment,
+			item: item,
+			warehouse: warehouse,
+			organization: organization
+		})
+		.from(equipment)
+		.innerJoin(item, eq(equipment.itemId, item.id))
+		.leftJoin(warehouse, eq(equipment.warehouseId, warehouse.id))
+		.leftJoin(organization, eq(warehouse.organizationId, organization.id))
+		.where(eq(equipment.id, id))
+		.limit(1);
+
+	if (results.length === 0) throw error(404, 'Alat tidak ditemukan');
+
+	const row = results[0];
+	const detail = {
+		...row.equipment,
+		item: row.item,
+		warehouse: row.warehouse
+			? {
+					...row.warehouse,
+					organization: row.organization
 				}
-			}
-		}
-	});
+			: null
+	};
 
-	if (!detail) throw error(404, 'Alat tidak ditemukan');
+	// Ambil riwayat pergerakan terakhir menggunakan join eksplisit
+	const historyResults = await db
+		.select({
+			movement: movement,
+			organization: organization,
+			fromWarehouse: warehouse,
+			toWarehouse: toWarehouse
+		})
+		.from(movement)
+		.leftJoin(organization, eq(movement.organizationId, organization.id))
+		.leftJoin(warehouse, eq(movement.fromWarehouseId, warehouse.id))
+		.leftJoin(toWarehouse, eq(movement.toWarehouseId, toWarehouse.id))
+		.where(eq(movement.equipmentId, id))
+		.orderBy(desc(movement.createdAt))
+		.limit(5);
 
-	// Ambil riwayat pergerakan terakhir
-	const history = await db.query.movement.findMany({
-		where: eq(movement.equipmentId, id),
-		limit: 5,
-		orderBy: [desc(movement.createdAt)],
-		with: {
-			organization: true,
-			fromWarehouse: true,
-			toWarehouse: true
-		}
-	});
+	const history = historyResults.map((h) => ({
+		...h.movement,
+		organization: h.organization,
+		fromWarehouse: h.fromWarehouse,
+		toWarehouse: h.toWarehouse
+	}));
 
 	return {
 		equipment: detail,

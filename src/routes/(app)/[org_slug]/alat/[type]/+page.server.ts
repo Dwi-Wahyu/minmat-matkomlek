@@ -3,6 +3,7 @@ import { equipment, item, warehouse, movement } from '$lib/server/db/schema';
 import { eq, and, like, sql, desc } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
+import { deleteFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const { org_slug, type } = params;
@@ -34,6 +35,7 @@ export const load: PageServerLoad = async ({ params, url }) => {
 				condition: equipment.condition,
 				status: equipment.status,
 				itemName: item.name,
+				imagePath: equipment.imagePath,
 				warehouseName: warehouse.name,
 				createdAt: equipment.createdAt
 			})
@@ -73,6 +75,14 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'ID is required' });
 
 		try {
+			const current = await db.query.equipment.findFirst({
+				where: eq(equipment.id, id)
+			});
+
+			if (current?.imagePath) {
+				deleteFile(current.imagePath, 'equipment');
+			}
+
 			await db.delete(equipment).where(eq(equipment.id, id));
 			return { success: true, message: 'Alat berhasil dihapus' };
 		} catch (error) {

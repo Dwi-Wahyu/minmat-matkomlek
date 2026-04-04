@@ -9,16 +9,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
-	import {
-		Search,
-		Plus,
-		MoreHorizontal,
-		Pencil,
-		Trash2,
-		ArrowRightLeft,
-		Package,
-		Ellipsis
-	} from '@lucide/svelte';
+	import { Search, Plus, Pencil, Trash2, ArrowRightLeft, Ellipsis } from '@lucide/svelte';
 
 	let { data } = $props();
 
@@ -80,10 +71,9 @@
 		<Table.Root>
 			<Table.Header>
 				<Table.Row class="bg-muted/50">
-					<Table.Head class="w-[50px] text-center">No</Table.Head>
+					<Table.Head class="text-center">No</Table.Head>
 					<Table.Head>Nama Barang</Table.Head>
 					<Table.Head>Satuan</Table.Head>
-					<Table.Head>Deskripsi</Table.Head>
 					<Table.Head class="text-right">Aksi</Table.Head>
 				</Table.Row>
 			</Table.Header>
@@ -95,9 +85,6 @@
 						</Table.Cell>
 						<Table.Cell>
 							<div class="flex items-center gap-3">
-								<div class="rounded-md bg-blue-50 p-2 text-blue-600">
-									<Package class="size-4" />
-								</div>
 								<div class="flex flex-col">
 									<span class="font-semibold text-foreground">{item.name}</span>
 									<span class="font-mono text-[10px] text-muted-foreground"
@@ -112,9 +99,6 @@
 							>
 								{item.baseUnit}
 							</span>
-						</Table.Cell>
-						<Table.Cell class="max-w-xs truncate text-xs text-muted-foreground italic">
-							{item.description || '-'}
 						</Table.Cell>
 						<Table.Cell class="text-right">
 							<DropdownMenu.Root>
@@ -194,11 +178,11 @@
 			deleteLoading = false;
 			deleteDialogOpen = false;
 			if (result.type === 'success') {
-				notificationMsg = result.data?.message || 'Barang berhasil dihapus';
+				notificationMsg = 'Barang berhasil dihapus';
 				notificationType = 'success';
 				notificationOpen = true;
 			} else {
-				notificationMsg = result.data?.message || 'Gagal menghapus barang';
+				notificationMsg = 'Gagal menghapus barang';
 				notificationType = 'error';
 				notificationOpen = true;
 			}

@@ -1,0 +1,61 @@
+# Contoh Akun Pengguna (Generated dari src/lib/server/db/seed.ts)
+# Password untuk semua akun adalah: password123
+
+## Akun Superadmin Global
+- Email: global.superadmin@gmail.com
+- Password: password123
+
+## Akun Organisasi PUSKOMLEKAD
+(Slug: puskomlekad)
+
+- pimpinan.puskomlekad@example.com
+- superadmin.puskomlekad@example.com
+- kakomlek.puskomlekad@example.com
+- operatorpusatdandaerah.puskomlekad@example.com
+- operatorbinmatdanbekharrah.puskomlekad@example.com
+
+## Akun Organisasi Satuan Wilayah
+Untuk setiap satuan wilayah berikut, akun dibuat dengan format:
+`[role].`**`[slug_organisasi]`**`@example.com`
+
+**Daftar Satuan Wilayah dan Slug mereka:**
+
+- **ISKDR MDA** (iskdr-mda)
+  - Contoh Email: `pimpinan.iskdr-mda@example.com`
+- **BUKIT BRSN** (bukit-brsn)
+  - Contoh Email: `superadmin.bukit-brsn@example.com`
+- **SRIWIJAYA** (sriwijaya)
+- **SILIWANGI** (siliwangi)
+- **DIPENOGORO** (dipenogoro)
+- **BRAWIJAYA** (brawijaya)
+- **MULAWARMN** (mulawarmn)
+- **UDAYANA** (udayana)
+- **TANJUNG PR** (tanjung-pr)
+- **MERDRKA** (merdrka)
+- **HASANUDDIN** (hasanuddin)
+- **PATTIMURA** (pattimura)
+- **CENDRAWASIH** (cendrawasih)
+- **KASUARI** (kasuari)
+- **TUANGKU TMBSI** (tuangku-tmbsi)
+- **TUANGKU IB** (tuangku-ib)
+- **RADEN INTEN** (raden-inten)
+- **TAMBUN BUNGAI** (tambun-bungai)
+- **PALAKA WIRA** (palaka-wira)
+- **MANDALA TRIKORA** (mandala-trikora)
+- **KOPASSUS** (kopassus)
+- **KOSTRAD** (kostrad)
+- **AKMIL** (akmil)
+
+**Daftar Role:**
+
+- `pimpinan`
+- `superadmin`
+- `kakomlek`
+- `operatorpusatdandaerah`
+- `operatorbinmatdanbekharrah`
+
+---
+Contoh lengkap email untuk peran `pimpinan` di organisasi `HASANUDDIN`:
+`pimpinan.hasanuddin@example.com`
+
+Semua akun ini menggunakan password: `password123`

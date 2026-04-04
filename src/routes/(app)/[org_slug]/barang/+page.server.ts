@@ -3,6 +3,7 @@ import { item, stock, warehouse, movement } from '$lib/server/db/schema';
 import { eq, and, like, desc, sql, inArray } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
+import { deleteFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
 	const organizationId = locals.user.organization.id;
@@ -64,13 +65,30 @@ export const actions: Actions = {
 		if (!id) return fail(400, { message: 'ID is required' });
 
 		try {
-			// Check if item is still used in stock before deleting
-			const existingStock = await db.query.stock.findFirst({
-				where: eq(stock.itemId, id)
-			});
+			// Get current item for image deletion
+			const currentResult = await db
+				.select()
+				.from(item)
+				.where(eq(item.id, id))
+				.limit(1);
 
-			if (existingStock && existingStock.qty > 0) {
+			if (currentResult.length === 0) return fail(404, { message: 'Barang tidak ditemukan' });
+			const current = currentResult[0];
+
+			// Check if item is still used in stock before deleting
+			const existingStockResult = await db
+				.select()
+				.from(stock)
+				.where(eq(stock.itemId, id))
+				.limit(1);
+
+			if (existingStockResult.length > 0 && Number(existingStockResult[0].qty) > 0) {
 				return fail(400, { message: 'Barang tidak bisa dihapus karena masih memiliki stok di gudang' });
+			}
+
+			// Delete image if exists
+			if (current.imagePath) {
+				deleteFile(current.imagePath, 'item');
 			}
 
 			await db.delete(item).where(eq(item.id, id));

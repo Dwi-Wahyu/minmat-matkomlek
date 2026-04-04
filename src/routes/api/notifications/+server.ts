@@ -8,7 +8,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 	const limit = url.searchParams.get('limit');
 	const parsedLimit = limit ? parseInt(limit) : undefined;
-	const finalLimit = parsedLimit && !isNaN(parsedLimit) ? parsedLimit : undefined;
+	const finalLimit = parsedLimit && !isNaN(parsedLimit) ? parsedLimit : 10;
 
 	const userOrgId = locals.user.organization?.id;
 
@@ -16,11 +16,12 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		? or(eq(notification.userId, locals.user.id), eq(notification.organizationId, userOrgId))
 		: eq(notification.userId, locals.user.id);
 
-	const notifications = await db.query.notification.findMany({
-		where: whereClause,
-		orderBy: [desc(notification.createdAt)],
-		limit: finalLimit
-	});
+	const notifications = await db
+		.select()
+		.from(notification)
+		.where(whereClause)
+		.orderBy(desc(notification.createdAt))
+		.limit(finalLimit);
 
 	return json(notifications);
 };

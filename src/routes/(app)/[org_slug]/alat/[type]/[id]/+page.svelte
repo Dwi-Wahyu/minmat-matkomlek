@@ -52,8 +52,34 @@
 	</div>
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+		{#if data.equipment.imagePath}
+			<Card.Root class="md:col-span-3 overflow-hidden">
+				<div class="flex flex-col md:flex-row gap-6 p-6">
+					<div class="size-64 shrink-0 overflow-hidden rounded-lg border bg-muted shadow-sm">
+						<img 
+							src="/uploads/equipment/{data.equipment.imagePath}" 
+							alt={data.equipment.item.name} 
+							class="size-full object-cover"
+						/>
+					</div>
+					<div class="flex flex-col justify-center gap-2">
+						<h2 class="text-2xl font-bold">{data.equipment.item.name}</h2>
+						<p class="text-muted-foreground">{data.equipment.brand || 'Tanpa Brand'} • {data.equipment.serialNumber || 'Tanpa SN'}</p>
+						<div class="mt-2 flex gap-2">
+							<Badge variant="outline" class={conditionColors[data.equipment.condition]}>
+								{data.equipment.condition.replace('_', ' ')}
+							</Badge>
+							<Badge variant="secondary" class={statusColors[data.equipment.status]}>
+								{data.equipment.status.replace('_', ' ')}
+							</Badge>
+						</div>
+					</div>
+				</div>
+			</Card.Root>
+		{/if}
+
 		<!-- Main Info -->
-		<Card.Root class="md:col-span-2">
+		<Card.Root class={data.equipment.imagePath ? 'md:col-span-2' : 'md:col-span-2'}>
 			<Card.Header>
 				<Card.Title class="flex items-center gap-2">
 					<Package class="size-5 text-blue-600" />

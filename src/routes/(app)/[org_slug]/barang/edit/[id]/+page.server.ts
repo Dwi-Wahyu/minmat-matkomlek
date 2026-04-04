@@ -1,17 +1,19 @@
 import { db } from '$lib/server/db';
 import { item } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { error, fail, redirect } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const data = await db.query.item.findFirst({
-		where: and(eq(item.id, params.id), eq(item.type, 'CONSUMABLE'))
-	});
+	const dataResults = await db
+		.select()
+		.from(item)
+		.where(and(eq(item.id, params.id), eq(item.type, 'CONSUMABLE')))
+		.limit(1);
 
-	if (!data) throw error(404, 'Barang tidak ditemukan');
+	if (dataResults.length === 0) throw error(404, 'Barang tidak ditemukan');
 
-	return { consumable: data };
+	return { consumable: dataResults[0] };
 };
 
 export const actions: Actions = {
@@ -22,13 +24,26 @@ export const actions: Actions = {
 		const description = formData.get('description') as string;
 
 		try {
-			await db.update(item).set({ name, baseUnit, description }).where(eq(item.id, params.id));
+			const currentResults = await db.select().from(item).where(eq(item.id, params.id)).limit(1);
 
-			return { success: true, message: 'Data alat berhasil diperbarui' };
+			if (currentResults.length === 0) return fail(404, { message: 'Barang tidak ditemukan' });
+			const current = currentResults[0];
+
+			await db
+				.update(item)
+				.set({
+					name,
+					baseUnit,
+					description
+				})
+				.where(eq(item.id, params.id));
+
+			return { success: true, message: 'Data barang berhasil diperbarui' };
 		} catch (error) {
+			console.error(error);
 			return fail(400, {
 				success: false,
-				message: 'Gagal update'
+				message: 'Gagal memperbarui data barang'
 			});
 		}
 	}

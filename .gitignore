@@ -22,8 +22,10 @@ Thumbs.db
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
-# contexts
+contexts/
 # context-path.md
 .aider*
 
-spec
+# spec
+
+ecosystem.config.cjs

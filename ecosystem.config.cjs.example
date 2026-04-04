@@ -1,0 +1,27 @@
+module.exports = {
+  apps: [
+    {
+      name: "Minmat Puskomlekad Web",
+      script: "build/index.js", // Jalankan setelah 'bun run build'
+      
+      // Konfigurasi Instance Tunggal
+      instances: 1,
+      exec_mode: "fork", 
+      
+      // Menggunakan node sebagai runtime
+      interpreter: "node",
+      
+      // Autorestart jika aplikasi crash
+      watch: false,
+      max_memory_restart: "1G",
+      
+      env: {
+        NODE_ENV: "production",
+        PORT: 3002,
+        HOST: "127.0.0.1", // Gunakan localhost agar hanya bisa diakses via Nginx
+        // Variabel tambahan jika diperlukan
+        ORIGIN: "http://localhost" // Sesuaikan dengan IP/Domain server Anda
+      }
+    }
+  ]
+};

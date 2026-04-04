@@ -6,8 +6,6 @@ import {
 	movement,
 	warehouse,
 	item,
-	lending,
-	lendingItem,
 	organization
 } from '$lib/server/db/schema';
 import { eq, and, count, sum, gte, desc, sql } from 'drizzle-orm';
@@ -18,15 +16,18 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		throw error(401, 'Unauthorized');
 	}
 
-	// Ambil ID organisasi berdasarkan slug dari URL
-	const org = await db.query.organization.findFirst({
-		where: eq(organization.slug, params.org_slug)
-	});
+	// Ambil ID organisasi berdasarkan slug dari URL - Menggunakan select eksplisit untuk keamanan
+	const orgResult = await db
+		.select()
+		.from(organization)
+		.where(eq(organization.slug, params.org_slug))
+		.limit(1);
 
-	if (!org) {
+	if (orgResult.length === 0) {
 		throw error(404, 'Organization not found');
 	}
 
+	const org = orgResult[0];
 	const orgId = org.id;
 
 	// Periode Bulan Ini
@@ -120,15 +121,17 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			)
 		);
 
-	// Daftar Alat Terbaru
-	const recentEquipments = await db.query.equipment.findMany({
-		where: (equipment, { eq }) => eq(equipment.organizationId, orgId),
-		with: {
-			item: true
-		},
-		limit: 5,
-		orderBy: [desc(equipment.createdAt)]
-	});
+	// Daftar Alat Terbaru - Menggunakan join eksplisit untuk menghindari LEFT JOIN LATERAL
+	const recentEquipmentsResults = await db
+		.select({
+			equipment: equipment,
+			item: item
+		})
+		.from(equipment)
+		.innerJoin(item, eq(equipment.itemId, item.id))
+		.where(eq(equipment.organizationId, orgId))
+		.limit(5)
+		.orderBy(desc(equipment.createdAt));
 
 	// Transformasi data agar sesuai dengan UI
 	return {
@@ -155,14 +158,14 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			ready: Number(balkirTotal?.count) || 0,
 			damaged: Number(balkirDamaged?.count) || 0
 		},
-		recentEquipments: recentEquipments.map((e) => ({
-			id: e.id,
-			name: e.item.name,
-			brand: e.brand,
-			serialNumber: e.serialNumber,
-			type: e.item.equipmentType,
-			condition: e.condition,
-			status: e.status
+		recentEquipments: recentEquipmentsResults.map((r) => ({
+			id: r.equipment.id,
+			name: r.item.name,
+			brand: r.equipment.brand,
+			serialNumber: r.equipment.serialNumber,
+			type: r.item.equipmentType,
+			condition: r.equipment.condition,
+			status: r.equipment.status
 		}))
 	};
 };

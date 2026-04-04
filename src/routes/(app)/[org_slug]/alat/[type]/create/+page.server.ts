@@ -3,22 +3,28 @@ import { equipment, item, warehouse, organization } from '$lib/server/db/schema'
 import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
+import { uploadFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ params }) => {
-	const { org_slug } = params;
+	const { org_slug, type } = params;
 
-	const [warehouses, org] = await Promise.all([
+	const [warehousesResults, orgResults] = await Promise.all([
 		db
-			.select()
+			.select({ warehouse: warehouse })
 			.from(warehouse)
 			.innerJoin(organization, eq(warehouse.organizationId, organization.id))
 			.where(eq(organization.slug, org_slug)),
-		db.query.organization.findFirst({ where: eq(organization.slug, org_slug) })
+		db
+			.select()
+			.from(organization)
+			.where(eq(organization.slug, org_slug))
+			.limit(1)
 	]);
 
 	return {
-		warehouses: warehouses.map((w) => w.warehouse),
-		org
+		warehouses: warehousesResults.map((w) => w.warehouse),
+		org: orgResults[0] || null,
+		type
 	};
 };
 
@@ -33,24 +39,37 @@ export const actions: Actions = {
 		const warehouseId = formData.get('warehouseId') as string;
 		const condition = formData.get('condition') as 'BAIK' | 'RUSAK_RINGAN' | 'RUSAK_BERAT';
 		const status = formData.get('status') as 'READY' | 'IN_USE' | 'TRANSIT' | 'MAINTENANCE';
+		const imageFile = formData.get('image') as File;
 
 		if (!itemName) return fail(400, { message: 'Nama Alat harus diisi' });
+
+		// Upload image if exists
+		const { fileName, error: uploadError } = await uploadFile(imageFile, 'equipment');
+		if (uploadError) return fail(400, { message: uploadError });
 
 		// Map URL type to database equipmentType
 		const equipmentType = type.toUpperCase() === 'ALPERNIKA' ? 'PERNIKA_LEK' : 'ALKOMLEK';
 
 		try {
-			const org = await db.query.organization.findFirst({ where: eq(organization.slug, org_slug) });
-			if (!org) return fail(404, { message: 'Organisasi tidak ditemukan' });
+			const orgResults = await db
+				.select()
+				.from(organization)
+				.where(eq(organization.slug, org_slug))
+				.limit(1);
+			
+			if (orgResults.length === 0) return fail(404, { message: 'Organisasi tidak ditemukan' });
+			const org = orgResults[0];
 
 			// Create or Find Item
 			let itemId: string;
-			const existingItem = await db.query.item.findFirst({
-				where: and(eq(item.name, itemName), eq(item.equipmentType, equipmentType))
-			});
+			const existingItemResults = await db
+				.select()
+				.from(item)
+				.where(and(eq(item.name, itemName), eq(item.equipmentType, equipmentType)))
+				.limit(1);
 
-			if (existingItem) {
-				itemId = existingItem.id;
+			if (existingItemResults.length > 0) {
+				itemId = existingItemResults[0].id;
 			} else {
 				itemId = crypto.randomUUID();
 				await db.insert(item).values({
@@ -70,7 +89,8 @@ export const actions: Actions = {
 				warehouseId: warehouseId || null,
 				organizationId: org.id,
 				condition: condition || 'BAIK',
-				status: status || 'READY'
+				status: status || 'READY',
+				imagePath: fileName
 			});
 
 			return { success: true, message: 'Alat berhasil ditambahkan' };

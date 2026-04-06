@@ -6,29 +6,25 @@
 	import { ChevronDown } from '@lucide/svelte';
 	import { getSidebarState } from '$lib/components/ui/sidebar/context.svelte.ts';
 
-	let { name, icon: Icon, children, activePrefix } = $props<{
+	let { name, icon: Icon, children, activePrefix, isOpen, onToggle } = $props<{
 		name: string;
 		icon: Component;
 		activePrefix: string;
 		children: Array<{ name: string; path: string }>;
+		isOpen: boolean;
+		onToggle: (open: boolean) => void;
 	}>();
 
 	const sidebar = getSidebarState();
 
 	let isGroupActive = $derived(page.url.pathname.startsWith(activePrefix));
-	let isOpen = $state(false);
-
-	$effect(() => {
-		if (isGroupActive && sidebar.open) isOpen = true;
-		if (!sidebar.open) isOpen = false;
-	});
 
 	function handleToggle() {
 		if (!sidebar.open) {
 			sidebar.setOpen(true);
-			isOpen = true;
+			onToggle(true);
 		} else {
-			isOpen = !isOpen;
+			onToggle(!isOpen);
 		}
 	}
 </script>

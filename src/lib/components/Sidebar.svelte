@@ -4,33 +4,95 @@
 		Warehouse,
 		FileText,
 		Wrench,
-		Handshake,
 		Building2,
-		RefreshCcw,
 		Settings,
-		Mailbox,
 		Map,
 		Package
 	} from '@lucide/svelte';
+	import { page } from '$app/state';
 	import SidebarDropdown from './SidebarDropdown.svelte';
 	import SidebarLink from './SidebarLink.svelte';
 	import { getSidebarState } from './ui/sidebar/context.svelte';
 
-	const { user } = $props();
+	// 1. Definisikan Interface agar tidak ada error "Property 'role' does not exist"
+	interface MenuItem {
+		name: string;
+		path: string;
+		role?: string | string[]; // Dibuat opsional dengan tanda tanya
+	}
+
+	interface Menu {
+		name: string;
+		path: string;
+		icon: any;
+		isDropdown: boolean;
+		role?: string | string[];
+		children: MenuItem[];
+	}
+
+	// Definisi props dengan tipe data yang ketat
+	let { user } = $props<{
+		user: {
+			role: string;
+			organization: {
+				slug: string;
+				parentId: string | null;
+			};
+		};
+	}>();
+
 	const sidebar = getSidebarState();
 
-	function getPath(path: string) {
-		const { organization } = user;
-		return `/${organization.slug + path}`;
+	let openDropdown = $state<string | null>(null);
+
+	$effect(() => {
+		if (sidebar.open) {
+			const activeMenu = menus.find((m) => m.isDropdown && page.url.pathname.startsWith(m.path));
+			if (activeMenu) {
+				openDropdown = activeMenu.name;
+			}
+		} else {
+			openDropdown = null;
+		}
+	});
+
+	function getPath(urlPath: string) {
+		return `/${user.organization.slug}${urlPath}`;
 	}
 
+	/**
+	 * Logika Akses:
+	 * 1. Jika menu tidak punya role, semua boleh akses.
+	 * 2. Jika menu punya role 'parent', hnya boleh diakses jika parentId === null.
+	 * 3. Jika menu punya role lain (admin, dll), cek apakah user.role cocok.
+	 */
 	function hasRole(menuRole: string | string[] | undefined, userRole: string) {
 		if (!menuRole) return true;
-		if (Array.isArray(menuRole)) return menuRole.includes(userRole);
-		return menuRole === userRole;
+
+		const roles = Array.isArray(menuRole) ? menuRole : [menuRole];
+
+		// LOGIKA UTAMA: Cek hak akses 'parent'
+		if (roles.includes('parent')) {
+			// Jika user punya parentId (artinya dia anak/satker), blokir akses ke menu 'parent'
+			if (user.organization.parentId !== null) {
+				return false;
+			}
+		}
+
+		// Cek role spesifik user (superadmin, kakomlek, dll)
+		// Kita filter 'parent' dari pengecekan role string karena 'parent' adalah pengecekan struktur org
+		const functionalRoles = roles.filter((r) => r !== 'parent');
+
+		// Jika setelah difilter 'parent' masih ada role lain (seperti 'superadmin')
+		if (functionalRoles.length > 0) {
+			return functionalRoles.includes(userRole);
+		}
+
+		// Jika hanya ada role 'parent' dan lolos pengecekan parentId === null di atas
+		return true;
 	}
 
-	const rawMenus = [
+	const rawMenus: Menu[] = [
 		{
 			name: 'Dashboard',
 			path: getPath('/dashboard'),
@@ -38,34 +100,21 @@
 			isDropdown: false,
 			children: []
 		},
-		// {
-		// 	name: 'Stock Gudang',
-		// 	icon: Warehouse,
-		// 	isDropdown: true,
-		// 	path: getPath('/gudang'),
-		// 	children: [
-		// 		{ name: 'Komunity', path: getPath('/gudang/komunity') },
-		// 		{ name: 'Transito', path: getPath('/gudang/transito') },
-		// 		{ name: 'Balkir', path: getPath('/gudang/balkir') }
-		// 	]
-		// },
-
 		{
 			name: 'Stok Gudang',
 			icon: Warehouse,
 			isDropdown: true,
-			path: getPath(''),
+			path: getPath('/gudang'),
 			children: [
 				{ name: 'Gudang Komunity', path: getPath('/gudang/komunity') },
 				{ name: 'Gudang Transito', path: getPath('/gudang/transito') },
-				{ name: 'Gudang Balkir', path: getPath('/gudang/balkir') },
-				{ name: 'Konversi Unit', path: getPath('/konversi-unit') }
+				{ name: 'Gudang Balkir', path: getPath('/gudang/balkir') }
 			]
 		},
-
 		{
 			name: 'Data Materiil',
 			icon: Package,
+			path: getPath('/materiil'),
 			isDropdown: true,
 			children: [
 				{ name: 'Alkomlek', path: getPath('/alat/alkomlek') },
@@ -73,30 +122,43 @@
 				{ name: 'Barang Habis Pakai', path: getPath('/barang') }
 			]
 		},
-
 		{
 			name: 'Operasional',
 			icon: Wrench,
 			isDropdown: true,
+			path: getPath('/operasional'),
 			children: [
 				{ name: 'Pemeliharaan', path: getPath('/pemeliharaan') },
 				{ name: 'Peminjaman', path: getPath('/peminjaman') },
 				{ name: 'Distribusi', path: getPath('/distribusi') }
 			]
 		},
-
-		// SECTION: PELAPORAN
 		{
 			name: 'Laporan',
 			icon: FileText,
 			isDropdown: true,
+			path: getPath('/laporan'),
 			children: [
-				{ name: 'LAP BTK - 16', path: getPath('/laporan/btk16') },
-				{ name: 'LAP PERNIKA & LEK', path: getPath('/laporan/pernikalek') }
+				{ name: 'LAP BTK - 16', path: getPath('/laporan/btk-16') },
+				{ name: 'LAP PERNIKA & LEK', path: getPath('/laporan/pernika-lek') }
 			]
 		},
-
-		// SECTION: PENGATURAN
+		{
+			name: 'Tanah',
+			icon: Map,
+			isDropdown: false,
+			path: getPath('/tanah'),
+			role: ['parent'], // Hanya muncul jika parentId === null
+			children: []
+		},
+		{
+			name: 'Bangunan',
+			icon: Building2,
+			isDropdown: false,
+			path: getPath('/bangunan'),
+			role: ['parent'], // Hanya muncul jika parentId === null
+			children: []
+		},
 		{
 			name: 'Administrasi',
 			icon: Settings,
@@ -107,41 +169,7 @@
 				{ name: 'Satuan Jajaran', path: getPath('/satuan-jajaran') },
 				{ name: 'Manajemen Pengguna', path: getPath('/pengaturan/pengguna'), role: ['superadmin'] },
 				{ name: 'Audit Log', path: getPath('/audit-log'), role: ['superadmin', 'kakomlek'] },
-				{
-					name: 'Satuan Jajaran',
-					path: getPath('/satuan-jajaran'),
-					role: ['superadmin', 'kakomlek']
-				},
-				...(user.organization?.parentId === null
-					? [{ name: 'Tanah & Bangunan', path: getPath('/tanah-bangunan') }]
-					: [])
-			]
-		},
-
-		...(user.organization?.parentId === null
-			? [
-					{
-						name: 'Tanah & Bangunan',
-						icon: Map,
-						isDropdown: true,
-						path: getPath('/tanah-bangunan'),
-						children: [
-							{ name: 'Data Tanah', path: getPath('/tanah-bangunan/tanah') },
-							{ name: 'Data Bangunan', path: getPath('/tanah-bangunan/bangunan') }
-						]
-					}
-				]
-			: []),
-
-		{
-			name: 'Pengaturan',
-			icon: Settings,
-			isDropdown: true,
-			path: getPath('/pengaturan'),
-			role: ['superadmin', 'kakomlek'],
-			children: [
-				{ name: 'Manajemen Pengguna', path: getPath('/pengaturan/pengguna'), role: ['superadmin'] },
-				{ name: 'Audit Log', path: getPath('/audit-log'), role: ['superadmin', 'kakomlek'] }
+				{ name: 'Konversi Unit', path: getPath('/konversi-unit') }
 			]
 		}
 	];
@@ -151,11 +179,13 @@
 			.filter((menu) => hasRole(menu.role, user.role))
 			.map((menu) => {
 				if (menu.isDropdown) {
+					// Filter anak menu berdasarkan role juga
 					const filteredChildren = menu.children.filter((child) => hasRole(child.role, user.role));
 					return { ...menu, children: filteredChildren };
 				}
 				return menu;
 			})
+			// Sembunyikan dropdown jika isinya kosong setelah difilter
 			.filter((menu) => !menu.isDropdown || menu.children.length > 0)
 	);
 </script>
@@ -195,6 +225,11 @@
 						icon={menu.icon}
 						activePrefix={menu.path}
 						children={menu.children}
+						isOpen={openDropdown === menu.name}
+						onToggle={(open) => {
+							if (open) openDropdown = menu.name;
+							else openDropdown = null;
+						}}
 					/>
 				{:else}
 					<SidebarLink href={menu.path} icon={menu.icon} name={sidebar.open ? menu.name : ''} />

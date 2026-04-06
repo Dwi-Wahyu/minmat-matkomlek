@@ -45,9 +45,6 @@
 
 <div class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6">
 	<div class="flex items-center gap-4">
-		<Button variant="outline" size="icon" href="/{page.params.org_slug}/alat/{data.type}">
-			<ChevronLeft class="size-4" />
-		</Button>
 		<div>
 			<h1 class="text-3xl font-bold tracking-tight text-foreground">Edit {typeLabel}</h1>
 			<p class="text-muted-foreground">Perbarui informasi peralatan yang sudah ada.</p>

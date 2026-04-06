@@ -346,6 +346,38 @@ export const reportBtk16 = mysqlTable('report_btk16', {
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
+export const land = mysqlTable('land', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+	certificateNumber: varchar('certificate_number', { length: 255 }).notNull(),
+	location: text('location').notNull(),
+	area: decimal('area', { precision: 12, scale: 2 }).notNull(), // m2
+	status: mysqlEnum('status', ['MILIK_TNI', 'SEWA']).notNull(),
+	usage: varchar('usage', { length: 255 }).notNull(), // kantor, asmen, dll
+	latitude: decimal('latitude', { precision: 10, scale: 8 }),
+	longitude: decimal('longitude', { precision: 11, scale: 8 }),
+	photoPath: text('photo_path'),
+	description: text('description'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().onUpdateNow()
+});
+
+export const building = mysqlTable('building', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+	code: varchar('code', { length: 100 }).notNull(),
+	name: varchar('name', { length: 255 }).notNull(),
+	location: text('location').notNull(),
+	type: varchar('type', { length: 255 }).notNull(), // kantor, asmen, dll
+	area: decimal('area', { precision: 12, scale: 2 }).notNull(), // m2
+	condition: mysqlEnum('condition', ['BAIK', 'RUSAK']).notNull(),
+	status: mysqlEnum('status', ['MILIK_TNI', 'SEWA']).notNull(),
+	latitude: decimal('latitude', { precision: 10, scale: 8 }),
+	longitude: decimal('longitude', { precision: 11, scale: 8 }),
+	photoPath: text('photo_path'),
+	description: text('description'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().onUpdateNow()
+});
+
 export const notificationPriorityEnum = mysqlEnum('notification_priority', [
 	'LOW',
 	'MEDIUM',

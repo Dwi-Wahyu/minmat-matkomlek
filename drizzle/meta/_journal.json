@@ -127,6 +127,13 @@
       "when": 1774791355574,
       "tag": "0017_chunky_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1775453386642,
+      "tag": "0018_natural_leader",
+      "breakpoints": true
     }
   ]
 }

@@ -2,16 +2,15 @@
 	import {
 		LayoutDashboard,
 		Warehouse,
-		Package,
 		FileText,
-		Radio,
-		Zap,
 		Wrench,
 		Handshake,
 		Building2,
 		RefreshCcw,
 		Settings,
-		Mailbox
+		Mailbox,
+		Map,
+		Package
 	} from '@lucide/svelte';
 	import SidebarDropdown from './SidebarDropdown.svelte';
 	import SidebarLink from './SidebarLink.svelte';
@@ -39,89 +38,101 @@
 			isDropdown: false,
 			children: []
 		},
+		// {
+		// 	name: 'Stock Gudang',
+		// 	icon: Warehouse,
+		// 	isDropdown: true,
+		// 	path: getPath('/gudang'),
+		// 	children: [
+		// 		{ name: 'Komunity', path: getPath('/gudang/komunity') },
+		// 		{ name: 'Transito', path: getPath('/gudang/transito') },
+		// 		{ name: 'Balkir', path: getPath('/gudang/balkir') }
+		// 	]
+		// },
+
 		{
-			name: 'Stock Gudang',
+			name: 'Stok Gudang',
 			icon: Warehouse,
 			isDropdown: true,
-			path: getPath('/gudang'),
+			path: getPath(''),
 			children: [
-				{ name: 'Komunity', path: getPath('/gudang/komunity') },
-				{ name: 'Transito', path: getPath('/gudang/transito') },
-				{ name: 'Balkir', path: getPath('/gudang/balkir') }
+				{ name: 'Gudang Komunity', path: getPath('/gudang/komunity') },
+				{ name: 'Gudang Transito', path: getPath('/gudang/transito') },
+				{ name: 'Gudang Balkir', path: getPath('/gudang/balkir') },
+				{ name: 'Konversi Unit', path: getPath('/konversi-unit') }
 			]
 		},
+
 		{
-			name: 'Barang Habis Pakai',
+			name: 'Data Materiil',
 			icon: Package,
 			isDropdown: true,
-			path: getPath('/barang'),
 			children: [
-				{ name: 'Daftar Barang Habis Pakai', path: getPath('/barang') },
-				{ name: 'Input Barang Habis Pakai Baru', path: getPath('/barang/create') }
+				{ name: 'Alkomlek', path: getPath('/alat/alkomlek') },
+				{ name: 'Alpernika & Lek', path: getPath('/alat/alpernika') },
+				{ name: 'Barang Habis Pakai', path: getPath('/barang') }
 			]
 		},
+
 		{
-			name: 'LAP BTK - 16',
-			path: getPath('/laporan/btk16'),
-			icon: FileText,
-			isDropdown: false,
-			children: []
-		},
-		{
-			name: 'Data Alkomlek',
-			icon: Radio,
-			isDropdown: true,
-			path: getPath('/alat/alkomlek'),
-			children: [
-				{ name: 'Daftar Alkomlek', path: getPath('/alat/alkomlek') },
-				{ name: 'Input Alkomlek Baru', path: getPath('/alat/alkomlek/create') }
-			]
-		},
-		{
-			name: 'Data Alpernika & Lek',
-			icon: Zap,
-			isDropdown: true,
-			path: getPath('/alat/alpernika'),
-			children: [
-				{ name: 'Daftar Alpernika & Lek', path: getPath('/alat/alpernika') },
-				{ name: 'Input Pernika & Lek Baru', path: getPath('/alat/alpernika/create') }
-			]
-		},
-		{
-			name: 'Pemeliharaan',
-			path: getPath('/pemeliharaan'),
+			name: 'Operasional',
 			icon: Wrench,
-			isDropdown: false,
-			children: []
+			isDropdown: true,
+			children: [
+				{ name: 'Pemeliharaan', path: getPath('/pemeliharaan') },
+				{ name: 'Peminjaman', path: getPath('/peminjaman') },
+				{ name: 'Distribusi', path: getPath('/distribusi') }
+			]
 		},
+
+		// SECTION: PELAPORAN
 		{
-			name: 'Peminjaman',
-			path: getPath('/peminjaman'),
-			icon: Handshake,
-			isDropdown: false,
-			children: []
+			name: 'Laporan',
+			icon: FileText,
+			isDropdown: true,
+			children: [
+				{ name: 'LAP BTK - 16', path: getPath('/laporan/btk16') },
+				{ name: 'LAP PERNIKA & LEK', path: getPath('/laporan/pernikalek') }
+			]
 		},
+
+		// SECTION: PENGATURAN
 		{
-			name: 'Distribusi',
-			path: getPath('/distribusi'),
-			icon: Mailbox,
-			isDropdown: false,
-			children: []
+			name: 'Administrasi',
+			icon: Settings,
+			isDropdown: true,
+			path: getPath('/pengaturan'),
+			role: ['superadmin', 'kakomlek'],
+			children: [
+				{ name: 'Satuan Jajaran', path: getPath('/satuan-jajaran') },
+				{ name: 'Manajemen Pengguna', path: getPath('/pengaturan/pengguna'), role: ['superadmin'] },
+				{ name: 'Audit Log', path: getPath('/audit-log'), role: ['superadmin', 'kakomlek'] },
+				{
+					name: 'Satuan Jajaran',
+					path: getPath('/satuan-jajaran'),
+					role: ['superadmin', 'kakomlek']
+				},
+				...(user.organization?.parentId === null
+					? [{ name: 'Tanah & Bangunan', path: getPath('/tanah-bangunan') }]
+					: [])
+			]
 		},
-		{
-			name: 'Satuan Jajaran',
-			path: getPath('/satuan-jajaran'),
-			icon: Building2,
-			isDropdown: false,
-			children: []
-		},
-		{
-			name: 'Konversi Unit',
-			path: getPath('/konversi-unit'),
-			icon: RefreshCcw,
-			isDropdown: false,
-			children: []
-		},
+
+		...(user.organization?.parentId === null
+			? [
+					{
+						name: 'Tanah & Bangunan',
+						icon: Map,
+						isDropdown: true,
+						path: getPath('/tanah-bangunan'),
+						children: [
+							{ name: 'Data Tanah', path: getPath('/tanah-bangunan/tanah') },
+							{ name: 'Data Bangunan', path: getPath('/tanah-bangunan/bangunan') }
+						]
+					}
+				]
+			: []),
+
 		{
 			name: 'Pengaturan',
 			icon: Settings,

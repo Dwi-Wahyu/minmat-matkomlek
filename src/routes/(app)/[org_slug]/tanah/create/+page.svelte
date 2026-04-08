@@ -25,20 +25,41 @@
 	const statusTrigger = $derived(
 		statusOptions.find((o) => o.value === selectedStatus)?.label ?? 'Pilih Status'
 	);
+	let imagePreview = $state<string | null>(null);
+
+	function handleImageChange(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				imagePreview = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			imagePreview = null;
+		}
+	}
 </script>
 
 <div class="flex flex-col gap-6 p-6">
 	<div class="mx-auto w-full max-w-3xl">
-		<div class="mb-4">
-			<h1 class="text-3xl font-bold tracking-tight text-foreground">Tambah Data Tanah</h1>
-			<p class="text-sm text-muted-foreground">
-				Isi formulir di bawah untuk menambahkan data tanah baru.
-			</p>
+		<div class="mb-4 flex items-center gap-4">
+			<Button variant="outline" size="icon" href="/{page.params.org_slug}/tanah">
+				<ChevronLeft class="size-4" />
+			</Button>
+			<div>
+				<h1 class="text-3xl font-bold tracking-tight text-foreground">Tambah Data Tanah</h1>
+				<p class="text-sm text-muted-foreground">
+					Isi formulir di bawah untuk menambahkan data tanah baru.
+				</p>
+			</div>
 		</div>
 
 		<div class="rounded-lg border bg-card p-6 shadow-sm">
 			<form
 				method="POST"
+				enctype="multipart/form-data"
 				use:enhance={() => {
 					loading = true;
 					return async ({ result }) => {
@@ -47,9 +68,6 @@
 							notificationMsg = 'Data berhasil disimpan';
 							notificationType = 'success';
 							notificationOpen = true;
-							setTimeout(() => {
-								goto(`/${page.params.org_slug}/tanah`);
-							}, 1500);
 						} else if (result.type === 'failure') {
 							notificationMsg = 'Terjadi kesalahan';
 							notificationType = 'error';
@@ -116,6 +134,31 @@
 					</div>
 
 					<div class="col-span-1 space-y-2 md:col-span-2">
+						<Label for="image">Foto Tanah</Label>
+						<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+							<div
+								class="flex size-32 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-muted"
+							>
+								{#if imagePreview}
+									<img src={imagePreview} alt="Preview" class="size-full object-cover" />
+								{:else}
+									<div class="text-center text-xs text-muted-foreground">No Image</div>
+								{/if}
+							</div>
+							<div class="flex-1 space-y-2">
+								<Input
+									type="file"
+									name="image"
+									id="image"
+									accept="image/png, image/jpeg, image/jpg"
+									onchange={handleImageChange}
+								/>
+								<p class="text-xs text-muted-foreground">Maksimal 5MB. Format: PNG, JPG, JPEG.</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-span-1 space-y-2 md:col-span-2">
 						<Label for="description">Keterangan Tambahan</Label>
 						<Textarea
 							id="description"
@@ -148,4 +191,9 @@
 	bind:open={notificationOpen}
 	type={notificationType}
 	description={notificationMsg}
+	onAction={() => {
+		if (notificationType === 'success') {
+			goto(`/${page.params.org_slug}/tanah`);
+		}
+	}}
 />

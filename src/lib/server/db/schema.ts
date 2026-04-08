@@ -348,6 +348,9 @@ export const reportBtk16 = mysqlTable('report_btk16', {
 
 export const land = mysqlTable('land', {
 	id: varchar('id', { length: 36 }).primaryKey(),
+	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id, {
+		onDelete: 'cascade'
+	}),
 	certificateNumber: varchar('certificate_number', { length: 255 }).notNull(),
 	location: text('location').notNull(),
 	area: decimal('area', { precision: 12, scale: 2 }).notNull(), // m2
@@ -363,6 +366,9 @@ export const land = mysqlTable('land', {
 
 export const building = mysqlTable('building', {
 	id: varchar('id', { length: 36 }).primaryKey(),
+	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id, {
+		onDelete: 'cascade'
+	}),
 	code: varchar('code', { length: 100 }).notNull(),
 	name: varchar('name', { length: 255 }).notNull(),
 	location: text('location').notNull(),
@@ -589,6 +595,20 @@ export const movementRelations = relations(movement, ({ one }) => ({
 	pic: one(user, {
 		fields: [movement.picId],
 		references: [user.id]
+	})
+}));
+
+export const landRelations = relations(land, ({ one }) => ({
+	organization: one(organization, {
+		fields: [land.organizationId],
+		references: [organization.id]
+	})
+}));
+
+export const buildingRelations = relations(building, ({ one }) => ({
+	organization: one(organization, {
+		fields: [building.organizationId],
+		references: [organization.id]
 	})
 }));
 

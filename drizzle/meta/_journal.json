@@ -141,6 +141,13 @@
       "when": 1775607500498,
       "tag": "0019_public_fixer",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1775620141042,
+      "tag": "0020_shallow_blindfold",
+      "breakpoints": true
     }
   ]
 }

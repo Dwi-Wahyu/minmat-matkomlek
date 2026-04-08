@@ -4,12 +4,12 @@ import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 
-export const load: PageServerLoad = async (event) => {
-	if (event.locals.user) {
-		return redirect(302, '/dashboard');
+export const load: PageServerLoad = async ({ locals }) => {
+	if (locals.user) {
+		return redirect(302, `${locals.user.organization.slug}/dashboard`);
 	}
 
-	return { user: event.locals.user };
+	return { user: locals.user };
 };
 
 export const actions: Actions = {

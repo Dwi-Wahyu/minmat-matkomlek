@@ -148,7 +148,7 @@
 			icon: Map,
 			isDropdown: false,
 			path: getPath('/tanah'),
-			role: ['parent'], // Hanya muncul jika parentId === null
+			role: ['superadmin', 'kakomlek'],
 			children: []
 		},
 		{
@@ -156,7 +156,7 @@
 			icon: Building2,
 			isDropdown: false,
 			path: getPath('/bangunan'),
-			role: ['parent'], // Hanya muncul jika parentId === null
+			role: ['superadmin', 'kakomlek'],
 			children: []
 		},
 		{

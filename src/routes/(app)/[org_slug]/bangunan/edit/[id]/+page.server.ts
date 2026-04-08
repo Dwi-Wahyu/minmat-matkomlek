@@ -3,6 +3,7 @@ import { building } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, error } from '@sveltejs/kit';
+import { uploadFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { id } = params;
@@ -35,27 +36,38 @@ export const actions: Actions = {
 		const description = formData.get('description') as string;
 		const latitude = formData.get('latitude') as string;
 		const longitude = formData.get('longitude') as string;
+		const imageFile = formData.get('image') as File;
 
 		if (!code || !name || !location || !type || !area || !condition || !status) {
 			return fail(400, { message: 'Field bertanda bintang wajib diisi' });
 		}
 
+		// Upload image if exists
+		const { fileName, error: uploadError } = await uploadFile(imageFile, 'building');
+		if (uploadError) return fail(400, { message: uploadError });
+
 		try {
+			const updateData: any = {
+				code,
+				name,
+				location,
+				type,
+				area,
+				condition,
+				status,
+				description,
+				latitude: latitude ? latitude : null,
+				longitude: longitude ? longitude : null,
+				updatedAt: new Date()
+			};
+
+			if (fileName) {
+				updateData.photoPath = fileName;
+			}
+
 			await db
 				.update(building)
-				.set({
-					code,
-					name,
-					location,
-					type,
-					area,
-					condition,
-					status,
-					description,
-					latitude: latitude ? latitude : null,
-					longitude: longitude ? longitude : null,
-					updatedAt: new Date()
-				})
+				.set(updateData)
 				.where(eq(building.id, id));
 
 			return { success: true, message: 'Data bangunan berhasil diperbarui' };

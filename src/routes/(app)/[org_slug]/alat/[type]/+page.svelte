@@ -114,7 +114,7 @@
 						<Table.Cell>
 							{#if item.imagePath}
 								<img
-									src="/uploads/equipment/{item.imagePath}"
+									src="/uploads/item/{item.imagePath}"
 									alt={item.itemName}
 									class="size-10 rounded-md border object-cover shadow-sm"
 								/>

@@ -44,7 +44,7 @@ export const actions: Actions = {
 		if (!itemName) return fail(400, { message: 'Nama Alat harus diisi' });
 
 		// Upload image if exists
-		const { fileName, error: uploadError } = await uploadFile(imageFile, 'equipment');
+		const { fileName, error: uploadError } = await uploadFile(imageFile, 'item');
 		if (uploadError) return fail(400, { message: uploadError });
 
 		// Map URL type to database equipmentType
@@ -70,6 +70,10 @@ export const actions: Actions = {
 
 			if (existingItemResults.length > 0) {
 				itemId = existingItemResults[0].id;
+				// Update image if new image provided
+				if (fileName) {
+					await db.update(item).set({ imagePath: fileName }).where(eq(item.id, itemId));
+				}
 			} else {
 				itemId = crypto.randomUUID();
 				await db.insert(item).values({
@@ -77,7 +81,8 @@ export const actions: Actions = {
 					name: itemName,
 					type: 'ASSET',
 					equipmentType: equipmentType,
-					baseUnit: 'UNIT'
+					baseUnit: 'UNIT',
+					imagePath: fileName
 				});
 			}
 
@@ -89,8 +94,7 @@ export const actions: Actions = {
 				warehouseId: warehouseId || null,
 				organizationId: org.id,
 				condition: condition || 'BAIK',
-				status: status || 'READY',
-				imagePath: fileName
+				status: status || 'READY'
 			});
 
 			return { success: true, message: 'Alat berhasil ditambahkan' };

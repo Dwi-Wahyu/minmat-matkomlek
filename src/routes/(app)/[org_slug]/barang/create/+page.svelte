@@ -25,6 +25,21 @@
 	let selectedBaseUnit = $state('');
 	let selectedWarehouseId = $state('');
 
+	let imagePreview = $state<string | null>(null);
+
+	function handleImageChange(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				imagePreview = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		} else {
+			imagePreview = null;
+		}
+	}
+
 	// Handler untuk menampilkan notifikasi
 	function showSuccessNotification(message: string) {
 		notificationType = 'success';
@@ -75,6 +90,7 @@
 		<Card.Content class="p-8">
 			<form
 				method="POST"
+				enctype="multipart/form-data"
 				use:enhance={() => {
 					isLoading = true;
 					return async ({ result }) => {
@@ -95,6 +111,34 @@
 				<!-- Hidden Inputs for Select Values -->
 				<input type="hidden" name="baseUnit" value={selectedBaseUnit} />
 				<input type="hidden" name="warehouseId" value={selectedWarehouseId} />
+
+				<div class="flex flex-col gap-2 md:col-span-2">
+					<Label for="image">Foto Barang</Label>
+					<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+						<div
+							class="flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-slate-50"
+						>
+							{#if imagePreview}
+								<img src={imagePreview} alt="Preview" class="h-full w-full object-cover" />
+							{:else}
+								<div class="text-center text-xs text-slate-400">Belum ada foto</div>
+							{/if}
+						</div>
+						<div class="flex-1">
+							<Input
+								type="file"
+								name="image"
+								id="image"
+								accept="image/*"
+								onchange={handleImageChange}
+								class="cursor-pointer"
+							/>
+							<p class="mt-1.5 text-[10px] text-slate-500">
+								Format: JPG, PNG, atau WEBP. Maks: 5MB.
+							</p>
+						</div>
+					</div>
+				</div>
 
 				<div class="flex flex-col gap-2">
 					<Label for="name">Nama Barang</Label>

@@ -62,29 +62,33 @@ export const actions: Actions = {
 		try {
 			// Menggunakan select eksplisit alih-alih db.query
 			const currentResults = await db
-				.select()
+				.select({
+					equipment: equipment,
+					item: item
+				})
 				.from(equipment)
+				.innerJoin(item, eq(equipment.itemId, item.id))
 				.where(eq(equipment.id, id))
 				.limit(1);
 
 			if (currentResults.length === 0) return fail(404, { message: 'Alat tidak ditemukan' });
 			const current = currentResults[0];
 
-			let imagePath = current.imagePath;
+			let imagePath = current.item.imagePath;
 
 			// Upload new image if exists
 			if (imageFile && imageFile.size > 0) {
-				const { fileName: newFileName, error: uploadError } = await uploadFile(imageFile, 'equipment');
+				const { fileName: newFileName, error: uploadError } = await uploadFile(imageFile, 'item');
 				if (uploadError) return fail(400, { message: uploadError });
 
 				// Delete old image if new one is uploaded
-				if (current.imagePath) {
-					deleteFile(current.imagePath, 'equipment');
+				if (current.item.imagePath) {
+					deleteFile(current.item.imagePath, 'item');
 				}
 				imagePath = newFileName;
 			}
 
-			// Find or Create Item
+			// Find or Create Item (Jika Nama Berubah)
 			let itemId: string;
 			const existingItemResults = await db
 				.select()
@@ -94,6 +98,10 @@ export const actions: Actions = {
 
 			if (existingItemResults.length > 0) {
 				itemId = existingItemResults[0].id;
+				// Update existing item's image if new one uploaded
+				if (imageFile && imageFile.size > 0) {
+					await db.update(item).set({ imagePath: imagePath }).where(eq(item.id, itemId));
+				}
 			} else {
 				itemId = crypto.randomUUID();
 				await db.insert(item).values({
@@ -101,7 +109,8 @@ export const actions: Actions = {
 					name: itemName,
 					type: 'ASSET',
 					equipmentType: equipmentType,
-					baseUnit: 'UNIT'
+					baseUnit: 'UNIT',
+					imagePath: imagePath
 				});
 			}
 
@@ -114,7 +123,6 @@ export const actions: Actions = {
 					warehouseId: warehouseId || null,
 					condition: condition || 'BAIK',
 					status: status || 'READY',
-					imagePath: imagePath,
 					updatedAt: new Date()
 				})
 				.where(eq(equipment.id, id));

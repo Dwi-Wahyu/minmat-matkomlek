@@ -1,0 +1,29 @@
+name: CI-CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Push Database Schema
+        run: bun run db:push
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build SvelteKit app
+        run: bun run build
+
+      - name: Restart Instances
+        run: pm2 restart ecosystem.config.cjs

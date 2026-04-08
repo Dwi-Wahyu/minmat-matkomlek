@@ -7,6 +7,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Table from '$lib/components/ui/table';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Select from '$lib/components/ui/select';
 	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
 	import { Search, Plus, Pencil, Trash2, ArrowRightLeft, Ellipsis } from '@lucide/svelte';
@@ -27,6 +28,16 @@
 	let mutateQty = $state(1);
 	let mutateType = $state('ADJUSTMENT');
 	let mutateNotes = $state('');
+
+	const mutateTypeOptions = [
+		{ value: 'ADJUSTMENT', label: 'Penyesuaian (Adjustment)' },
+		{ value: 'ISSUE', label: 'Keluar (Issue)' },
+		{ value: 'RECEIVE', label: 'Masuk (Receive)' }
+	];
+
+	const mutateTrigger = $derived(
+		mutateTypeOptions.find((o) => o.value === mutateType)?.label ?? 'Pilih Jenis'
+	);
 
 	function confirmDelete(id: string) {
 		selectedId = id;
@@ -85,6 +96,19 @@
 						</Table.Cell>
 						<Table.Cell>
 							<div class="flex items-center gap-3">
+								<div
+									class="flex size-10 items-center justify-center overflow-hidden rounded border bg-muted/50"
+								>
+									{#if item.imagePath}
+										<img
+											src="/uploads/item/{item.imagePath}"
+											alt={item.name}
+											class="h-full w-full object-cover"
+										/>
+									{:else}
+										<div class="text-[8px] text-muted-foreground">NO IMG</div>
+									{/if}
+								</div>
 								<div class="flex flex-col">
 									<span class="font-semibold text-foreground">{item.name}</span>
 									<span class="font-mono text-[10px] text-muted-foreground"
@@ -201,10 +225,17 @@
 		mutateLoading = true;
 		return ({ result }) => {
 			mutateLoading = false;
-			mutateDialogOpen = false;
 			if (result.type === 'success') {
+				mutateDialogOpen = false;
 				notificationMsg = result.data?.message;
 				notificationType = 'success';
+				notificationOpen = true;
+				// Reset fields
+				mutateQty = 1;
+				mutateNotes = '';
+			} else {
+				notificationMsg = 'Gagal mencatat mutasi';
+				notificationType = 'error';
 				notificationOpen = true;
 			}
 		};
@@ -240,14 +271,16 @@
 	<div class="mt-4 grid gap-4 text-left">
 		<div class="space-y-2">
 			<Label>Jenis Pergerakan</Label>
-			<select
-				bind:value={mutateType}
-				class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-			>
-				<option value="ADJUSTMENT">Penyesuaian (Adjustment)</option>
-				<option value="ISSUE">Keluar (Issue)</option>
-				<option value="RECEIVE">Masuk (Receive)</option>
-			</select>
+			<Select.Root type="single" bind:value={mutateType}>
+				<Select.Trigger class="w-full">
+					{mutateTrigger}
+				</Select.Trigger>
+				<Select.Content>
+					{#each mutateTypeOptions as opt (opt.value)}
+						<Select.Item value={opt.value} label={opt.label}>{opt.label}</Select.Item>
+					{/each}
+				</Select.Content>
+			</Select.Root>
 		</div>
 		<div class="space-y-2">
 			<Label>Jumlah (Qty)</Label>

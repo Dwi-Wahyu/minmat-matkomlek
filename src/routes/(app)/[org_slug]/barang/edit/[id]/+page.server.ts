@@ -3,6 +3,7 @@ import { item } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
+import { uploadFile, deleteFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const dataResults = await db
@@ -22,6 +23,7 @@ export const actions: Actions = {
 		const name = formData.get('name') as string;
 		const baseUnit = formData.get('baseUnit') as any;
 		const description = formData.get('description') as string;
+		const image = formData.get('image') as File;
 
 		try {
 			const currentResults = await db.select().from(item).where(eq(item.id, params.id)).limit(1);
@@ -29,12 +31,29 @@ export const actions: Actions = {
 			if (currentResults.length === 0) return fail(404, { message: 'Barang tidak ditemukan' });
 			const current = currentResults[0];
 
+			let imagePath = current.imagePath;
+
+			if (image && image.size > 0) {
+				const uploadResult = await uploadFile(image, 'item');
+				if (uploadResult.error) {
+					return fail(400, { message: uploadResult.error });
+				}
+
+				// Delete old image if exists
+				if (current.imagePath) {
+					deleteFile(current.imagePath, 'item');
+				}
+
+				imagePath = uploadResult.fileName;
+			}
+
 			await db
 				.update(item)
 				.set({
 					name,
 					baseUnit,
-					description
+					description,
+					imagePath
 				})
 				.where(eq(item.id, params.id));
 

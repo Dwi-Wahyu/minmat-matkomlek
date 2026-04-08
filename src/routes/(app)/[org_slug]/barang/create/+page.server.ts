@@ -37,6 +37,7 @@ import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
+import { uploadFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const orgResults = await db
@@ -71,9 +72,19 @@ export const actions: Actions = {
 			const description = formData.get('description') as string;
 			const warehouseId = formData.get('warehouseId') as string;
 			const qty = formData.get('qty') as string;
+			const image = formData.get('image') as File;
 
 			if (!name || !baseUnit) {
 				return fail(400, { message: 'Nama dan Satuan dasar wajib diisi' });
+			}
+
+			let imagePath = null;
+			if (image && image.size > 0) {
+				const uploadResult = await uploadFile(image, 'item');
+				if (uploadResult.error) {
+					return fail(400, { message: uploadResult.error });
+				}
+				imagePath = uploadResult.fileName;
 			}
 
 			const itemId = uuidv4();
@@ -85,6 +96,7 @@ export const actions: Actions = {
 					type: 'CONSUMABLE',
 					baseUnit,
 					description,
+					imagePath,
 					createdAt: new Date()
 				});
 

@@ -49,7 +49,7 @@ export const GET = async ({ url, locals }) => {
 			status: r.equipment.status,
 			gudang: r.warehouseName,
 			tipe: r.item.equipmentType,
-			image: r.equipment.imagePath ? `/uploads/equipment/${r.equipment.imagePath}` : null
+			image: r.item.imagePath ? `/uploads/item/${r.item.imagePath}` : null
 		}));
 
 		return json({

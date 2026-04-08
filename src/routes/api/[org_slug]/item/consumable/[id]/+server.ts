@@ -106,6 +106,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 	// Format response
 	const response = {
 		...itemData,
+		image: itemData.imagePath ? `/uploads/item/${itemData.imagePath}` : null,
 		stocks: stocksResults,
 		movements: movementsResults,
 		unitConversions: unitConversions

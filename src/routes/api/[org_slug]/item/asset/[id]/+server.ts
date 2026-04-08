@@ -40,7 +40,6 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 			brand: equipment.brand,
 			condition: equipment.condition,
 			status: equipment.status,
-			imagePath: equipment.imagePath,
 			createdAt: equipment.createdAt,
 			updatedAt: equipment.updatedAt,
 			item: {
@@ -49,7 +48,8 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 				type: item.type,
 				equipmentType: item.equipmentType,
 				baseUnit: item.baseUnit,
-				description: item.description
+				description: item.description,
+				imagePath: item.imagePath
 			},
 			warehouse: {
 				id: warehouse.id,
@@ -126,7 +126,7 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 	// Format response
 	const response = {
 		...assetData,
-		image: assetData.imagePath ? `/uploads/equipment/${assetData.imagePath}` : null,
+		image: assetData.item.imagePath ? `/uploads/item/${assetData.item.imagePath}` : null,
 		movements: movementsResults,
 		maintenances: maintenanceResults
 	};

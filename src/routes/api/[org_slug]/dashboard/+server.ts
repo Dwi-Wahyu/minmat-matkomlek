@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { equipment, stock, movement, warehouse, organization } from '$lib/server/db/schema';
+import { equipment, item, stock, movement, warehouse, organization } from '$lib/server/db/schema';
 import { eq, and, count, sum, gte, sql, desc } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
@@ -117,12 +117,23 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 			),
 
 		// Recent Equipment
-		db.query.equipment.findMany({
-			where: (e, { eq }) => eq(e.organizationId, orgId),
-			with: { item: true },
-			limit: 5,
-			orderBy: [desc(equipment.createdAt)]
-		})
+		db
+			.select({
+				id: equipment.id,
+				serialNumber: equipment.serialNumber,
+				brand: equipment.brand,
+				condition: equipment.condition,
+				status: equipment.status,
+				createdAt: equipment.createdAt,
+				item: {
+					name: item.name
+				}
+			})
+			.from(equipment)
+			.innerJoin(item, eq(equipment.itemId, item.id))
+			.where(eq(equipment.organizationId, orgId))
+			.orderBy(desc(equipment.createdAt))
+			.limit(5)
 	]);
 
 	// Transformasi & Return Response

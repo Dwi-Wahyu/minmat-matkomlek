@@ -52,13 +52,13 @@
 	</div>
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-		{#if data.equipment.imagePath}
+		{#if data.equipment.item.imagePath}
 			<Card.Root class="md:col-span-3 overflow-hidden">
 				<div class="flex flex-col md:flex-row gap-6 p-6">
 					<div class="size-64 shrink-0 overflow-hidden rounded-lg border bg-muted shadow-sm">
-						<img 
-							src="/uploads/equipment/{data.equipment.imagePath}" 
-							alt={data.equipment.item.name} 
+						<img
+							src="/uploads/item/{data.equipment.item.imagePath}"
+							alt={data.equipment.item.name}
 							class="size-full object-cover"
 						/>
 					</div>
@@ -79,8 +79,7 @@
 		{/if}
 
 		<!-- Main Info -->
-		<Card.Root class={data.equipment.imagePath ? 'md:col-span-2' : 'md:col-span-2'}>
-			<Card.Header>
+		<Card.Root class={data.equipment.item.imagePath ? 'md:col-span-2' : 'md:col-span-2'}>			<Card.Header>
 				<Card.Title class="flex items-center gap-2">
 					<Package class="size-5 text-blue-600" />
 					{data.equipment.item.name}

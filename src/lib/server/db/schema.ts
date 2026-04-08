@@ -44,8 +44,6 @@ export const equipment = mysqlTable(
 
 		status: mysqlEnum('status', ['READY', 'IN_USE', 'TRANSIT', 'MAINTENANCE']).default('READY'),
 
-		imagePath: text('image_path'),
-
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').onUpdateNow()
 	},
@@ -68,6 +66,8 @@ export const item = mysqlTable('item', {
 	baseUnit: mysqlEnum('base_unit', ['PCS', 'BOX', 'METER', 'ROLL', 'UNIT']).notNull(),
 
 	description: text('description'),
+
+	imagePath: text('image_path'),
 
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });

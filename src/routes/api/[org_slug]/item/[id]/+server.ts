@@ -67,7 +67,6 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 				brand: equipment.brand,
 				condition: equipment.condition,
 				status: equipment.status,
-				imagePath: equipment.imagePath,
 				warehouse: warehouse
 			})
 			.from(equipment)
@@ -100,10 +99,11 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 	// Format response
 	const response = {
 		...itemData,
+		image: itemData.imagePath ? `/uploads/item/${itemData.imagePath}` : null,
 		stocks: stocksResults,
 		equipments: equipmentsResults.map((e) => ({
 			...e,
-			image: e.imagePath ? `/uploads/equipment/${e.imagePath}` : null
+			image: itemData.imagePath ? `/uploads/item/${itemData.imagePath}` : null
 		})),
 		movements: movementsResults.map((m) => ({
 			...m.movement,

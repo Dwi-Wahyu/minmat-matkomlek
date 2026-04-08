@@ -134,6 +134,13 @@
       "when": 1775453386642,
       "tag": "0018_natural_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1775607500498,
+      "tag": "0019_public_fixer",
+      "breakpoints": true
     }
   ]
 }

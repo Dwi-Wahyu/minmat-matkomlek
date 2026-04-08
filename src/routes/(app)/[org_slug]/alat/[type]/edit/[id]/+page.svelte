@@ -15,7 +15,7 @@
 	let notificationType = $state<'success' | 'error' | 'info'>('success');
 
 	let imagePreview = $state<string | null>(
-		data.equipment.imagePath ? `/uploads/equipment/${data.equipment.imagePath}` : null
+		data.equipment.item.imagePath ? `/uploads/item/${data.equipment.item.imagePath}` : null
 	);
 
 	function handleImageChange(event: Event) {
@@ -28,8 +28,8 @@
 			};
 			reader.readAsDataURL(file);
 		} else {
-			imagePreview = data.equipment.imagePath
-				? `/uploads/equipment/${data.equipment.imagePath}`
+			imagePreview = data.equipment.item.imagePath
+				? `/uploads/item/${data.equipment.item.imagePath}`
 				: null;
 		}
 	}

@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { invalidateAll, goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
 	import { Badge } from '$lib/components/ui/badge';
 	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
+	import * as SearchableSelect from '$lib/components/ui/searchable-select';
 	import {
 		Wrench,
 		Plus,
@@ -15,10 +16,28 @@
 		Clock,
 		CheckCircle2,
 		AlertCircle,
-		Box
+		Box,
+		Filter
 	} from '@lucide/svelte';
 
 	let { data } = $props();
+
+	// State untuk filter
+	let selectedEquipmentIds = $state(data.filters.equipmentIds);
+
+	$effect(() => {
+		const url = new URL(window.location.href);
+		const currentEqIds = url.searchParams.get('equipmentIds')?.split(',').filter(Boolean) || [];
+		
+		if (JSON.stringify(currentEqIds.sort()) !== JSON.stringify(selectedEquipmentIds.slice().sort())) {
+			if (selectedEquipmentIds.length > 0) {
+				url.searchParams.set('equipmentIds', selectedEquipmentIds.join(','));
+			} else {
+				url.searchParams.delete('equipmentIds');
+			}
+			goto(url.toString(), { keepFocus: true, noScroll: true });
+		}
+	});
 
 	// State untuk dialog konfirmasi hapus
 	let showDeleteDialog = $state(false);
@@ -103,15 +122,51 @@
 	</div>
 
 	<div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-		<div class="flex w-full gap-3 md:w-auto">
-			<div class="relative flex-1 md:w-80">
+		<div class="flex w-full flex-wrap gap-3 md:w-auto">
+			<div class="relative flex-1 md:w-64">
 				<Search class="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" size={16} />
 				<input
 					type="text"
-					placeholder="Cari alat, teknisi..."
+					placeholder="Cari deskripsi..."
 					class="w-full rounded-xl border border-slate-200 bg-white py-2 pr-4 pl-10 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
 				/>
 			</div>
+
+			<!-- Filter Peralatan Multi-select -->
+			<div class="w-full md:w-64">
+				<SearchableSelect.Root type="multiple" bind:value={selectedEquipmentIds}>
+					<SearchableSelect.Trigger
+						class="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors hover:bg-slate-50"
+					>
+						<div class="flex items-center gap-2 overflow-hidden">
+							<Filter size={16} class="text-slate-400 shrink-0" />
+							{#if selectedEquipmentIds.length === 0}
+								<span class="text-slate-500 truncate">Filter Peralatan</span>
+							{:else}
+								<span class="text-slate-900 font-medium truncate"
+									>{selectedEquipmentIds.length} Alat</span
+								>
+							{/if}
+						</div>
+					</SearchableSelect.Trigger>
+					<SearchableSelect.Content>
+						{#each data.equipment as eq (eq.id)}
+							<SearchableSelect.Item
+								value={eq.id}
+								label={`${eq.item?.name || 'Tanpa Nama'} ${eq.serialNumber ? `(${eq.serialNumber})` : ''}`}
+							>
+								<div class="flex flex-col">
+									<span class="font-medium text-xs">{eq.item?.name || 'Tanpa Nama'}</span>
+									{#if eq.serialNumber}
+										<span class="text-[10px] text-slate-400">SN: {eq.serialNumber}</span>
+									{/if}
+								</div>
+							</SearchableSelect.Item>
+						{/each}
+					</SearchableSelect.Content>
+				</SearchableSelect.Root>
+			</div>
+
 			<button
 				class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-slate-50"
 			>

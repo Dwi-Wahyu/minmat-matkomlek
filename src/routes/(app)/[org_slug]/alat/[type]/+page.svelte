@@ -16,7 +16,6 @@
 		Pencil,
 		Trash2,
 		Package,
-		MoreHorizontal,
 		ArrowRightLeft,
 		Info,
 		Ellipsis
@@ -27,11 +26,6 @@
 	let deleteDialogOpen = $state(false);
 	let deleteLoading = $state(false);
 	let selectedId = $state('');
-
-	let mutateDialogOpen = $state(false);
-	let mutateLoading = $state(false);
-	let mutateClass = $state('TRANSITO');
-	let mutateNotes = $state('');
 
 	let notificationOpen = $state(false);
 	let notificationMsg = $state('');
@@ -45,8 +39,7 @@
 	}
 
 	function openMutate(id: string) {
-		selectedId = id;
-		mutateDialogOpen = true;
+		goto(`/${page.params.org_slug}/alat/${data.type}/mutate/${id}`);
 	}
 
 	const conditionColors: Record<string, string> = {
@@ -60,6 +53,29 @@
 		IN_USE: 'bg-purple-100 text-purple-700',
 		TRANSIT: 'bg-orange-100 text-orange-700',
 		MAINTENANCE: 'bg-red-100 text-red-700'
+	};
+
+	const statusLabels: Record<string, string> = {
+		READY: 'Tersedia',
+		IN_USE: 'Digunakan',
+		TRANSIT: 'Transit',
+		MAINTENANCE: 'Perbaikan'
+	};
+
+	const conditionLabels: Record<string, string> = {
+		BAIK: 'Baik',
+		RUSAK_RINGAN: 'Rusak Ringan',
+		RUSAK_BERAT: 'Rusak Berat'
+	};
+
+	const eventTypeLabels: Record<string, string> = {
+		RECEIVE: 'Masuk',
+		ISSUE: 'Keluar',
+		TRANSFER_IN: 'Transfer Masuk',
+		TRANSFER_OUT: 'Transfer Keluar',
+		MAINTENANCE_IN: 'Masuk Perbaikan',
+		MAINTENANCE_OUT: 'Selesai Perbaikan',
+		ADJUSTMENT: 'Penyesuaian'
 	};
 </script>
 
@@ -96,12 +112,11 @@
 			<Table.Header>
 				<Table.Row class="bg-muted/50">
 					<Table.Head class=" text-center">No</Table.Head>
-					<Table.Head class="">Gambar</Table.Head>
-					<Table.Head>Alat / Barang</Table.Head>
-					<Table.Head>Brand</Table.Head>
+					<Table.Head>Alat</Table.Head>
 					<Table.Head>Gudang</Table.Head>
 					<Table.Head>Kondisi</Table.Head>
 					<Table.Head>Status</Table.Head>
+					<Table.Head>Mutasi Terakhir</Table.Head>
 					<Table.Head class="text-right">Aksi</Table.Head>
 				</Table.Row>
 			</Table.Header>
@@ -112,19 +127,6 @@
 							{i + 1 + (data.pagination.currentPage - 1) * 10}
 						</Table.Cell>
 						<Table.Cell>
-							{#if item.imagePath}
-								<img
-									src="/uploads/item/{item.imagePath}"
-									alt={item.itemName}
-									class="size-10 rounded-md border object-cover shadow-sm"
-								/>
-							{:else}
-								<div class="flex size-10 items-center justify-center rounded-md border bg-muted">
-									<Package class="size-5 text-muted-foreground/50" />
-								</div>
-							{/if}
-						</Table.Cell>
-						<Table.Cell>
 							<div class="flex flex-col">
 								<span class="font-semibold text-foreground">{item.itemName}</span>
 								<code class="w-fit rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
@@ -132,7 +134,6 @@
 								</code>
 							</div>
 						</Table.Cell>
-						<Table.Cell>{item.brand || '-'}</Table.Cell>
 						<Table.Cell>
 							<div class="flex items-center gap-1.5 text-sm">
 								<Package class="size-3.5 text-muted-foreground" />
@@ -141,13 +142,27 @@
 						</Table.Cell>
 						<Table.Cell>
 							<Badge variant="outline" class={conditionColors[item.condition]}>
-								{item.condition.replace('_', ' ')}
+								{conditionLabels[item.condition] || item.condition}
 							</Badge>
 						</Table.Cell>
 						<Table.Cell>
 							<Badge variant="secondary" class={statusColors[item.status]}>
-								{item.status.replace('_', ' ')}
+								{statusLabels[item.status] || item.status}
 							</Badge>
+						</Table.Cell>
+						<Table.Cell>
+							{#if item.lastMovement}
+								<div class="flex flex-col gap-0.5">
+									<span class="text-xs font-semibold text-primary">
+										{eventTypeLabels[item.lastMovement.eventType] || item.lastMovement.eventType}
+									</span>
+									<span class="text-[10px] text-muted-foreground">
+										{new Date(item.lastMovement.createdAt).toLocaleDateString('id-ID')}
+									</span>
+								</div>
+							{:else}
+								<span class="text-xs text-muted-foreground italic">Belum ada data</span>
+							{/if}
 						</Table.Cell>
 						<Table.Cell class="text-right">
 							<DropdownMenu.Root>
@@ -244,30 +259,6 @@
 	<input type="hidden" name="id" value={selectedId} />
 </form>
 
-<form
-	id="mutate-form"
-	method="POST"
-	action="?/mutate"
-	use:enhance={() => {
-		mutateLoading = true;
-		return ({ result }) => {
-			mutateLoading = false;
-			mutateDialogOpen = false;
-			if (result.type === 'success') {
-				notificationMsg = 'Sukses mutasi alat';
-				notificationType = 'success';
-				notificationOpen = true;
-				invalidateAll();
-			}
-		};
-	}}
-	hidden
->
-	<input type="hidden" name="equipmentId" value={selectedId} />
-	<input type="hidden" name="classification" value={mutateClass} />
-	<input type="hidden" name="notes" value={mutateNotes} />
-</form>
-
 <!-- DIALOGS -->
 <ConfirmationDialog
 	bind:open={deleteDialogOpen}
@@ -278,34 +269,6 @@
 	actionLabel="Hapus Alat"
 	onAction={() => document.getElementById('delete-form').requestSubmit()}
 />
-
-<ConfirmationDialog
-	bind:open={mutateDialogOpen}
-	loading={mutateLoading}
-	type="info"
-	title="Mutasi Klasifikasi Alat"
-	description="Ubah klasifikasi penyimpanan alat ini (Balkir/Komunity/Transito)."
-	actionLabel="Simpan Perubahan"
-	onAction={() => document.getElementById('mutate-form').requestSubmit()}
->
-	<div class="mt-4 grid gap-4 text-left">
-		<div class="space-y-2">
-			<Label>Klasifikasi Baru</Label>
-			<select
-				bind:value={mutateClass}
-				class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
-			>
-				<option value="TRANSITO">Transito</option>
-				<option value="KOMUNITY">Komunity</option>
-				<option value="BALKIR">Balkir</option>
-			</select>
-		</div>
-		<div class="space-y-2">
-			<Label>Catatan Mutasi</Label>
-			<Input bind:value={mutateNotes} placeholder="Masukkan alasan mutasi..." />
-		</div>
-	</div>
-</ConfirmationDialog>
 
 <NotificationDialog
 	bind:open={notificationOpen}

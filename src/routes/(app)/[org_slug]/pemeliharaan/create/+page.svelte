@@ -6,14 +6,16 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { Label } from '$lib/components/ui/label';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
-	import { ArrowLeft, Save, Activity, Clock, User as UserIcon, Calendar } from '@lucide/svelte';
+	import { ArrowLeft, Save, Activity, Clock, User as UserIcon, Calendar, Box, X } from '@lucide/svelte';
 	import * as Card from '$lib/components/ui/card';
+	import * as SearchableSelect from '$lib/components/ui/searchable-select';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data } = $props();
 
 	// State form
 	let formData = $state({
-		equipmentId: '',
+		equipmentIds: [] as string[],
 		maintenanceType: 'PERAWATAN',
 		description: '',
 		scheduledDate: '',
@@ -21,6 +23,17 @@
 		status: 'PENDING',
 		technicianId: ''
 	});
+
+	// Helper untuk mendapatkan label alat yang dipilih
+	function getEquipmentLabel(id: string) {
+		const eq = data.equipment.find((e: any) => e.id === id);
+		if (!eq) return id;
+		return `${eq.item?.name || 'Tanpa Nama'} ${eq.serialNumber ? `(${eq.serialNumber})` : ''}`;
+	}
+
+	function removeEquipment(id: string) {
+		formData.equipmentIds = formData.equipmentIds.filter((itemId) => itemId !== id);
+	}
 
 	// State untuk dialog notifikasi
 	let showNotification = $state(false);
@@ -110,25 +123,67 @@
 			>
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 					<!-- Equipment -->
-					<div class="space-y-2">
+					<div class="space-y-2 md:col-span-2">
 						<Label for="equipmentId" class="text-xs font-bold text-slate-500 uppercase"
-							>Peralatan</Label
+							>Peralatan (Bisa pilih lebih dari satu)</Label
 						>
-						<select
-							id="equipmentId"
-							name="equipmentId"
-							bind:value={formData.equipmentId}
-							required
-							class="flex h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+
+						<!-- Hidden Inputs for form submission -->
+						{#each formData.equipmentIds as id (id)}
+							<input type="hidden" name="equipmentId" value={id} />
+						{/each}
+
+						<SearchableSelect.Root
+							type="multiple"
+							bind:value={formData.equipmentIds}
 						>
-							<option value="" disabled>Pilih alat</option>
-							{#each data.equipment as eq}
-								<option value={eq.id}>
-									{eq.item?.name || 'Tanpa Nama'}
-									{eq.serialNumber ? `(${eq.serialNumber})` : ''}
-								</option>
-							{/each}
-						</select>
+							<SearchableSelect.Trigger
+								class="flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+							>
+								{#if formData.equipmentIds.length === 0}
+									<span class="text-slate-400">Pilih alat...</span>
+								{:else}
+									<span class="text-slate-900">{formData.equipmentIds.length} alat dipilih</span>
+								{/if}
+							</SearchableSelect.Trigger>
+							<SearchableSelect.Content>
+								{#each data.equipment as eq (eq.id)}
+									<SearchableSelect.Item
+										value={eq.id}
+										label={`${eq.item?.name || 'Tanpa Nama'} ${eq.serialNumber ? `(${eq.serialNumber})` : ''}`}
+									>
+										<div class="flex flex-col">
+											<span class="font-medium">{eq.item?.name || 'Tanpa Nama'}</span>
+											{#if eq.serialNumber}
+												<span class="text-[10px] text-slate-400">SN: {eq.serialNumber}</span>
+											{/if}
+										</div>
+									</SearchableSelect.Item>
+								{/each}
+							</SearchableSelect.Content>
+						</SearchableSelect.Root>
+
+						<!-- List of Selected Badges -->
+						{#if formData.equipmentIds.length > 0}
+							<div class="mt-3 flex flex-wrap gap-2">
+								{#each formData.equipmentIds as id (id)}
+									<Badge
+										variant="secondary"
+										class="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-700 hover:bg-slate-200"
+									>
+										<Box size={12} class="text-slate-400" />
+										{getEquipmentLabel(id)}
+										<button
+											type="button"
+											onclick={() => removeEquipment(id)}
+											class="ml-1 text-slate-400 hover:text-slate-900"
+										>
+											<X size={14} />
+										</button>
+									</Badge>
+								{/each}
+							</div>
+						{/if}
 					</div>
 
 					<!-- Tipe -->
@@ -143,7 +198,7 @@
 							required
 							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
 						>
-							{#each maintenanceTypes as type}
+							{#each maintenanceTypes as type (type)}
 								<option value={type}>{type}</option>
 							{/each}
 						</select>
@@ -182,7 +237,7 @@
 							required
 							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
 						>
-							{#each statusOptions as status}
+							{#each statusOptions as status (status)}
 								<option value={status}>{status}</option>
 							{/each}
 						</select>
@@ -220,7 +275,7 @@
 							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
 						>
 							<option value="">Pilih teknisi</option>
-							{#each data.technicians as tech}
+							{#each data.technicians as tech (tech.id)}
 								<option value={tech.id}>{tech.name}</option>
 							{/each}
 						</select>

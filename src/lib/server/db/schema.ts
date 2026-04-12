@@ -354,7 +354,7 @@ export const land = mysqlTable('land', {
 	certificateNumber: varchar('certificate_number', { length: 255 }).notNull(),
 	location: text('location').notNull(),
 	area: decimal('area', { precision: 12, scale: 2 }).notNull(), // m2
-	status: mysqlEnum('status', ['MILIK_TNI', 'SEWA']).notNull(),
+	status: mysqlEnum('status', ['MILIK_TNI', 'LAINNYA']).notNull(),
 	usage: varchar('usage', { length: 255 }).notNull(), // kantor, asmen, dll
 	latitude: decimal('latitude', { precision: 10, scale: 8 }),
 	longitude: decimal('longitude', { precision: 11, scale: 8 }),
@@ -375,7 +375,7 @@ export const building = mysqlTable('building', {
 	type: varchar('type', { length: 255 }).notNull(), // kantor, asmen, dll
 	area: decimal('area', { precision: 12, scale: 2 }).notNull(), // m2
 	condition: mysqlEnum('condition', ['BAIK', 'RUSAK']).notNull(),
-	status: mysqlEnum('status', ['MILIK_TNI', 'SEWA']).notNull(),
+	status: mysqlEnum('status', ['MILIK_TNI', 'LAINNYA']).notNull(),
 	latitude: decimal('latitude', { precision: 10, scale: 8 }),
 	longitude: decimal('longitude', { precision: 11, scale: 8 }),
 	photoPath: text('photo_path'),
@@ -446,6 +446,10 @@ export const equipmentRelations = relations(equipment, ({ many, one }) => ({
 		references: [item.id]
 	}),
 	warehouse: one(warehouse, { fields: [equipment.warehouseId], references: [warehouse.id] }),
+	organization: one(organization, {
+		fields: [equipment.organizationId],
+		references: [organization.id]
+	}),
 	maintenances: many(maintenance),
 	lendingItems: many(lendingItem),
 	movements: many(movement)

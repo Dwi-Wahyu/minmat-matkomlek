@@ -1,9 +1,8 @@
 import { db } from '$lib/server/db';
 import { equipment, item, warehouse, movement } from '$lib/server/db/schema';
-import { eq, and, like, sql, desc } from 'drizzle-orm';
+import { eq, and, like, sql, desc, inArray } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
-import { deleteFile } from '$lib/server/storage';
 
 export const load: PageServerLoad = async ({ params, url }) => {
 	const { org_slug, type } = params;
@@ -15,9 +14,15 @@ export const load: PageServerLoad = async ({ params, url }) => {
 	// Map URL type to database equipmentType
 	const equipmentType = type.toUpperCase() === 'ALPERNIKA' ? 'PERNIKA_LEK' : 'ALKOMLEK';
 
+	const org = await db.query.organization.findFirst({
+		where: eq(sql`slug`, org_slug)
+	});
+
+	if (!org) throw fail(404, { message: 'Organisasi tidak ditemukan' });
+
 	const filters = [
 		eq(item.equipmentType, equipmentType),
-		eq(equipment.organizationId, sql`(SELECT id FROM organization WHERE slug = ${org_slug})`)
+		eq(equipment.organizationId, org.id)
 	];
 
 	if (searchQuery) {
@@ -26,12 +31,11 @@ export const load: PageServerLoad = async ({ params, url }) => {
 		);
 	}
 
-	const [data, totalCountResult] = await Promise.all([
+	const [dataRaw, totalCountResult] = await Promise.all([
 		db
 			.select({
 				id: equipment.id,
 				serialNumber: equipment.serialNumber,
-				brand: equipment.brand,
 				condition: equipment.condition,
 				status: equipment.status,
 				itemName: item.name,
@@ -53,10 +57,21 @@ export const load: PageServerLoad = async ({ params, url }) => {
 			.where(and(...filters))
 	]);
 
+	// Fetch last movement for each
+	const equipmentWithMovements = await Promise.all(
+		dataRaw.map(async (eqp) => {
+			const lastMov = await db.query.movement.findFirst({
+				where: eq(movement.equipmentId, eqp.id),
+				orderBy: [desc(movement.createdAt)]
+			});
+			return { ...eqp, lastMovement: lastMov };
+		})
+	);
+
 	const totalItems = totalCountResult[0].count;
 
 	return {
-		equipment: data,
+		equipment: equipmentWithMovements,
 		pagination: {
 			currentPage: page,
 			totalPages: Math.ceil(totalItems / limit),
@@ -80,36 +95,6 @@ export const actions: Actions = {
 		} catch (error) {
 			console.error(error);
 			return fail(500, { message: 'Gagal menghapus alat' });
-		}
-	},
-
-	mutate: async ({ request, locals }) => {
-		const { user } = locals;
-		if (!user) return fail(401);
-
-		const formData = await request.formData();
-		const equipmentId = formData.get('equipmentId') as string;
-		const classification = formData.get('classification') as any;
-		const notes = formData.get('notes') as string;
-
-		if (!equipmentId) return fail(400, { message: 'ID Alat tidak ditemukan' });
-
-		try {
-			await db.insert(movement).values({
-				id: crypto.randomUUID(),
-				equipmentId,
-				organizationId: user.organization.id,
-				eventType: 'ADJUSTMENT',
-				classification: classification || null,
-				qty: 1,
-				notes: notes || 'Mutasi klasifikasi manual',
-				picId: user.id,
-				createdAt: new Date()
-			});
-			return { success: true, message: 'Mutasi alat berhasil dicatat' };
-		} catch (error) {
-			console.error('Error in mutate alat:', error);
-			return fail(500, { message: 'Gagal mencatat mutasi alat ke database' });
 		}
 	}
 };

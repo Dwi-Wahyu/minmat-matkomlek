@@ -1,13 +1,16 @@
 import { fail, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { maintenance, organization } from '$lib/server/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { maintenance, organization, equipment } from '$lib/server/db/schema';
+import { eq, desc, inArray } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
+	const { org_slug } = params;
+	const equipmentIds = url.searchParams.get('equipmentIds')?.split(',').filter(Boolean) || [];
+
 	// Ambil ID organisasi berdasarkan slug dari URL
 	const org = await db.query.organization.findFirst({
-		where: eq(organization.slug, params.org_slug)
+		where: eq(organization.slug, org_slug)
 	});
 
 	if (!org) {
@@ -15,6 +18,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	}
 
 	const maintenanceList = await db.query.maintenance.findMany({
+		where: equipmentIds.length > 0 ? inArray(maintenance.equipmentId, equipmentIds) : undefined,
 		with: {
 			equipment: {
 				with: {
@@ -25,6 +29,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		orderBy: [desc(maintenance.scheduledDate)]
 	});
 
+	// Ambil daftar alat untuk filter
+	const equipmentList = await db.query.equipment.findMany({
+		where: eq(equipment.organizationId, org.id),
+		with: {
+			item: true
+		}
+	});
+
 	// Filter maintenanceList berdasarkan organizationId (jika equipment ada)
 	const filteredMaintenance = maintenanceList.filter(
 		(m) => m.equipment?.organizationId === org.id
@@ -32,7 +44,11 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return { 
 		maintenance: filteredMaintenance,
-		org_slug: params.org_slug
+		equipment: equipmentList,
+		org_slug: org_slug,
+		filters: {
+			equipmentIds
+		}
 	};
 };
 

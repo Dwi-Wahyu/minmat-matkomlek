@@ -24,7 +24,7 @@
 
 	const statusOptions = [
 		{ value: 'MILIK_TNI', label: 'MILIK TNI' },
-		{ value: 'SEWA', label: 'SEWA' }
+		{ value: 'LAINNYA', label: 'LAINNYA' }
 	];
 
 	let selectedCondition = $state(
@@ -55,7 +55,9 @@
 			};
 			reader.readAsDataURL(file);
 		} else {
-			imagePreview = data.building.photoPath ? `/uploads/building/${data.building.photoPath}` : null;
+			imagePreview = data.building.photoPath
+				? `/uploads/building/${data.building.photoPath}`
+				: null;
 		}
 	}
 </script>
@@ -137,7 +139,7 @@
 					</div>
 
 					<div class="space-y-2">
-						<Label for="status">Status *</Label>
+						<Label for="status">Kepemilikan *</Label>
 						<Select.Root type="single" name="status" bind:value={selectedStatus}>
 							<Select.Trigger class="w-full">
 								{statusTrigger}

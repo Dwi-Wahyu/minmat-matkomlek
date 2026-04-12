@@ -13,29 +13,31 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const limit = 10;
 	const offset = (page - 1) * limit;
 
-	// Subquery to get warehouse IDs for this organization
-	const organizationWarehouseIds = db
-		.select({ id: warehouse.id })
-		.from(warehouse)
-		.where(eq(warehouse.organizationId, organizationId));
+	const stockAgg = db
+		.select({
+			itemId: stock.itemId,
+			totalQty: sql<string>`SUM(${stock.qty})`.as('totalQty')
+		})
+		.from(stock)
+		.innerJoin(warehouse, eq(stock.warehouseId, warehouse.id))
+		.where(eq(warehouse.organizationId, organizationId))
+		.groupBy(stock.itemId)
+		.as('sa');
 
-	const filters = [
-		eq(item.type, 'CONSUMABLE'),
-		inArray(
-			item.id,
-			db
-				.select({ itemId: stock.itemId })
-				.from(stock)
-				.where(inArray(stock.warehouseId, organizationWarehouseIds))
-		)
-	];
-
+	const filters = [eq(item.type, 'CONSUMABLE')];
 	if (searchQuery) filters.push(like(item.name, `%${searchQuery}%`));
 
 	const [data, totalCountResult] = await Promise.all([
 		db
-			.select()
+			.select({
+				id: item.id,
+				name: item.name,
+				baseUnit: item.baseUnit,
+				createdAt: item.createdAt,
+				totalStock: stockAgg.totalQty
+			})
 			.from(item)
+			.leftJoin(stockAgg, eq(item.id, stockAgg.itemId))
 			.where(and(...filters))
 			.limit(limit)
 			.offset(offset)
@@ -66,24 +68,18 @@ export const actions: Actions = {
 
 		try {
 			// Get current item for image deletion
-			const currentResult = await db
-				.select()
-				.from(item)
-				.where(eq(item.id, id))
-				.limit(1);
+			const currentResult = await db.select().from(item).where(eq(item.id, id)).limit(1);
 
 			if (currentResult.length === 0) return fail(404, { message: 'Barang tidak ditemukan' });
 			const current = currentResult[0];
 
 			// Check if item is still used in stock before deleting
-			const existingStockResult = await db
-				.select()
-				.from(stock)
-				.where(eq(stock.itemId, id))
-				.limit(1);
+			const existingStockResult = await db.select().from(stock).where(eq(stock.itemId, id)).limit(1);
 
 			if (existingStockResult.length > 0 && Number(existingStockResult[0].qty) > 0) {
-				return fail(400, { message: 'Barang tidak bisa dihapus karena masih memiliki stok di gudang' });
+				return fail(400, {
+					message: 'Barang tidak bisa dihapus karena masih memiliki stok di gudang'
+				});
 			}
 
 			// Delete image if exists
@@ -104,14 +100,12 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const itemId = formData.get('itemId') as string;
 		const qtyInput = formData.get('qty') as string;
-		const type = formData.get('type') as any; 
+		const type = formData.get('type') as any;
 		const notes = formData.get('notes') as string;
 
 		if (!itemId || !qtyInput) {
 			return fail(400, { message: 'Data mutasi tidak lengkap' });
 		}
-
-		const qty = parseInt(qtyInput);
 
 		try {
 			await db.insert(movement).values({
@@ -119,7 +113,7 @@ export const actions: Actions = {
 				itemId,
 				organizationId: user.organization.id,
 				eventType: type || 'ADJUSTMENT',
-				qty,
+				qty: qtyInput,
 				notes: notes || 'Mutasi stok manual',
 				picId: user.id,
 				createdAt: new Date()

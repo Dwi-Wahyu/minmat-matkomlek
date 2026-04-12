@@ -7,13 +7,13 @@ import type { PageServerLoad, Actions } from './$types';
 import { eq } from 'drizzle-orm';
 
 const maintenanceSchema = z.object({
-	equipmentId: z.string().uuid(),
+	equipmentIds: z.array(z.string()).min(1),
 	maintenanceType: z.enum(['PERAWATAN', 'PERBAIKAN']),
 	description: z.string().min(1),
 	scheduledDate: z.string().datetime(),
 	completionDate: z.string().datetime().optional().nullable(),
 	status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED']).default('PENDING'),
-	technicianId: z.string().uuid().optional().nullable()
+	technicianId: z.string().optional().nullable()
 });
 
 export const load: PageServerLoad = async ({ params, locals }) => {
@@ -67,7 +67,7 @@ export const actions = {
 		const rawTechnicianId = formData.get('technicianId')?.toString();
 
 		const data = {
-			equipmentId: formData.get('equipmentId')?.toString(),
+			equipmentIds: formData.getAll('equipmentId').map(id => id.toString()),
 			maintenanceType: formData.get('maintenanceType')?.toString(),
 			description: formData.get('description')?.toString(),
 			scheduledDate:
@@ -85,15 +85,19 @@ export const actions = {
 		try {
 			const validated = maintenanceSchema.parse(data);
 
-			await db.insert(maintenance).values({
-				id: uuidv4(),
-				equipmentId: validated.equipmentId,
-				maintenanceType: validated.maintenanceType,
-				description: validated.description,
-				status: validated.status,
-				technicianId: validated.technicianId,
-				scheduledDate: new Date(validated.scheduledDate),
-				completionDate: validated.completionDate ? new Date(validated.completionDate) : null
+			await db.transaction(async (tx) => {
+				for (const equipmentId of validated.equipmentIds) {
+					await tx.insert(maintenance).values({
+						id: uuidv4(),
+						equipmentId,
+						maintenanceType: validated.maintenanceType,
+						description: validated.description,
+						status: validated.status,
+						technicianId: validated.technicianId,
+						scheduledDate: new Date(validated.scheduledDate),
+						completionDate: validated.completionDate ? new Date(validated.completionDate) : null
+					});
+				}
 			});
 		} catch (err) {
 			console.error(err);

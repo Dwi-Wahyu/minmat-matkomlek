@@ -84,6 +84,7 @@
 				<Table.Row class="bg-muted/50">
 					<Table.Head class="text-center">No</Table.Head>
 					<Table.Head>Nama Barang</Table.Head>
+					<Table.Head class="text-center">Stok</Table.Head>
 					<Table.Head>Satuan</Table.Head>
 					<Table.Head class="text-right">Aksi</Table.Head>
 				</Table.Row>
@@ -95,27 +96,15 @@
 							{i + 1 + (data.pagination.currentPage - 1) * 10}
 						</Table.Cell>
 						<Table.Cell>
-							<div class="flex items-center gap-3">
-								<div
-									class="flex size-10 items-center justify-center overflow-hidden rounded border bg-muted/50"
+							<div class="flex flex-col">
+								<span class="font-semibold text-foreground">{item.name}</span>
+								<span class="font-mono text-[10px] text-muted-foreground"
+									>ID: {item.id.slice(0, 8)}</span
 								>
-									{#if item.imagePath}
-										<img
-											src="/uploads/item/{item.imagePath}"
-											alt={item.name}
-											class="h-full w-full object-cover"
-										/>
-									{:else}
-										<div class="text-[8px] text-muted-foreground">NO IMG</div>
-									{/if}
-								</div>
-								<div class="flex flex-col">
-									<span class="font-semibold text-foreground">{item.name}</span>
-									<span class="font-mono text-[10px] text-muted-foreground"
-										>ID: {item.id.slice(0, 8)}</span
-									>
-								</div>
 							</div>
+						</Table.Cell>
+						<Table.Cell class="text-center">
+							<span class="text-lg font-bold">{Number(item.totalStock || 0)}</span>
 						</Table.Cell>
 						<Table.Cell>
 							<span
@@ -125,31 +114,36 @@
 							</span>
 						</Table.Cell>
 						<Table.Cell class="text-right">
-							<DropdownMenu.Root>
-								<DropdownMenu.Trigger>
-									<Ellipsis class="size-4" />
-								</DropdownMenu.Trigger>
-								<DropdownMenu.Content align="end" class="w-40">
-									<DropdownMenu.Item onclick={() => openMutate(item.id)} class="gap-2">
-										<ArrowRightLeft class="size-4" /> Mutasi Stok
-									</DropdownMenu.Item>
+							<div class="flex justify-end gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									class="h-8 gap-1.5 px-2"
+									onclick={() => openMutate(item.id)}
+								>
+									<ArrowRightLeft class="size-3.5" />
+									<span class="hidden lg:inline">Mutasi</span>
+								</Button>
 
-									<DropdownMenu.Item
-										onclick={() => goto(`/${page.params.org_slug}/barang/edit/${item.id}`)}
-										class="gap-2"
-									>
-										<Pencil class="size-4" /> Edit Data
-									</DropdownMenu.Item>
+								<Button
+									variant="outline"
+									size="sm"
+									class="h-8 gap-1.5 px-2"
+									onclick={() => goto(`/${page.params.org_slug}/barang/edit/${item.id}`)}
+								>
+									<Pencil class="size-3.5" />
+									<span class="hidden lg:inline">Edit</span>
+								</Button>
 
-									<DropdownMenu.Separator />
-									<DropdownMenu.Item
-										onclick={() => confirmDelete(item.id)}
-										class="gap-2 text-red-600"
-									>
-										<Trash2 class="size-4" /> Hapus
-									</DropdownMenu.Item>
-								</DropdownMenu.Content>
-							</DropdownMenu.Root>
+								<Button
+									variant="outline"
+									size="sm"
+									class="h-8 border-red-200 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+									onclick={() => confirmDelete(item.id)}
+								>
+									<Trash2 class="size-3.5" />
+								</Button>
+							</div>
 						</Table.Cell>
 					</Table.Row>
 				{:else}

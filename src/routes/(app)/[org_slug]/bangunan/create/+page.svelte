@@ -22,7 +22,7 @@
 
 	const statusOptions = [
 		{ value: 'MILIK_TNI', label: 'MILIK TNI' },
-		{ value: 'SEWA', label: 'SEWA' }
+		{ value: 'LAINNYA', label: 'LAINNYA' }
 	];
 
 	let selectedCondition = $state(conditionOptions[0].value);
@@ -122,7 +122,7 @@
 					</div>
 
 					<div class="space-y-2">
-						<Label for="status">Status *</Label>
+						<Label for="status">Kepemilikan *</Label>
 						<Select.Root type="single" name="status" bind:value={selectedStatus}>
 							<Select.Trigger class="w-full">
 								{statusTrigger}

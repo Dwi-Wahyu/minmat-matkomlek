@@ -342,10 +342,12 @@ export const actions: Actions = {
 					await tx.insert(movement).values({
 						id: uuidv4(),
 						equipmentId: item.equipmentId,
+						itemId: item.equipment.itemId,
 						organizationId: lendingData.organizationId,
 						eventType: 'LOAN_OUT',
 						classification: 'KOMUNITY',
 						specificLocationName: lendingData.unit,
+						fromWarehouseId: item.equipment.warehouseId,
 						referenceType: 'LENDING',
 						referenceId: id,
 						qty: 1,

@@ -39,7 +39,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		let totalKeluar = 0;
 
 		equip.movements.forEach((m) => {
-			if (m.eventType === 'RECEIVE') {
+			if (m.eventType === 'RECEIVE' || m.eventType === 'ADJUSTMENT') {
 				totalMasuk += Number(m.qty);
 			} else if (m.eventType === 'ISSUE') {
 				totalKeluar += Number(m.qty);

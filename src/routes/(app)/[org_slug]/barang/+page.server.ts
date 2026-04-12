@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { item, stock, warehouse, movement } from '$lib/server/db/schema';
+import { item, stock, warehouse, movement, itemUnitConversion } from '$lib/server/db/schema';
 import { eq, and, like, desc, sql, inArray } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
@@ -27,7 +27,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const filters = [eq(item.type, 'CONSUMABLE')];
 	if (searchQuery) filters.push(like(item.name, `%${searchQuery}%`));
 
-	const [data, totalCountResult] = await Promise.all([
+	const [itemsData, totalCountResult, warehouses] = await Promise.all([
 		db
 			.select({
 				id: item.id,
@@ -45,11 +45,30 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		db
 			.select({ count: sql<number>`count(*)` })
 			.from(item)
-			.where(and(...filters))
+			.where(and(...filters)),
+		db.query.warehouse.findMany({
+			where: eq(warehouse.organizationId, organizationId)
+		})
 	]);
 
+	// Fetch conversions for the items on current page
+	const itemIds = itemsData.map((i) => i.id);
+	const conversions =
+		itemIds.length > 0
+			? await db.query.itemUnitConversion.findMany({
+					where: inArray(itemUnitConversion.itemId, itemIds)
+				})
+			: [];
+
+	// Map conversions to items
+	const consumables = itemsData.map((item) => ({
+		...item,
+		conversions: conversions.filter((c) => c.itemId === item.id)
+	}));
+
 	return {
-		consumables: data,
+		consumables,
+		warehouses,
 		pagination: {
 			currentPage: page,
 			totalPages: Math.ceil(totalCountResult[0].count / limit),
@@ -74,7 +93,11 @@ export const actions: Actions = {
 			const current = currentResult[0];
 
 			// Check if item is still used in stock before deleting
-			const existingStockResult = await db.select().from(stock).where(eq(stock.itemId, id)).limit(1);
+			const existingStockResult = await db
+				.select()
+				.from(stock)
+				.where(eq(stock.itemId, id))
+				.limit(1);
 
 			if (existingStockResult.length > 0 && Number(existingStockResult[0].qty) > 0) {
 				return fail(400, {
@@ -102,26 +125,59 @@ export const actions: Actions = {
 		const qtyInput = formData.get('qty') as string;
 		const type = formData.get('type') as any;
 		const notes = formData.get('notes') as string;
+		const warehouseId = formData.get('warehouseId') as string;
 
-		if (!itemId || !qtyInput) {
-			return fail(400, { message: 'Data mutasi tidak lengkap' });
+		if (!itemId || !qtyInput || !warehouseId) {
+			return fail(400, { message: 'Data mutasi tidak lengkap (pilih barang, jumlah, dan gudang)' });
 		}
 
 		try {
-			await db.insert(movement).values({
-				id: crypto.randomUUID(),
-				itemId,
-				organizationId: user.organization.id,
-				eventType: type || 'ADJUSTMENT',
-				qty: qtyInput,
-				notes: notes || 'Mutasi stok manual',
-				picId: user.id,
-				createdAt: new Date()
+			const qtyNum = Number(qtyInput);
+			const delta = type === 'ISSUE' ? -qtyNum : qtyNum;
+
+			await db.transaction(async (tx) => {
+				// 1. Record movement
+				await tx.insert(movement).values({
+					id: crypto.randomUUID(),
+					itemId,
+					organizationId: user.organization.id,
+					eventType: type || 'ADJUSTMENT',
+					qty: qtyNum.toString(),
+					fromWarehouseId: type === 'ISSUE' || type === 'ADJUSTMENT' ? warehouseId : null,
+					toWarehouseId: type === 'RECEIVE' || type === 'ADJUSTMENT' ? warehouseId : null,
+					notes: notes || 'Mutasi stok manual',
+					picId: user.id,
+					createdAt: new Date()
+				});
+
+				// 2. Update or Insert Stock
+				const existingStock = await tx.query.stock.findFirst({
+					where: and(eq(stock.itemId, itemId), eq(stock.warehouseId, warehouseId))
+				});
+
+				if (existingStock) {
+					const newQty = Number(existingStock.qty) + delta;
+					if (newQty < 0) throw new Error('Stok tidak mencukupi untuk pengeluaran ini');
+
+					await tx
+						.update(stock)
+						.set({ qty: newQty.toFixed(4) })
+						.where(eq(stock.id, existingStock.id));
+				} else {
+					if (delta < 0) throw new Error('Stok awal tidak bisa negatif');
+					await tx.insert(stock).values({
+						id: crypto.randomUUID(),
+						itemId,
+						warehouseId,
+						qty: delta.toFixed(4)
+					});
+				}
 			});
-			return { success: true, message: 'Mutasi stok berhasil dicatat' };
-		} catch (error) {
+
+			return { success: true, message: 'Mutasi stok berhasil diperbarui' };
+		} catch (error: any) {
 			console.error('Error in mutate action:', error);
-			return fail(500, { message: 'Gagal mencatat mutasi ke database' });
+			return fail(500, { message: error.message || 'Gagal mencatat mutasi ke database' });
 		}
 	}
 };

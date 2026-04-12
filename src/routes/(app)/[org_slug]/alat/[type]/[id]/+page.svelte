@@ -171,19 +171,22 @@
 			</Card.Header>
 			<Card.Content>
 				<div
-					class="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:-translate-x-px before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent"
+					class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-200 md:before:left-1/2 md:before:ml-0"
 				>
 					{#each data.history as log (log.id)}
 						<div
-							class="group is-active relative flex items-center justify-between md:justify-start md:odd:flex-row-reverse"
+							class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group"
 						>
+							<!-- Icon/Dot -->
 							<div
-								class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white bg-slate-200 text-slate-500 shadow group-[.is-active]:bg-blue-500 group-[.is-active]:text-white md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2"
+								class="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-white bg-blue-500 text-white shadow md:absolute md:left-1/2 md:-translate-x-1/2"
 							>
 								<Package class="size-5" />
 							</div>
+
+							<!-- Content Card -->
 							<div
-								class="w-[calc(100%-4rem)] rounded border border-slate-200 bg-white p-4 shadow md:w-[calc(50%-2.5rem)]"
+								class="w-[calc(100%-4rem)] rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:w-[calc(50%-2.5rem)]"
 							>
 								<div class="mb-1 flex items-center justify-between space-x-2">
 									<div class="font-bold text-slate-900">{log.eventType.replace('_', ' ')}</div>
@@ -198,7 +201,7 @@
 							</div>
 						</div>
 					{:else}
-						<p class="text-center text-muted-foreground py-8">
+						<p class="py-8 text-center text-muted-foreground">
 							Belum ada riwayat pergerakan untuk alat ini.
 						</p>
 					{/each}

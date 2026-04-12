@@ -100,7 +100,7 @@
 							<div class="font-semibold">{item.nama}</div>
 						</Table.Cell>
 						<Table.Cell>
-							<span class="text-lg">{item.qty}</span>
+							<span class="text-lg">{Number(item.qty)}</span>
 							<span class="ml-1 text-xs text-muted-foreground">{item.satuan}</span>
 						</Table.Cell>
 						<Table.Cell>

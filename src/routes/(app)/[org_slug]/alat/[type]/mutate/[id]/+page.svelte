@@ -128,8 +128,9 @@
 					method="POST"
 					use:enhance={() => {
 						loading = true;
-						return ({ result }) => {
+						return async ({ update }) => {
 							loading = false;
+							await update();
 						};
 					}}
 				>

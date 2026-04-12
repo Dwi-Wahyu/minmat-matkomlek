@@ -144,36 +144,29 @@
 			]
 		},
 		{
-			name: 'Tanah',
-			icon: Map,
-			isDropdown: false,
-			path: getPath('/tanah'),
-			children: []
-		},
-		{
-			name: 'Bangunan',
+			name: 'Infrastruktur',
 			icon: Building2,
-			isDropdown: false,
-			path: getPath('/bangunan'),
-			children: []
-		},
-		{
-			name: 'Audit Log',
-			path: getPath('/audit-log'),
-			role: ['superadmin', 'kakomlek'],
-			icon: Settings,
-			isDropdown: false,
-			children: []
+			isDropdown: true,
+			path: getPath('/fasilitas'),
+			children: [
+				{ name: 'Data Tanah', path: getPath('/tanah') },
+				{ name: 'Data Bangunan', path: getPath('/bangunan') },
+				{ name: 'Manajemen Gudang', path: getPath('/gudang-management') }
+			]
 		},
 		{
 			name: 'Administrasi',
 			icon: Settings,
 			isDropdown: true,
 			path: getPath('/pengaturan'),
-			role: ['superadmin', 'kakomlek', 'parent'],
+			role: ['superadmin', 'kakomlek'],
 			children: [
-				{ name: 'Satuan Jajaran', path: getPath('/satuan-jajaran') },
-				{ name: 'Manajemen Pengguna', path: getPath('/pengaturan/pengguna'), role: ['superadmin'] },
+				{ name: 'Satuan Jajaran', path: getPath('/satuan-jajaran'), role: ['parent'] },
+				{
+					name: 'Manajemen Pengguna',
+					path: getPath('/pengaturan/pengguna'),
+					role: ['superadmin', 'parent']
+				},
 				{ name: 'Audit Log', path: getPath('/audit-log'), role: ['superadmin', 'kakomlek'] },
 				{ name: 'Konversi Unit', path: getPath('/konversi-unit') }
 			]

@@ -95,7 +95,7 @@
 							<div class="font-semibold">{item.nama}</div>
 						</Table.Cell>
 						<Table.Cell>
-							<span class="text-lg">{item.qty}</span>
+							<span class="text-lg">{Number(item.qty)}</span>
 						</Table.Cell>
 						<Table.Cell>
 							{item.notes}

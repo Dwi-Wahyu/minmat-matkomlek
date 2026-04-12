@@ -28,6 +28,7 @@
 	let mutateQty = $state(1);
 	let mutateType = $state('ADJUSTMENT');
 	let mutateNotes = $state('');
+	let mutateWarehouseId = $state('');
 
 	const mutateTypeOptions = [
 		{ value: 'ADJUSTMENT', label: 'Penyesuaian (Adjustment)' },
@@ -39,6 +40,10 @@
 		mutateTypeOptions.find((o) => o.value === mutateType)?.label ?? 'Pilih Jenis'
 	);
 
+	const warehouseTrigger = $derived(
+		data.warehouses.find((w) => w.id === mutateWarehouseId)?.name ?? 'Pilih Gudang'
+	);
+
 	function confirmDelete(id: string) {
 		selectedId = id;
 		deleteDialogOpen = true;
@@ -46,7 +51,38 @@
 
 	function openMutate(id: string) {
 		selectedId = id;
+		mutateWarehouseId = '';
 		mutateDialogOpen = true;
+	}
+
+	function formatStock(qty: string | number, baseUnit: string, conversions: any[]) {
+		let total = Number(qty);
+		if (total === 0) return '0 ' + baseUnit;
+
+		// Sort conversions by multiplier (largest first)
+		const sorted = [...(conversions || [])].sort(
+			(a, b) => Number(b.multiplier) - Number(a.multiplier)
+		);
+
+		let result: string[] = [];
+		let remaining = total;
+
+		for (const conv of sorted) {
+			const mult = Number(conv.multiplier);
+			if (mult <= 0) continue;
+
+			const amount = Math.floor(remaining / mult);
+			if (amount > 0) {
+				result.push(`${amount} ${conv.fromUnit}`);
+				remaining = Number((remaining % mult).toFixed(4));
+			}
+		}
+
+		if (remaining > 0 || result.length === 0) {
+			result.push(`${remaining} ${baseUnit}`);
+		}
+
+		return result.join(' ');
 	}
 </script>
 
@@ -85,7 +121,7 @@
 					<Table.Head class="text-center">No</Table.Head>
 					<Table.Head>Nama Barang</Table.Head>
 					<Table.Head class="text-center">Stok</Table.Head>
-					<Table.Head>Satuan</Table.Head>
+					<Table.Head>Satuan Dasar</Table.Head>
 					<Table.Head class="text-right">Aksi</Table.Head>
 				</Table.Row>
 			</Table.Header>
@@ -104,7 +140,17 @@
 							</div>
 						</Table.Cell>
 						<Table.Cell class="text-center">
-							<span class="text-lg font-bold">{Number(item.totalStock || 0)}</span>
+							<div class="flex flex-col items-center">
+								<span class="">
+									{formatStock(item.totalStock || 0, item.baseUnit, item.conversions || [])}
+								</span>
+								{#if item.conversions?.length > 0 && Number(item.totalStock || 0) > 0}
+									<span class="text-[10px] text-muted-foreground italic">
+										(Total: {Number(item.totalStock)}
+										{item.baseUnit})
+									</span>
+								{/if}
+							</div>
 						</Table.Cell>
 						<Table.Cell>
 							<span
@@ -192,15 +238,16 @@
 	action="?/delete"
 	use:enhance={() => {
 		deleteLoading = true;
-		return ({ result }) => {
+		return async ({ result, update }) => {
 			deleteLoading = false;
 			deleteDialogOpen = false;
+			await update();
 			if (result.type === 'success') {
 				notificationMsg = 'Barang berhasil dihapus';
 				notificationType = 'success';
 				notificationOpen = true;
 			} else {
-				notificationMsg = 'Gagal menghapus barang';
+				notificationMsg = result.data?.message || 'Gagal menghapus barang';
 				notificationType = 'error';
 				notificationOpen = true;
 			}
@@ -217,18 +264,20 @@
 	action="?/mutate"
 	use:enhance={() => {
 		mutateLoading = true;
-		return ({ result }) => {
+		return async ({ result, update }) => {
 			mutateLoading = false;
 			if (result.type === 'success') {
 				mutateDialogOpen = false;
+				await update();
 				notificationMsg = result.data?.message;
 				notificationType = 'success';
 				notificationOpen = true;
 				// Reset fields
 				mutateQty = 1;
 				mutateNotes = '';
+				mutateWarehouseId = '';
 			} else {
-				notificationMsg = 'Gagal mencatat mutasi';
+				notificationMsg = result.data?.message || 'Gagal mencatat mutasi';
 				notificationType = 'error';
 				notificationOpen = true;
 			}
@@ -240,6 +289,7 @@
 	<input type="hidden" name="qty" value={mutateQty} />
 	<input type="hidden" name="type" value={mutateType} />
 	<input type="hidden" name="notes" value={mutateNotes} />
+	<input type="hidden" name="warehouseId" value={mutateWarehouseId} />
 </form>
 
 <!-- DIALOGS -->
@@ -260,9 +310,30 @@
 	title="Mutasi / Penyesuaian Stok"
 	description="Catat pergerakan stok manual untuk barang ini."
 	actionLabel="Simpan Mutasi"
-	onAction={() => document.getElementById('mutate-form').requestSubmit()}
+	onAction={() => {
+		if (!mutateWarehouseId) {
+			notificationMsg = 'Pilih gudang terlebih dahulu';
+			notificationType = 'error';
+			notificationOpen = true;
+			return;
+		}
+		document.getElementById('mutate-form').requestSubmit();
+	}}
 >
 	<div class="mt-4 grid gap-4 text-left">
+		<div class="space-y-2">
+			<Label>Pilih Gudang</Label>
+			<Select.Root type="single" bind:value={mutateWarehouseId}>
+				<Select.Trigger class="w-full">
+					{warehouseTrigger}
+				</Select.Trigger>
+				<Select.Content>
+					{#each data.warehouses as wh (wh.id)}
+						<Select.Item value={wh.id} label={wh.name}>{wh.name}</Select.Item>
+					{/each}
+				</Select.Content>
+			</Select.Root>
+		</div>
 		<div class="space-y-2">
 			<Label>Jenis Pergerakan</Label>
 			<Select.Root type="single" bind:value={mutateType}>
@@ -292,4 +363,5 @@
 	type={notificationType}
 	title={notificationType === 'success' ? 'Berhasil' : 'Gagal'}
 	description={notificationMsg}
+	onAction={() => (notificationOpen = false)}
 />

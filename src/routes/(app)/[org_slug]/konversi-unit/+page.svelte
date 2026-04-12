@@ -17,6 +17,7 @@
 	} from '$lib/components/ui/dialog';
 	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
+	import * as SearchableSelect from '$lib/components/ui/searchable-select';
 	import { Plus, Pencil, Trash2, RefreshCcw, Search, Info } from '@lucide/svelte';
 
 	let { data } = $props();
@@ -39,9 +40,18 @@
 	let deleteLoading = $state(false);
 	let selectedId = $state('');
 
+	let searchQuery = $state('');
+
+	let filteredConversions = $derived(
+		data.conversions.filter((conv) =>
+			conv.item?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+		)
+	);
+
 	// State form
 	let formData = $state({
-		itemId: '',
+		itemId: '', // Hanya untuk edit (single)
+		itemIds: [] as string[], // Untuk tambah (multiple)
 		fromUnit: '',
 		toUnit: '',
 		multiplier: 1
@@ -51,7 +61,7 @@
 	const unitOptions = ['PCS', 'BOX', 'METER', 'ROLL', 'UNIT'];
 
 	function resetForm() {
-		formData = { itemId: '', fromUnit: '', toUnit: '', multiplier: 1 };
+		formData = { itemId: '', itemIds: [], fromUnit: '', toUnit: '', multiplier: 1 };
 		isEditing = false;
 		currentId = null;
 		errorMessage = '';
@@ -60,6 +70,7 @@
 	function editItem(conv: (typeof data.conversions)[0]) {
 		formData = {
 			itemId: conv.itemId,
+			itemIds: [conv.itemId],
 			fromUnit: conv.fromUnit,
 			toUnit: conv.toUnit,
 			multiplier: parseFloat(conv.multiplier.toString())
@@ -74,7 +85,11 @@
 		deleteDialogOpen = true;
 	}
 
-	function handleNotification(title: string, msg: string, type: 'success' | 'error' | 'info' = 'success') {
+	function handleNotification(
+		title: string,
+		msg: string,
+		type: 'success' | 'error' | 'info' = 'success'
+	) {
 		notificationTitle = title;
 		notificationMsg = msg;
 		notificationType = type;
@@ -83,12 +98,24 @@
 
 	// Sinkronkan toUnit dengan baseUnit item terpilih
 	$effect(() => {
-		if (formData.itemId) {
-			const selectedItem = data.items.find((i) => i.id === formData.itemId);
+		const targetId = isEditing ? formData.itemId : formData.itemIds[0];
+		if (targetId) {
+			const selectedItem = data.items.find((i) => i.id === targetId);
 			if (selectedItem) {
 				formData.toUnit = selectedItem.baseUnit;
 			}
 		}
+	});
+
+	const selectedItemName = $derived(() => {
+		if (isEditing) {
+			return data.items.find((i) => i.id === formData.itemId)?.name || 'Pilih item...';
+		}
+		if (formData.itemIds.length === 0) return 'Pilih satu atau lebih item...';
+		if (formData.itemIds.length === 1) {
+			return data.items.find((i) => i.id === formData.itemIds[0])?.name;
+		}
+		return `${formData.itemIds.length} item dipilih`;
 	});
 
 	$effect(() => {
@@ -110,16 +137,28 @@
 				Kelola perbandingan satuan untuk mempermudah perhitungan stok barang.
 			</p>
 		</div>
-		<Button onclick={() => (showFormDialog = true)} class="gap-2 bg-emerald-700 hover:bg-emerald-800">
-			<Plus class="size-4" />
-			Tambah Konversi
-		</Button>
+		<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+			<div class="relative min-w-[250px]">
+				<Search class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+				<Input placeholder="Cari nama item..." class="pl-10" bind:value={searchQuery} />
+			</div>
+			<Button
+				onclick={() => (showFormDialog = true)}
+				class="gap-2 bg-emerald-700 hover:bg-emerald-800"
+			>
+				<Plus class="size-4" />
+				Tambah Konversi
+			</Button>
+		</div>
 	</header>
 
 	<Card.Root class="overflow-hidden border-none shadow-md">
 		<Card.Header class="bg-muted/30">
 			<Card.Title>Daftar Konversi Satuan</Card.Title>
-			<Card.Description>Daftar aturan konversi unit yang berlaku di sistem. Setiap konversi harus merujuk pada satuan dasar (Base Unit) barang.</Card.Description>
+			<Card.Description
+				>Daftar aturan konversi unit yang berlaku di sistem. Setiap konversi harus merujuk pada
+				satuan dasar (Base Unit) barang.</Card.Description
+			>
 		</Card.Header>
 		<Card.Content class="p-0">
 			<div class="overflow-x-auto">
@@ -135,22 +174,27 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each data.conversions as conv, i (conv.id)}
+						{#each filteredConversions as conv, i (conv.id)}
 							<Table.Row class="transition-colors hover:bg-muted/30">
-								<Table.Cell class="text-center font-medium text-muted-foreground">{i + 1}</Table.Cell>
+								<Table.Cell class="text-center font-medium text-muted-foreground"
+									>{i + 1}</Table.Cell
+								>
 								<Table.Cell>
 									<div class="flex items-center gap-3">
-										<div class="rounded-md bg-blue-50 p-2 text-blue-600">
-											<RefreshCcw class="size-4" />
-										</div>
 										<div class="flex flex-col">
-											<span class="font-semibold text-foreground">{conv.item?.name ?? 'Item Tidak Dikenal'}</span>
-											<span class="text-[10px] text-muted-foreground uppercase">Base: {conv.item?.baseUnit}</span>
+											<span class="font-semibold text-foreground"
+												>{conv.item?.name ?? 'Item Tidak Dikenal'}</span
+											>
+											<span class="text-[10px] text-muted-foreground uppercase"
+												>Base: {conv.item?.baseUnit}</span
+											>
 										</div>
 									</div>
 								</Table.Cell>
 								<Table.Cell>
-									<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600">
+									<span
+										class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600"
+									>
 										1 {conv.fromUnit}
 									</span>
 								</Table.Cell>
@@ -159,14 +203,24 @@
 								</Table.Cell>
 								<Table.Cell>
 									<span class="font-bold">{parseFloat(conv.multiplier.toString())}</span>
-									<span class="text-xs text-muted-foreground ml-1">{conv.toUnit}</span>
+									<span class="ml-1 text-xs text-muted-foreground">{conv.toUnit}</span>
 								</Table.Cell>
 								<Table.Cell class="text-right">
 									<div class="flex justify-end gap-2">
-										<Button variant="outline" size="icon" onclick={() => editItem(conv)} class="size-8">
+										<Button
+											variant="outline"
+											size="icon"
+											onclick={() => editItem(conv)}
+											class="size-8"
+										>
 											<Pencil class="size-4 text-blue-600" />
 										</Button>
-										<Button variant="outline" size="icon" onclick={() => confirmDelete(conv.id)} class="size-8">
+										<Button
+											variant="outline"
+											size="icon"
+											onclick={() => confirmDelete(conv.id)}
+											class="size-8"
+										>
 											<Trash2 class="size-4 text-red-600" />
 										</Button>
 									</div>
@@ -194,7 +248,10 @@
 	<DialogContent class="sm:max-w-[425px]">
 		<DialogHeader>
 			<DialogTitle>{isEditing ? 'Edit' : 'Tambah'} Konversi Unit</DialogTitle>
-			<DialogDescription>Atur perbandingan satuan untuk item terpilih. Satuan tujuan otomatis menggunakan satuan dasar (Base Unit) item.</DialogDescription>
+			<DialogDescription
+				>Atur perbandingan satuan untuk item terpilih. Satuan tujuan otomatis menggunakan satuan
+				terkecil item.</DialogDescription
+			>
 		</DialogHeader>
 
 		<form
@@ -212,7 +269,9 @@
 						showFormDialog = false;
 						handleNotification(
 							'Berhasil',
-							isEditing ? 'Data konversi berhasil diperbarui.' : 'Data konversi baru telah ditambahkan.',
+							isEditing
+								? 'Data konversi berhasil diperbarui.'
+								: 'Data konversi baru telah ditambahkan.',
 							'success'
 						);
 					}
@@ -222,59 +281,93 @@
 			class="space-y-4 pt-4"
 		>
 			<input type="hidden" name="id" value={currentId ?? ''} />
-			<input type="hidden" name="toUnit" value={formData.toUnit} />
 
 			<div class="space-y-2">
-				<Label for="itemId">Pilih Item</Label>
+				<Label for="itemId">Pilih Item {isEditing ? '' : '(Dapat Pilih Banyak)'}</Label>
+				{#if isEditing}
+					<SearchableSelect.Root
+						type="single"
+						bind:value={formData.itemId}
+						onValueChange={(v) => (formData.itemId = v || '')}
+					>
+						<SearchableSelect.Trigger class="w-full">
+							{selectedItemName()}
+						</SearchableSelect.Trigger>
+						<SearchableSelect.Content>
+							{#each data.items as item (item.id)}
+								<SearchableSelect.Item value={item.id} label={item.name}>
+									{item.name} ({item.baseUnit})
+								</SearchableSelect.Item>
+							{/each}
+						</SearchableSelect.Content>
+					</SearchableSelect.Root>
+					<input type="hidden" name="itemIds" value={JSON.stringify([formData.itemId])} />
+				{:else}
+					<SearchableSelect.Root
+						type="multiple"
+						bind:value={formData.itemIds}
+						onValueChange={(v) => (formData.itemIds = (v as string[]) || [])}
+					>
+						<SearchableSelect.Trigger class="w-full">
+							{selectedItemName()}
+						</SearchableSelect.Trigger>
+						<SearchableSelect.Content>
+							{#each data.items as item (item.id)}
+								<SearchableSelect.Item value={item.id} label={item.name}>
+									{item.name} ({item.baseUnit})
+								</SearchableSelect.Item>
+							{/each}
+						</SearchableSelect.Content>
+					</SearchableSelect.Root>
+					<input type="hidden" name="itemIds" value={JSON.stringify(formData.itemIds)} />
+				{/if}
+			</div>
+
+			<div class="space-y-2">
+				<Label for="fromUnit">Unit</Label>
 				<select
-					id="itemId"
-					name="itemId"
-					bind:value={formData.itemId}
+					id="fromUnit"
+					name="fromUnit"
+					bind:value={formData.fromUnit}
 					required
-					class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+					class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				>
-					<option value="" disabled>Pilih item...</option>
-					{#each data.items as item}
-						<option value={item.id}>{item.name} ({item.baseUnit})</option>
+					<option value="" disabled>Unit...</option>
+					{#each unitOptions as unit}
+						<option value={unit}>{unit}</option>
 					{/each}
 				</select>
 			</div>
 
-			<div class="grid grid-cols-2 gap-4">
-				<div class="space-y-2">
-					<Label for="fromUnit">Dari Unit</Label>
-					<select
-						id="fromUnit"
-						name="fromUnit"
-						bind:value={formData.fromUnit}
-						required
-						class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					>
-						<option value="" disabled>Unit...</option>
-						{#each unitOptions as unit}
-							<option value={unit}>{unit}</option>
-						{/each}
-					</select>
-				</div>
+			<!-- <div class="grid grid-cols-2 gap-4">
 				<div class="space-y-2">
 					<Label for="toUnit">Ke Unit (Base)</Label>
-					<select
-						id="toUnit"
-						bind:value={formData.toUnit}
-						disabled
-						class="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					>
-						<option value="" disabled>Unit...</option>
-						{#each unitOptions as unit}
-							<option value={unit}>{unit}</option>
-						{/each}
-					</select>
-					<p class="text-[10px] text-muted-foreground italic">Otomatis dari Base Unit</p>
+					{#if isEditing}
+						<select
+							id="toUnit"
+							bind:value={formData.toUnit}
+							disabled
+							class="flex h-10 w-full rounded-md border border-input bg-muted px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+						>
+							{#each unitOptions as unit}
+								<option value={unit}>{unit}</option>
+							{/each}
+						</select>
+						<input type="hidden" name="toUnit" value={formData.toUnit} />
+						<p class="text-[10px] italic text-muted-foreground">Otomatis dari Base Unit</p>
+					{:else}
+						<div
+							class="flex h-10 w-full items-center rounded-md border border-dashed border-input bg-muted/50 px-3 text-xs italic text-muted-foreground"
+						>
+							Otomatis Per Barang
+						</div>
+						<p class="text-[10px] italic text-muted-foreground">Sesuai Satuan Dasar tiap item</p>
+					{/if}
 				</div>
-			</div>
+			</div> -->
 
 			<div class="space-y-2">
-				<Label for="multiplier">Nilai Pengali (Multiplier)</Label>
+				<Label for="multiplier">Nilai Pengali</Label>
 				<div class="relative">
 					<Input
 						id="multiplier"
@@ -286,22 +379,30 @@
 						required
 						class="pl-10"
 					/>
-					<div class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+					<div class="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">
 						<RefreshCcw size={16} />
 					</div>
 				</div>
 				<p class="text-[10px] text-muted-foreground italic">
-					Contoh: 1 {formData.fromUnit || '...'} = {formData.multiplier} {formData.toUnit || '...'}
+					Contoh: 1 {formData.fromUnit || '...'} = {formData.multiplier}
+					{formData.toUnit || '...'}
 				</p>
 			</div>
 
 			{#if errorMessage}
-				<p class="text-xs font-bold text-red-500 bg-red-50 p-2 rounded border border-red-100">{errorMessage}</p>
+				<p class="rounded border border-red-100 bg-red-50 p-2 text-xs font-bold text-red-500">
+					{errorMessage}
+				</p>
 			{/if}
 
 			<DialogFooter class="pt-4">
-				<Button type="button" variant="ghost" onclick={() => (showFormDialog = false)}>Batal</Button>
-				<Button type="submit" disabled={formLoading} class="bg-emerald-700 hover:bg-emerald-800 min-w-[100px]">
+				<Button type="button" variant="ghost" onclick={() => (showFormDialog = false)}>Batal</Button
+				>
+				<Button
+					type="submit"
+					disabled={formLoading}
+					class="min-w-[100px] bg-emerald-700 hover:bg-emerald-800"
+				>
 					{formLoading ? 'Menyimpan...' : 'Simpan Konversi'}
 				</Button>
 			</DialogFooter>
@@ -338,7 +439,10 @@
 	description="Data konversi ini akan dihapus permanen. Barang yang menggunakan konversi ini mungkin akan terpengaruh pada tampilan stok."
 	actionLabel="Ya, Hapus"
 	loading={deleteLoading}
-	onAction={() => document.getElementById('delete-form')?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
+	onAction={() =>
+		document
+			.getElementById('delete-form')
+			?.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }))}
 />
 
 <!-- Notification Dialog -->

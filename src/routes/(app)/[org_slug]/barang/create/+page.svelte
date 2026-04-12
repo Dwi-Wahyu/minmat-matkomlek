@@ -86,8 +86,13 @@
 		</div>
 	</div>
 
-	<Card.Root class="overflow-hidden border-slate-200 shadow-sm">
-		<Card.Content class="p-8">
+	<Card.Root>
+		<Card.Content class="space-y-6">
+			<div>
+				<Card.Title>Tambah Barang Habis Pakai</Card.Title>
+				<Card.Description>Daftarkan definisi barang baru untuk inventaris.</Card.Description>
+			</div>
+
 			<form
 				method="POST"
 				enctype="multipart/form-data"
@@ -200,15 +205,10 @@
 				</div>
 
 				<div class="mt-4 flex gap-4 md:col-span-2">
-					<Button
-						variant="outline"
-						class="flex-1 py-6"
-						href="/{data.org_slug}/barang"
-						disabled={isLoading}
-					>
+					<Button variant="outline" href="/{data.org_slug}/barang" disabled={isLoading}>
 						Batal
 					</Button>
-					<Button type="submit" class="flex-1 bg-[#2D5A43] py-6 hover:bg-[#2D5A43]/90" disabled={isLoading}>
+					<Button type="submit" disabled={isLoading}>
 						{isLoading ? 'Menyimpan...' : 'Simpan Barang'}
 					</Button>
 				</div>

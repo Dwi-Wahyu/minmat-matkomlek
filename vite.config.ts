@@ -14,6 +14,9 @@ export default defineConfig({
 	ssr: {
 		noExternal: ['lucide-svelte']
 	},
+	build: {
+		sourcemap: false
+	},
 	test: {
 		expect: { requireAssertions: true },
 		projects: [

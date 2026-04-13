@@ -10,7 +10,7 @@ import { Faker, id_ID } from '@faker-js/faker';
 
 const faker = new Faker({ locale: [id_ID] });
 
-import { betterAuth } from 'better-auth/minimal';
+import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { organization, username } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
@@ -190,197 +190,88 @@ async function main() {
 		console.log(`Created organization: ${orgWilayah.name}`);
 	}
 
-	// Reference for distributions
-	const allCreatedEquipment: any[] = [];
-	const allCreatedConsumables: any[] = [];
-
 	for (const org of allOrganizations) {
 		console.log(`\n--- Seeding for ${org.name} ---`);
 
+		// Helper to format Role and Org Name
+		const toTitleCase = (str: string) =>
+			str
+				.toLowerCase()
+				.split(' ')
+				.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+				.join(' ');
+
+		const formatRoleLabel = (role: string) => {
+			const result = role.replace(/([A-Z])/g, ' $1');
+			return result.charAt(0).toUpperCase() + result.slice(1);
+		};
+
+		const roleName = 'kakomlek';
+
+		const cleanOrgName = org.name.toLowerCase().replace(/\s+/g, '_');
+		const username = `${roleName}.${cleanOrgName}`;
+		const email = `${roleName}_${cleanOrgName}@gmail.com`;
+		const roleLabel = formatRoleLabel(roleName);
+		const orgNameTitleCase = toTitleCase(org.name);
+		const name = `${roleLabel} ${orgNameTitleCase}`;
+
+		try {
+			// Create user and add to organization with role
+			await auth.api.signUpEmail({
+				body: {
+					email,
+					password: roleName,
+					name,
+					username,
+					displayUsername: name
+				}
+			});
+			const userRec = await db.query.user.findFirst({
+				where: eq(authSchema.user.username, username)
+			});
+			if (userRec) {
+				await auth.api.addMember({
+					body: { organizationId: org.id, userId: userRec.id, role: roleName as any }
+				});
+				org.users.push({ id: userRec.id, role: roleName });
+			}
+		} catch (e) {
+			console.error(`Gagal membuat user ${username}:`, e);
+		}
+
 		// Seed Users
-		for (const roleName of Object.keys(allAuthRoles)) {
-			const name = faker.person.fullName();
-			const email = faker.internet
-				.email({ firstName: name.split(' ')[0], lastName: name.split(' ')[1] })
-				.toLowerCase();
-			try {
-				// Create user and add to organization with role
-				await auth.api.signUpEmail({
-					body: {
-						email,
-						password: roleName,
-						name,
-						username: `${roleName}.${org.slug}`,
-						displayUsername: name
-					}
-				});
-				const userRec = await db.query.user.findFirst({
-					where: eq(authSchema.user.username, `${roleName}.${org.slug}`)
-				});
-				if (userRec) {
-					await auth.api.addMember({
-						body: { organizationId: org.id, userId: userRec.id, role: roleName as any }
-					});
-					org.users.push({ id: userRec.id, role: roleName });
-				}
-			} catch (e) {}
-		}
+		// for (const roleName of Object.keys(allAuthRoles)) {
+		// 	const cleanOrgName = org.name.toLowerCase().replace(/\s+/g, '_');
+		// 	const username = `${roleName}.${cleanOrgName}`;
+		// 	const email = `${roleName}_${cleanOrgName}@gmail.com`;
+		// 	const roleLabel = formatRoleLabel(roleName);
+		// 	const orgNameTitleCase = toTitleCase(org.name);
+		// 	const name = `${roleLabel} ${orgNameTitleCase}`;
 
-		// Seed BHP (Consumable)
-		for (const name of bhpList) {
-			const itemId = uuidv4();
-			await db.insert(schema.item).values({
-				id: itemId,
-				baseUnit: 'PCS',
-				name: `${name}`,
-				type: 'CONSUMABLE',
-				description: `Bahan habis pakai`
-			});
-			await db.insert(schema.stock).values({
-				id: uuidv4(),
-				itemId: itemId,
-				warehouseId: org.warehouseId,
-				qty: (Math.floor(Math.random() * 500) + 100).toString()
-			});
-			allCreatedConsumables.push({ id: itemId, name, orgId: org.id });
-		}
-
-		// Seed Alat (Asset)
-		for (let i = 0; i < alatList.length; i++) {
-			const name = alatList[i];
-			const itemId = uuidv4();
-			const equipmentType = i % 2 === 0 ? 'ALKOMLEK' : 'PERNIKA_LEK';
-
-			await db.insert(schema.item).values({
-				id: itemId,
-				baseUnit: 'UNIT',
-				name: `${name}`,
-				type: 'ASSET',
-				equipmentType: equipmentType,
-				description: `Peralatan ${equipmentType}`
-			});
-
-			for (let j = 1; j <= 5; j++) {
-				const eqId = uuidv4();
-				const sn = `SN-${org.slug.substring(0, 3).toUpperCase()}-${i}-${j}-${uuidv4().substring(0, 4).toUpperCase()}`;
-				await db.insert(schema.equipment).values({
-					id: eqId,
-					itemId: itemId,
-					serialNumber: sn,
-					brand: faker.company.name(),
-					warehouseId: org.warehouseId,
-					organizationId: org.id,
-					condition: 'BAIK',
-					status: 'READY'
-				});
-				allCreatedEquipment.push({ id: eqId, sn, orgId: org.id, itemId });
-			}
-		}
-
-		// Seed Movements for Dashboard
-		console.log(`Seeding movements for ${org.name}...`);
-		const orgUser = org.users[0]?.id;
-		const now = new Date();
-
-		for (let i = 0; i < 20; i++) {
-			const daysAgo = Math.floor(Math.random() * 25);
-			const createdAt = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-
-			// Mix of types to populate different dashboard stats
-			const types = [
-				{ event: 'RECEIVE', class: 'TRANSITO' }, // Inventory In
-				{ event: 'ISSUE', class: 'TRANSITO' }, // Inventory Out
-				{ event: 'ISSUE', class: 'KOMUNITY' }, // Distribution Out
-				{ event: 'RECEIVE', class: 'KOMUNITY' }
-			];
-			const type = types[Math.floor(Math.random() * types.length)];
-			const isEq = Math.random() > 0.5;
-
-			if (isEq) {
-				const eqp = allCreatedEquipment.filter((e) => e.orgId === org.id)[
-					Math.floor(Math.random() * 5)
-				];
-				if (eqp) {
-					await db.insert(schema.movement).values({
-						id: uuidv4(),
-						equipmentId: eqp.id,
-						eventType: type.event as any,
-						classification: type.class as any,
-						qty: '1.0000',
-						organizationId: org.id,
-						fromWarehouseId: org.warehouseId,
-						picId: orgUser,
-						createdAt
-					});
-				}
-			} else {
-				const bhp = allCreatedConsumables.filter((b) => b.orgId === org.id)[
-					Math.floor(Math.random() * 5)
-				];
-				if (bhp) {
-					await db.insert(schema.movement).values({
-						id: uuidv4(),
-						itemId: bhp.id,
-						eventType: type.event as any,
-						classification: type.class as any,
-						qty: (Math.floor(Math.random() * 10) + 1).toString(),
-						unit: 'PCS',
-						organizationId: org.id,
-						fromWarehouseId: org.warehouseId,
-						picId: orgUser,
-						createdAt
-					});
-				}
-			}
-		}
-	}
-
-	// Seed Distributions
-	console.log('\n--- Seeding Distributions ---');
-	const statuses = ['DRAFT', 'VALIDATED', 'APPROVED', 'SHIPPED', 'RECEIVED'];
-	const sourceOrg = allOrganizations[0]; // PUSKOMLEKAD
-
-	for (let i = 1; i < allOrganizations.length; i++) {
-		const targetOrg = allOrganizations[i];
-		const distId = uuidv4();
-		const status = statuses[Math.floor(Math.random() * statuses.length)] as any;
-
-		await db.insert(schema.distribution).values({
-			id: distId,
-			fromOrganizationId: sourceOrg.id,
-			toOrganizationId: targetOrg.id,
-			status: status,
-			requestedBy: sourceOrg.users[0]?.id,
-			createdAt: new Date()
-		});
-
-		// Add 2 items per distribution
-		const eqps = allCreatedEquipment
-			.filter((e) => e.orgId === sourceOrg.id)
-			.slice(i * 2, i * 2 + 2);
-		for (const eqp of eqps) {
-			await db.insert(schema.distributionItem).values({
-				id: uuidv4(),
-				distributionId: distId,
-				equipmentId: eqp.id,
-				quantity: '1.0000',
-				note: 'Distribusi rutin'
-			});
-		}
-
-		if (status !== 'DRAFT' && status !== 'VALIDATED') {
-			await db.insert(schema.approval).values({
-				id: uuidv4(),
-				referenceType: 'DISTRIBUTION',
-				referenceId: distId,
-				approvedBy:
-					sourceOrg.users.find((u) => u.role === 'pimpinan')?.id || sourceOrg.users[0]?.id,
-				status: 'APPROVED',
-				createdAt: new Date()
-			});
-		}
-
-		console.log(`Created distribution: PUSKOMLEKAD -> ${targetOrg.name} (${status})`);
+		// 	try {
+		// 		// Create user and add to organization with role
+		// 		await auth.api.signUpEmail({
+		// 			body: {
+		// 				email,
+		// 				password: roleName,
+		// 				name,
+		// 				username,
+		// 				displayUsername: name
+		// 			}
+		// 		});
+		// 		const userRec = await db.query.user.findFirst({
+		// 			where: eq(authSchema.user.username, username)
+		// 		});
+		// 		if (userRec) {
+		// 			await auth.api.addMember({
+		// 				body: { organizationId: org.id, userId: userRec.id, role: roleName as any }
+		// 			});
+		// 			org.users.push({ id: userRec.id, role: roleName });
+		// 		}
+		// 	} catch (e) {
+		// 		console.error(`Gagal membuat user ${username}:`, e);
+		// 	}
+		// }
 	}
 
 	console.log('\nSeeding selesai!');

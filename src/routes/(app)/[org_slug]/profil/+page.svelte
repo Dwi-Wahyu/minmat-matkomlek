@@ -79,7 +79,7 @@
 					{/if}
 				</div>
 				<Card.Title>{data.user.name}</Card.Title>
-				<Card.Description>{data.user.email}</Card.Description>
+				<Card.Description>{data.user.username}</Card.Description>
 			</Card.Header>
 			<Card.Content class="space-y-4 border-t pt-4">
 				<div class="space-y-1">

@@ -22,31 +22,31 @@
 	<div
 		transition:fade={{ duration: 200 }}
 		onclick={close}
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
 	>
 		<div
 			transition:fly={{ y: 20, duration: 400, easing: cubicOut }}
 			onclick={(e) => e.stopPropagation()}
-			class="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
+			class="w-full max-w-md overflow-hidden rounded-xl border border-border bg-card shadow-2xl"
 		>
-			<div class="border-b border-gray-100 p-6">
-				<h3 class="text-xl font-bold text-gray-900">{title}</h3>
+			<div class="border-b border-border p-6">
+				<h3 class="text-xl font-bold text-foreground">{title}</h3>
 			</div>
 
-			<div class="p-6 text-gray-600">
+			<div class="p-6 text-muted-foreground">
 				<p>{description}</p>
 			</div>
 
-			<div class="flex justify-end gap-3 bg-gray-50 p-4">
+			<div class="flex justify-end gap-3 bg-muted/50 p-4">
 				<button
 					onclick={close}
-					class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-200"
+					class="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted"
 				>
 					Batal
 				</button>
 				<button
 					onclick={close}
-					class="hover:bg-opacity-90 rounded-lg bg-[#2D5A43] px-4 py-2 text-sm font-medium text-white transition"
+					class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
 				>
 					Konfirmasi
 				</button>

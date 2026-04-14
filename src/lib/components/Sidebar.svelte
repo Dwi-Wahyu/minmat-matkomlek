@@ -190,7 +190,7 @@
 </script>
 
 <aside
-	class="flex h-screen flex-col overflow-hidden bg-[#2D5A43] text-white shadow-xl transition-all duration-300 ease-in-out"
+	class="flex h-screen flex-col overflow-hidden bg-sidebar text-sidebar-foreground shadow-xl transition-all duration-300 ease-in-out"
 	class:w-64={sidebar.open}
 	class:w-[70px]={!sidebar.open}
 >
@@ -204,7 +204,7 @@
 				class:pointer-events-none={!sidebar.open}
 			>
 				<h1
-					class="text-sm leading-tight font-bold tracking-wider whitespace-nowrap text-yellow-400"
+					class="text-sm leading-tight font-bold tracking-wider whitespace-nowrap text-sidebar-primary"
 				>
 					MINMAT
 				</h1>

@@ -58,28 +58,28 @@
 	const statusConfig = {
 		DRAFT: {
 			label: 'Menunggu Persetujuan',
-			color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+			color: 'bg-secondary/10 text-secondary border-secondary/20',
 			icon: Clock
 		},
 		APPROVED: {
 			label: 'Disetujui',
-			color: 'bg-blue-100 text-blue-700 border-blue-200',
+			color: 'bg-primary/10 text-primary border-primary/20',
 			icon: CheckCircle2
 		},
-		REJECTED: { label: 'Ditolak', color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
+		REJECTED: { label: 'Ditolak', color: 'bg-destructive/10 text-destructive border-destructive/20', icon: XCircle },
 		PERINTAH_LANGSUNG: {
 			label: 'Perintah Langsung',
-			color: 'bg-orange-100 text-orange-700 border-orange-200',
+			color: 'bg-secondary/10 text-secondary border-secondary/20',
 			icon: AlertCircle
 		},
 		DIPINJAM: {
 			label: 'Sedang Dipinjam',
-			color: 'bg-purple-100 text-purple-700 border-purple-200',
+			color: 'bg-primary/10 text-primary border-primary/20',
 			icon: Package
 		},
 		KEMBALI: {
 			label: 'Sudah Kembali',
-			color: 'bg-green-100 text-green-700 border-green-200',
+			color: 'bg-success/10 text-success border-success/20',
 			icon: RotateCcw
 		}
 	};
@@ -132,7 +132,7 @@
 			{#if data.canDelete}
 				<Button
 					variant="outline"
-					class="border-red-200 text-red-600 hover:bg-red-50"
+					class="border-destructive/20 text-destructive hover:bg-destructive/10"
 					onclick={() => (deleteDialogOpen = true)}
 				>
 					Hapus Pengajuan
@@ -142,7 +142,7 @@
 			{#if data.canOverride}
 				<Button
 					variant="outline"
-					class="border-orange-200 text-orange-600 hover:bg-orange-50"
+					class="border-secondary/20 text-secondary hover:bg-secondary/10"
 					onclick={() => (overrideDialogOpen = true)}
 				>
 					Perintah Langsung
@@ -152,13 +152,13 @@
 			{#if data.canApprove}
 				<Button
 					variant="outline"
-					class="border-red-200 text-red-600 hover:bg-red-50"
+					class="border-destructive/20 text-destructive hover:bg-destructive/10"
 					onclick={() => (rejectDialogOpen = true)}
 				>
 					Tolak Pengajuan
 				</Button>
 				<Button
-					class="bg-green-600 text-white hover:bg-green-700"
+					class="bg-success text-success-foreground hover:bg-success/90"
 					onclick={() => (approveDialogOpen = true)}
 				>
 					Setujui Pengajuan
@@ -166,14 +166,14 @@
 			{/if}
 
 			{#if data.canExecute}
-				<Button class="bg-blue-600 hover:bg-blue-700" onclick={() => (startDialogOpen = true)}>
+				<Button class="bg-primary text-primary-foreground hover:bg-primary/90" onclick={() => (startDialogOpen = true)}>
 					<PlayCircle class="mr-2 size-4" />
 					Barang Diambil
 				</Button>
 			{/if}
 
 			{#if data.canReturn}
-				<Button class="bg-purple-600 hover:bg-purple-700" onclick={() => (returnDialogOpen = true)}>
+				<Button class="bg-secondary text-secondary-foreground hover:bg-secondary/90" onclick={() => (returnDialogOpen = true)}>
 					<RotateCcw class="mr-2 size-4" />
 					Kembalikan Barang
 				</Button>
@@ -199,7 +199,7 @@
 							isActive
 								? 'border-primary bg-primary text-primary-foreground shadow-lg ring-4 ring-primary/20'
 								: isCompleted
-									? 'border-green-500 bg-green-500 text-white'
+									? 'border-success bg-success text-success-foreground'
 									: 'border-muted bg-muted text-muted-foreground'
 						)}
 					>
@@ -214,7 +214,7 @@
 					<span
 						class={cn(
 							'text-[10px] font-bold tracking-tight md:text-xs',
-							isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+							isActive ? 'text-primary' : isCompleted ? 'text-success' : 'text-muted-foreground'
 						)}
 					>
 						{step.label}
@@ -225,7 +225,7 @@
 							class={cn(
 								'absolute top-5 left-[calc(50%+25px)] h-0.5 w-[calc(100%-50px)] md:top-6',
 								isCompleted && statusOrder.indexOf(data.lending.status) > statusOrder.indexOf(step.status)
-									? 'bg-green-500'
+									? 'bg-success'
 									: 'bg-muted'
 							)}
 						></div>
@@ -326,23 +326,23 @@
 						</div>
 
 						{#if data.lending.status === 'REJECTED'}
-							<div class="rounded-lg border border-red-200 bg-red-50 p-4">
-								<div class="mb-1 flex items-center gap-2 font-bold text-red-700">
+							<div class="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+								<div class="mb-1 flex items-center gap-2 font-bold text-destructive">
 									<AlertCircle class="size-4" />
 									Alasan Penolakan
 								</div>
-								<p class="text-sm text-red-600">{data.lending.rejectedReason}</p>
+								<p class="text-sm text-destructive/80">{data.lending.rejectedReason}</p>
 							</div>
 						{/if}
 
 						{#if data.lending.status === 'PERINTAH_LANGSUNG'}
-							<div class="rounded-lg border border-orange-200 bg-orange-50 p-4">
-								<div class="mb-1 flex items-center gap-2 font-bold text-orange-700">
+							<div class="rounded-lg border border-secondary/20 bg-secondary/10 p-4">
+								<div class="mb-1 flex items-center gap-2 font-bold text-secondary">
 									<AlertCircle class="size-4" />
 									Perintah Langsung (Command Override)
 								</div>
-								<p class="text-sm text-orange-600">{data.lending.overrideReason}</p>
-								<p class="mt-2 text-xs font-medium text-orange-700 italic">
+								<p class="text-sm text-secondary/80">{data.lending.overrideReason}</p>
+								<p class="mt-2 text-xs font-medium text-secondary italic">
 									Oleh: {data.lending.overrideByUser?.name || 'Pimpinan'}
 								</p>
 							</div>
@@ -350,7 +350,7 @@
 
 						{#if data.lending.approvedByUser}
 							<div class="flex items-center gap-3 border-t pt-2">
-								<div class="rounded-full bg-blue-50 p-2 text-blue-600">
+								<div class="rounded-full bg-primary/10 p-2 text-primary">
 									<CheckCircle2 class="size-5" />
 								</div>
 								<div>
@@ -401,7 +401,7 @@
 						{#each data.lending.approvals as log (log.id)}
 							<div class="flex gap-4">
 								<div class="flex flex-col items-center">
-									<div class={log.status === 'APPROVED' ? 'text-green-500' : 'text-red-500'}>
+									<div class={log.status === 'APPROVED' ? 'text-success' : 'text-destructive'}>
 										<History class="size-5" />
 									</div>
 									<div class="mt-2 h-full w-px bg-border"></div>
@@ -417,7 +417,7 @@
 							</div>
 						{/each}
 						<div class="flex gap-4">
-							<div class="text-yellow-500">
+							<div class="text-primary">
 								<Clock class="size-5" />
 							</div>
 							<div>

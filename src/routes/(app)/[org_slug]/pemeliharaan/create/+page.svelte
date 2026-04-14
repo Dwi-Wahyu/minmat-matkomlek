@@ -87,18 +87,18 @@
 				<ArrowLeft size={18} />
 			</Button>
 			<div>
-				<h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
+				<h1 class="flex items-center gap-2 text-2xl font-bold text-foreground">
 					Tambah Pemeliharaan Baru
 				</h1>
-				<p class="text-sm text-slate-500">Buat jadwal perawatan atau perbaikan peralatan baru</p>
+				<p class="text-sm text-muted-foreground">Buat jadwal perawatan atau perbaikan peralatan baru</p>
 			</div>
 		</div>
 	</div>
 
-	<Card.Root class="overflow-hidden border-slate-200 shadow-sm">
-		<Card.Header class="border-b border-slate-100 bg-slate-50/50">
+	<Card.Root class="overflow-hidden border-border shadow-sm">
+		<Card.Header class="border-b border-border bg-muted/50">
 			<Card.Title
-				class="flex items-center gap-2 text-sm font-bold tracking-wider text-slate-500 uppercase"
+				class="flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase"
 			>
 				Formulir Pemeliharaan
 			</Card.Title>
@@ -124,7 +124,7 @@
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 					<!-- Equipment -->
 					<div class="space-y-2 md:col-span-2">
-						<Label for="equipmentId" class="text-xs font-bold text-slate-500 uppercase"
+						<Label for="equipmentId" class="text-xs font-bold text-muted-foreground uppercase"
 							>Peralatan (Bisa pilih lebih dari satu)</Label
 						>
 
@@ -138,12 +138,12 @@
 							bind:value={formData.equipmentIds}
 						>
 							<SearchableSelect.Trigger
-								class="flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+								class="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-card px-3 py-2 text-sm"
 							>
 								{#if formData.equipmentIds.length === 0}
-									<span class="text-slate-400">Pilih alat...</span>
+									<span class="text-muted-foreground">Pilih alat...</span>
 								{:else}
-									<span class="text-slate-900">{formData.equipmentIds.length} alat dipilih</span>
+									<span class="text-foreground">{formData.equipmentIds.length} alat dipilih</span>
 								{/if}
 							</SearchableSelect.Trigger>
 							<SearchableSelect.Content>
@@ -155,7 +155,7 @@
 										<div class="flex flex-col">
 											<span class="font-medium">{eq.item?.name || 'Tanpa Nama'}</span>
 											{#if eq.serialNumber}
-												<span class="text-[10px] text-slate-400">SN: {eq.serialNumber}</span>
+												<span class="text-[10px] text-muted-foreground">SN: {eq.serialNumber}</span>
 											{/if}
 										</div>
 									</SearchableSelect.Item>
@@ -169,14 +169,14 @@
 								{#each formData.equipmentIds as id (id)}
 									<Badge
 										variant="secondary"
-										class="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-xs text-slate-700 hover:bg-slate-200"
+										class="flex items-center gap-1.5 rounded-lg bg-muted px-2 py-1 text-xs text-foreground hover:bg-accent"
 									>
-										<Box size={12} class="text-slate-400" />
+										<Box size={12} class="text-muted-foreground" />
 										{getEquipmentLabel(id)}
 										<button
 											type="button"
 											onclick={() => removeEquipment(id)}
-											class="ml-1 text-slate-400 hover:text-slate-900"
+											class="ml-1 text-muted-foreground hover:text-foreground"
 										>
 											<X size={14} />
 										</button>
@@ -188,7 +188,7 @@
 
 					<!-- Tipe -->
 					<div class="space-y-2">
-						<Label for="maintenanceType" class="text-xs font-bold text-slate-500 uppercase"
+						<Label for="maintenanceType" class="text-xs font-bold text-muted-foreground uppercase"
 							>Tipe Pemeliharaan</Label
 						>
 						<select
@@ -196,7 +196,7 @@
 							name="maintenanceType"
 							bind:value={formData.maintenanceType}
 							required
-							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+							class="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 						>
 							{#each maintenanceTypes as type (type)}
 								<option value={type}>{type}</option>
@@ -208,7 +208,7 @@
 					<div class="space-y-2">
 						<Label
 							for="scheduledDate"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<Calendar size={14} /> Tanggal Jadwal
 						</Label>
@@ -218,7 +218,7 @@
 							type="datetime-local"
 							bind:value={formData.scheduledDate}
 							required
-							class="h-11 rounded-xl border-slate-200"
+							class="h-11 rounded-xl border-border"
 						/>
 					</div>
 
@@ -226,7 +226,7 @@
 					<div class="space-y-2">
 						<Label
 							for="status"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<Activity size={14} /> Status
 						</Label>
@@ -235,7 +235,7 @@
 							name="status"
 							bind:value={formData.status}
 							required
-							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+							class="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 						>
 							{#each statusOptions as status (status)}
 								<option value={status}>{status}</option>
@@ -247,7 +247,7 @@
 					<div class="space-y-2">
 						<Label
 							for="completionDate"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<Clock size={14} /> Tanggal Selesai (Opsional)
 						</Label>
@@ -256,7 +256,7 @@
 							name="completionDate"
 							type="datetime-local"
 							bind:value={formData.completionDate}
-							class="h-11 rounded-xl border-slate-200"
+							class="h-11 rounded-xl border-border"
 						/>
 					</div>
 
@@ -264,7 +264,7 @@
 					<div class="space-y-2">
 						<Label
 							for="technicianId"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<UserIcon size={14} /> Teknisi (Opsional)
 						</Label>
@@ -272,7 +272,7 @@
 							id="technicianId"
 							name="technicianId"
 							bind:value={formData.technicianId}
-							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+							class="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 						>
 							<option value="">Pilih teknisi</option>
 							{#each data.technicians as tech (tech.id)}
@@ -284,7 +284,7 @@
 
 				<!-- Deskripsi -->
 				<div class="space-y-2">
-					<Label for="description" class="text-xs font-bold text-slate-500 uppercase"
+					<Label for="description" class="text-xs font-bold text-muted-foreground uppercase"
 						>Deskripsi Pekerjaan</Label
 					>
 					<Textarea
@@ -293,12 +293,12 @@
 						bind:value={formData.description}
 						required
 						rows={4}
-						class="resize-none rounded-xl border-slate-200"
+						class="resize-none rounded-xl border-border"
 						placeholder="Jelaskan detail pemeliharaan..."
 					/>
 				</div>
 
-				<div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+				<div class="flex justify-end gap-3 border-t border-border pt-4">
 					<Button
 						variant="outline"
 						href="/{data.org_slug}/pemeliharaan"
@@ -306,7 +306,7 @@
 					>
 					<Button
 						type="submit"
-						class="h-11 gap-2 rounded-xl bg-slate-900 px-8 text-white shadow-sm hover:bg-slate-800"
+						class="h-11 gap-2 rounded-xl bg-primary px-8 text-primary-foreground shadow-sm hover:bg-primary/90"
 					>
 						<Save size={18} />
 						Simpan Data

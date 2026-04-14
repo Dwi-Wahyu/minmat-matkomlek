@@ -20,8 +20,8 @@
 		{href}
 		class="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200
         {isActive
-			? 'bg-white/20 text-yellow-400 shadow-sm'
-			: 'opacity-80 hover:bg-white/10 hover:opacity-100'}
+			? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-sm'
+			: 'opacity-80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:opacity-100'}
 		{sidebar.open ? 'gap-3' : 'justify-center'}"
 		title={!sidebar.open ? name : ''}
 	>

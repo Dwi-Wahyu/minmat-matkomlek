@@ -33,8 +33,8 @@
 	<button
 		type="button"
 		onclick={handleToggle}
-		class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all hover:bg-white/10
-        {isGroupActive ? 'text-yellow-400' : 'opacity-80'}"
+		class="flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
+        {isGroupActive ? 'text-sidebar-primary' : 'opacity-80'}"
 	>
 		<div class="flex items-center gap-3 shrink-0">
 			<Icon size={18} strokeWidth={2} class="opacity-70" />
@@ -55,16 +55,16 @@
 	{#if isOpen && sidebar.open}
 		<ul
 			transition:slide={{ duration: 300, easing: cubicOut }}
-			class="mt-1 ml-9 space-y-1 overflow-hidden border-l border-white/20 pl-2"
+			class="mt-1 ml-9 space-y-1 overflow-hidden border-l border-sidebar-border pl-2"
 		>
 			{#each children as child}
 				{@const isChildActive = page.url.pathname === child.path}
 				<li>
 					<a
 						href={child.path}
-						class="block rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-white/10
+						class="block rounded-md px-3 py-2 text-xs font-medium transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground
                         {isChildActive
-							? 'font-bold text-yellow-400 opacity-100'
+							? 'font-bold text-sidebar-primary opacity-100'
 							: 'opacity-60 hover:opacity-100'}"
 					>
 						{child.name}

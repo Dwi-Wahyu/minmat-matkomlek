@@ -75,19 +75,19 @@
 				<ArrowLeft size={18} />
 			</Button>
 			<div>
-				<h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
-					<Wrench size={24} class="text-slate-400" />
+				<h1 class="flex items-center gap-2 text-2xl font-bold text-foreground">
+					<Wrench size={24} class="text-muted-foreground" />
 					Edit Pemeliharaan
 				</h1>
-				<p class="text-sm text-slate-500">Perbarui detail jadwal pemeliharaan peralatan</p>
+				<p class="text-sm text-muted-foreground">Perbarui detail jadwal pemeliharaan peralatan</p>
 			</div>
 		</div>
 	</div>
 
-	<Card.Root class="overflow-hidden border-slate-200 shadow-sm">
-		<Card.Header class="border-b border-slate-100 bg-slate-50/50">
+	<Card.Root class="overflow-hidden border-border shadow-sm">
+		<Card.Header class="border-b border-border bg-muted/50">
 			<Card.Title
-				class="flex items-center gap-2 text-sm font-bold tracking-wider text-slate-500 uppercase"
+				class="flex items-center gap-2 text-sm font-bold tracking-wider text-muted-foreground uppercase"
 			>
 				<Info size={16} />
 				Informasi Pemeliharaan
@@ -111,7 +111,7 @@
 				<div class="grid grid-cols-1 gap-6 md:grid-cols-2">
 					<!-- Equipment -->
 					<div class="space-y-2">
-						<Label for="equipmentId" class="text-xs font-bold text-slate-500 uppercase"
+						<Label for="equipmentId" class="text-xs font-bold text-muted-foreground uppercase"
 							>Peralatan</Label
 						>
 						<div class="relative">
@@ -120,7 +120,7 @@
 								name="equipmentId"
 								bind:value={formData.equipmentId}
 								required
-								class="flex h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+								class="flex h-11 w-full appearance-none rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 							>
 								<option value="" disabled>Pilih alat</option>
 								{#each data.equipment as eq}
@@ -135,7 +135,7 @@
 
 					<!-- Tipe -->
 					<div class="space-y-2">
-						<Label for="maintenanceType" class="text-xs font-bold text-slate-500 uppercase"
+						<Label for="maintenanceType" class="text-xs font-bold text-muted-foreground uppercase"
 							>Tipe Pemeliharaan</Label
 						>
 						<select
@@ -143,7 +143,7 @@
 							name="maintenanceType"
 							bind:value={formData.maintenanceType}
 							required
-							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+							class="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 						>
 							{#each maintenanceTypes as type}
 								<option value={type}>{type}</option>
@@ -155,7 +155,7 @@
 					<div class="space-y-2">
 						<Label
 							for="scheduledDate"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<Calendar size={14} /> Tanggal Jadwal
 						</Label>
@@ -165,7 +165,7 @@
 							type="datetime-local"
 							bind:value={formData.scheduledDate}
 							required
-							class="h-11 rounded-xl border-slate-200"
+							class="h-11 rounded-xl border-border"
 						/>
 					</div>
 
@@ -173,7 +173,7 @@
 					<div class="space-y-2">
 						<Label
 							for="status"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<Activity size={14} /> Status
 						</Label>
@@ -182,7 +182,7 @@
 							name="status"
 							bind:value={formData.status}
 							required
-							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+							class="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 						>
 							{#each statusOptions as status}
 								<option value={status}>{status}</option>
@@ -194,7 +194,7 @@
 					<div class="space-y-2">
 						<Label
 							for="completionDate"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<Clock size={14} /> Tanggal Selesai (Opsional)
 						</Label>
@@ -203,7 +203,7 @@
 							name="completionDate"
 							type="datetime-local"
 							bind:value={formData.completionDate}
-							class="h-11 rounded-xl border-slate-200"
+							class="h-11 rounded-xl border-border"
 						/>
 					</div>
 
@@ -211,7 +211,7 @@
 					<div class="space-y-2">
 						<Label
 							for="technicianId"
-							class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase"
+							class="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase"
 						>
 							<UserIcon size={14} /> Teknisi (Opsional)
 						</Label>
@@ -219,7 +219,7 @@
 							id="technicianId"
 							name="technicianId"
 							bind:value={formData.technicianId}
-							class="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm transition-all outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+							class="flex h-11 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm transition-all outline-none focus:border-primary focus:ring-2 focus:ring-ring"
 						>
 							<option value="">Pilih teknisi</option>
 							{#each data.technicians as tech}
@@ -231,7 +231,7 @@
 
 				<!-- Deskripsi -->
 				<div class="space-y-2">
-					<Label for="description" class="text-xs font-bold text-slate-500 uppercase"
+					<Label for="description" class="text-xs font-bold text-muted-foreground uppercase"
 						>Deskripsi Pekerjaan</Label
 					>
 					<Textarea
@@ -240,12 +240,12 @@
 						bind:value={formData.description}
 						required
 						rows={4}
-						class="resize-none rounded-xl border-slate-200"
+						class="resize-none rounded-xl border-border"
 						placeholder="Jelaskan detail pemeliharaan..."
 					/>
 				</div>
 
-				<div class="flex justify-end gap-3 border-t border-slate-100 pt-4">
+				<div class="flex justify-end gap-3 border-t border-border pt-4">
 					<Button
 						variant="outline"
 						href="/{data.org_slug}/pemeliharaan"
@@ -253,7 +253,7 @@
 					>
 					<Button
 						type="submit"
-						class="h-11 gap-2 rounded-xl bg-slate-900 px-8 text-white shadow-sm hover:bg-slate-800"
+						class="h-11 gap-2 rounded-xl bg-primary px-8 text-primary-foreground shadow-sm hover:bg-primary/90"
 					>
 						<Save size={18} />
 						Simpan Perubahan

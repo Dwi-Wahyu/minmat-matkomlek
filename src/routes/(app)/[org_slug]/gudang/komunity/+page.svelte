@@ -30,11 +30,11 @@
 
 	function getConditionBadge(kondisi: string) {
 		const variants: Record<string, string> = {
-			BAIK: 'border-green-500 bg-green-50 text-green-600',
-			RUSAK_RINGAN: 'border-yellow-500 bg-yellow-50 text-yellow-600',
-			RUSAK_BERAT: 'border-red-500 bg-red-50 text-red-600'
+			BAIK: 'border-success bg-success/10 text-success',
+			RUSAK_RINGAN: 'border-primary bg-primary/10 text-primary',
+			RUSAK_BERAT: 'border-destructive bg-destructive/10 text-destructive'
 		};
-		return variants[kondisi] || 'border-gray-500 bg-gray-50 text-gray-600';
+		return variants[kondisi] || 'border-border bg-muted text-muted-foreground';
 	}
 
 	function getEquipmentTypeLabel(type: string | null) {
@@ -76,7 +76,7 @@
 						value={data.selectedOrgId}
 						onValueChange={handleOrgChange}
 					>
-						<SearchableSelect.Trigger class="w-[250px] border-2">
+						<SearchableSelect.Trigger class="w-[250px] border border-border">
 							<Building2 class="mr-2 h-4 w-4 opacity-50" />
 							{selectedOrgName}
 						</SearchableSelect.Trigger>
@@ -98,7 +98,7 @@
 						id="search"
 						type="text"
 						placeholder="Cari SN atau nama..."
-						class="w-[300px] border-2 pl-10"
+						class="w-[300px] border border-border pl-10"
 						bind:value={searchQuery}
 					/>
 				</div>
@@ -106,59 +106,59 @@
 		</div>
 	</div>
 
-	<div class="rounded-lg bg-card shadow-sm">
+	<div class="rounded-lg bg-card shadow-sm border border-border">
 		<div class="overflow-x-auto">
 			<Table.Table class="w-full border-collapse">
-				<Table.Header class="sticky top-0 ">
+				<Table.Header class="sticky top-0 bg-muted/50">
 					<!-- First header row -->
-					<Table.Row class="border-b-2 border-gray-300">
-						<!-- <Table.Head rowspan={2} class="border-r border-gray-200 text-center font-bold"
+					<Table.Row class="border-b-2 border-border">
+						<!-- <Table.Head rowspan={2} class="border-r border-border text-center font-bold"
 							>MATKOMPLEK</Table.Head
 						> -->
-						<Table.Head rowspan={2} class="border-r border-gray-200 text-center font-bold"
+						<Table.Head rowspan={2} class="border-r border-border text-center font-bold"
 							>Barang</Table.Head
 						>
-						<Table.Head rowspan={2} class="border-r border-gray-200 text-center  font-bold"
+						<Table.Head rowspan={2} class="border-r border-border text-center  font-bold"
 							>Stok</Table.Head
 						>
-						<Table.Head rowspan={2} class="border-r border-gray-200 text-center  font-bold"
+						<Table.Head rowspan={2} class="border-r border-border text-center  font-bold"
 							>Masuk</Table.Head
 						>
-						<Table.Head rowspan={2} class="border-r border-gray-200 text-center  font-bold"
+						<Table.Head rowspan={2} class="border-r border-border text-center  font-bold"
 							>Keluar</Table.Head
 						>
-						<Table.Head class="border-r border-gray-200 text-center font-bold" colspan={3}
+						<Table.Head class="border-r border-border text-center font-bold" colspan={3}
 							>Sisa</Table.Head
 						>
-						<Table.Head rowspan={2} class="border-r border-gray-200 text-center  font-bold"
+						<Table.Head rowspan={2} class="border-r border-border text-center  font-bold"
 							>Ket</Table.Head
 						>
 						<Table.Head rowspan={2} class=" font-bold">Tahun</Table.Head>
 					</Table.Row>
 
 					<!-- Second header row (sub-headers) -->
-					<Table.Row class="border-b-2 border-gray-300 bg-gray-50">
-						<Table.Head class="border-r border-gray-200 text-center font-semibold">B</Table.Head>
-						<Table.Head class="border-r border-gray-200 text-center font-semibold">RR</Table.Head>
-						<Table.Head class="border-r border-gray-200 text-center font-semibold">RB</Table.Head>
+					<Table.Row class="border-b-2 border-border bg-muted">
+						<Table.Head class="border-r border-border text-center font-semibold">B</Table.Head>
+						<Table.Head class="border-r border-border text-center font-semibold">RR</Table.Head>
+						<Table.Head class="border-r border-border text-center font-semibold">RB</Table.Head>
 					</Table.Row>
 				</Table.Header>
 
 				<Table.Body>
 					{#if paginatedItems.length === 0}
 						<Table.Row>
-							<Table.Cell colspan={12} class="border py-8 text-center text-gray-500">
+							<Table.Cell colspan={12} class="border border-border py-8 text-center text-muted-foreground">
 								Tidak ada data
 							</Table.Cell>
 						</Table.Row>
 					{:else}
 						{#each paginatedItems as item (item.id)}
-							<Table.Row class="border-b border-gray-200 hover:bg-gray-50">
-								<!-- <Table.Cell class="border-r border-gray-200 font-mono text-sm">
+							<Table.Row class="border-b border-border hover:bg-muted/50">
+								<!-- <Table.Cell class="border-r border-border font-mono text-sm">
 									{item.matkomplek}
 								</Table.Cell> -->
 
-								<Table.Cell class="border-r border-gray-200">
+								<Table.Cell class="border-r border-border">
 									<div class="font-semibold">{item.namaBarang}</div>
 									<div class="text-xs text-muted-foreground">
 										<!-- {getEquipmentTypeLabel(item.equipmentType)} -->
@@ -166,31 +166,31 @@
 									</div>
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200  font-semibold">
+								<Table.Cell class="border-r border-border  font-semibold">
 									{item.stok}
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200  text-green-600">
+								<Table.Cell class="border-r border-border  text-success">
 									{item.masuk}
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200  text-red-600">
+								<Table.Cell class="border-r border-border  text-destructive">
 									{item.keluar}
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200 text-center font-semibold">
+								<Table.Cell class="border-r border-border text-center font-semibold">
 									{item.sisaBaik}
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200 text-center text-yellow-600">
+								<Table.Cell class="border-r border-border text-center text-primary">
 									{item.sisaRR}
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200 text-center text-red-600">
+								<Table.Cell class="border-r border-border text-center text-destructive">
 									{item.sisaRB}
 								</Table.Cell>
 
-								<Table.Cell class="border-r border-gray-200">
+								<Table.Cell class="border-r border-border">
 									{item.keterangan}
 								</Table.Cell>
 
@@ -206,15 +206,15 @@
 
 		<!-- Pagination -->
 		{#if totalPages > 0}
-			<div class="flex items-center justify-between rounded-b-lg border-t px-6 py-4">
-				<div class="text-sm text-gray-600">
-					Menampilkan <span class="font-semibold">{(currentPage - 1) * itemsPerPage + 1}</span> -
-					<span class="font-semibold">{Math.min(currentPage * itemsPerPage, totalItems)}</span>
-					dari <span class="font-semibold">{totalItems}</span> data
+			<div class="flex items-center justify-between rounded-b-lg border-t border-border px-6 py-4">
+				<div class="text-sm text-muted-foreground">
+					Menampilkan <span class="font-semibold text-foreground">{(currentPage - 1) * itemsPerPage + 1}</span> -
+					<span class="font-semibold text-foreground">{Math.min(currentPage * itemsPerPage, totalItems)}</span>
+					dari <span class="font-semibold text-foreground">{totalItems}</span> data
 				</div>
 				<div class="flex gap-2">
 					<button
-						class="rounded-md border px-3 py-1 text-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+						class="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={() => (currentPage = Math.max(1, currentPage - 1))}
 						disabled={currentPage === 1}
 					>
@@ -222,7 +222,7 @@
 						Sebelumnya
 					</button>
 					<button
-						class="rounded-md border px-3 py-1 text-sm hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+						class="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
 						onclick={() => (currentPage = Math.min(totalPages, currentPage + 1))}
 						disabled={currentPage === totalPages}
 					>

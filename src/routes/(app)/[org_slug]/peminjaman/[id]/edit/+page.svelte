@@ -285,10 +285,10 @@
 												{#if eq.condition}
 													<Badge
 														class={eq.condition === 'BAIK'
-															? 'bg-green-100 text-green-800'
+															? 'bg-success/10 text-success'
 															: eq.condition === 'RUSAK_RINGAN'
-																? 'bg-yellow-100 text-yellow-800'
-																: 'bg-red-100 text-red-800'}
+																? 'bg-secondary/10 text-secondary'
+																: 'bg-destructive/10 text-destructive'}
 													>
 														{eq.condition.replace('_', ' ')}
 													</Badge>
@@ -347,7 +347,7 @@
 						<div class="rounded-lg bg-muted p-3">
 							<div class="flex items-center justify-between">
 								<span class="text-sm text-muted-foreground">Status</span>
-								<Badge class="bg-gray-100 text-gray-800">Draft</Badge>
+								<Badge class="bg-muted text-muted-foreground">Draft</Badge>
 							</div>
 						</div>
 
@@ -418,7 +418,7 @@
 
 						<!-- Info tambahan -->
 						<p class="text-xs text-muted-foreground">
-							<span class="text-red-500">*</span> Field wajib diisi
+							<span class="text-destructive">*</span> Field wajib diisi
 						</p>
 					</CardContent>
 				</Card>

@@ -60,11 +60,11 @@
 	}
 </script>
 
-<div class="flex h-screen p-6">
+<div class="flex h-screen p-6 bg-background text-foreground">
 	<main class="flex-1 overflow-y-auto">
 		<div class="mb-8 flex items-end justify-between">
 			<div>
-				<h1 class="text-3xl font-bold tracking-tight text-gray-900">LAP BTK - 16</h1>
+				<h1 class="text-3xl font-bold tracking-tight text-foreground">LAP BTK - 16</h1>
 				<p class="text-sm text-muted-foreground">Laporan Berita Tambah Kurang Material Matkomlek</p>
 			</div>
 
@@ -72,7 +72,7 @@
 				<div class="space-y-1.5">
 					<span class="text-xs font-bold text-muted-foreground uppercase">Tahun</span>
 					<Select.Root type="single" bind:value={selectedTahun}>
-						<Select.Trigger class="w-[100px] bg-white">{selectedTahun}</Select.Trigger>
+						<Select.Trigger class="w-[100px] bg-background">{selectedTahun}</Select.Trigger>
 						<Select.Content>
 							<Select.Item value="2026">2026</Select.Item>
 							<Select.Item value="2025">2025</Select.Item>
@@ -83,7 +83,7 @@
 				<div class="space-y-1.5">
 					<span class="text-xs font-bold text-muted-foreground uppercase">Triwulan</span>
 					<Select.Root type="single" bind:value={selectedTriwulan}>
-						<Select.Trigger class="w-[160px] bg-white">{selectedTriwulan}</Select.Trigger>
+						<Select.Trigger class="w-[160px] bg-background">{selectedTriwulan}</Select.Trigger>
 						<Select.Content>
 							<Select.Item value="Triwulan I">Triwulan I</Select.Item>
 							<Select.Item value="Triwulan II">Triwulan II</Select.Item>
@@ -95,7 +95,7 @@
 
 				<Button
 					onclick={exportToExcel}
-					class="h-10 gap-2 bg-[#2D5A47] text-white hover:bg-[#1E3D30]"
+					class="h-10 gap-2 bg-success text-success-foreground hover:bg-success/90"
 				>
 					<FileSpreadsheet size={18} />
 					Export Excel
@@ -103,13 +103,13 @@
 			</div>
 		</div>
 
-		<div class="mb-4 flex items-center justify-between gap-4 rounded-lg border bg-gray-50/50 p-3">
+		<div class="mb-4 flex items-center justify-between gap-4 rounded-lg border bg-muted/50 p-3">
 			<div class="relative w-full max-w-sm">
 				<Search class="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
 					placeholder="Cari material..."
 					bind:value={searchQuery}
-					class="h-9 border-gray-200 bg-white pl-10"
+					class="h-9 border-border bg-background pl-10"
 				/>
 			</div>
 			<div class="text-sm font-medium text-muted-foreground">
@@ -122,44 +122,44 @@
 				<Table.Header class="bg-muted/50">
 					<!-- Baris 1: Judul Utama -->
 					<Table.Row class="hover:bg-transparent">
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>NO</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>KAT/KODE/NSN</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>JENIS MATERIAL / MEREK TYPE</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>SAT</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>THN BUAT / PEROLEHAN</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>TOP/ DSPP</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" rowspan={2}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" rowspan={2}
 							>TW LALU</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black" colspan={3}
+						<Table.Head class="border-r border-b text-center font-bold text-foreground" colspan={3}
 							>JUMLAH</Table.Head
 						>
 
-						<!-- <Table.Head class="border-b text-center font-bold text-black" rowspan={2}
+						<!-- <Table.Head class="border-b text-center font-bold text-foreground" rowspan={2}
 							>KET</Table.Head
 						> -->
 					</Table.Row>
 
 					<Table.Row>
-						<Table.Head class="border-r border-b text-center font-bold text-black"
+						<Table.Head class="border-r border-b text-center font-bold text-foreground"
 							>TAMBAH</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black"
+						<Table.Head class="border-r border-b text-center font-bold text-foreground"
 							>KURANG</Table.Head
 						>
-						<Table.Head class="border-r border-b text-center font-bold text-black"
+						<Table.Head class="border-r border-b text-center font-bold text-foreground"
 							>SEKARANG</Table.Head
 						>
 					</Table.Row>
@@ -187,12 +187,12 @@
 					</Table.Row> -->
 
 					<!-- Baris 3: Penomoran Kolom (1 - 26) -->
-					<Table.Row class="bg-gray-100 hover:bg-transparent">
+					<Table.Row class="bg-muted hover:bg-transparent">
 						{#each Array(10) as _, i}
-							<Table.Head class="border-r border-b py-1 text-center font-bold text-black"
+							<Table.Head class="border-r border-b py-1 text-center font-bold text-foreground"
 								>{i + 1}</Table.Head
 							>
-						{/each}
+						{#/each}
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -215,8 +215,8 @@
 								>{row.twLaluJumlah}</Table.Cell
 							>
 							<!-- TAMBAH -->
-							<Table.Cell class="border-r text-center text-green-600">{row.tambahBaik}</Table.Cell>
-							<!-- <Table.Cell class="border-r text-center text-green-600"
+							<Table.Cell class="border-r text-center text-success">{row.tambahBaik}</Table.Cell>
+							<!-- <Table.Cell class="border-r text-center text-success"
 								>{row.tambahRusakRingan}</Table.Cell
 							> -->
 							<!-- JUMLAH -->
@@ -225,17 +225,17 @@
 							<!-- <Table.Cell class="border-r text-center">{row.jumlahRusakBerat}</Table.Cell> -->
 							<!-- <Table.Cell class="border-r bg-muted/20 text-center font-bold">{row.jumlahTotal}</Table.Cell> -->
 							<!-- KURANG -->
-							<!-- <Table.Cell class="border-r text-center text-red-600">{row.kurangBaik}</Table.Cell> -->
-							<!-- <Table.Cell class="border-r text-center text-red-600">{row.kurangRusakRingan}</Table.Cell> -->
-							<!-- <Table.Cell class="border-r text-center text-red-600">{row.kurangRusakBerat}</Table.Cell> -->
-							<Table.Cell class="border-r bg-muted/20 text-center font-bold text-red-600"
+							<!-- <Table.Cell class="border-r text-center text-destructive">{row.kurangBaik}</Table.Cell> -->
+							<!-- <Table.Cell class="border-r text-center text-destructive">{row.kurangRusakRingan}</Table.Cell> -->
+							<!-- <Table.Cell class="border-r text-center text-destructive">{row.kurangRusakBerat}</Table.Cell> -->
+							<Table.Cell class="border-r bg-muted/20 text-center font-bold text-destructive"
 								>{row.kurangJumlah}</Table.Cell
 							>
 							<!-- SEKARANG -->
 							<!-- <Table.Cell class="border-r text-center font-bold">{row.sekarangBaik}</Table.Cell> -->
 							<!-- <Table.Cell class="border-r text-center">{row.sekarangRusakRingan}</Table.Cell> -->
 							<!-- <Table.Cell class="border-r text-center">{row.sekarangRusakBerat}</Table.Cell> -->
-							<Table.Cell class="border-r bg-blue-50 text-center font-bold"
+							<Table.Cell class="border-r bg-primary/10 text-center font-bold"
 								>{row.sekarangJumlah}</Table.Cell
 							>
 							<!-- <Table.Cell class="text-center">{row.keterangan}</Table.Cell> -->

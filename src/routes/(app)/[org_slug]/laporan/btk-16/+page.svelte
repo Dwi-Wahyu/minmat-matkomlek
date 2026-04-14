@@ -44,63 +44,63 @@
 <div class="space-y-4 p-6">
 	<div class="flex items-end justify-between">
 		<div class="w-full text-center">
-			<h1 class="text-lg font-bold uppercase underline">LAPORAN KONDISI MATERIIL</h1>
-			<h2 class="text-md font-bold uppercase">( BTK - 16 )</h2>
+			<h1 class="text-lg font-bold uppercase underline text-foreground">LAPORAN KONDISI MATERIIL</h1>
+			<h2 class="text-md font-bold uppercase text-foreground">( BTK - 16 )</h2>
 		</div>
 		<button
 			onclick={exportCSV}
-			class="w-fit rounded bg-green-800 px-4 py-2 text-sm text-white shadow-sm hover:bg-green-900"
+			class="w-fit rounded bg-success px-4 py-2 text-sm text-success-foreground shadow-sm hover:opacity-90 transition-opacity"
 		>
 			Ekspor CSV
 		</button>
 	</div>
 
 	<div class="overflow-x-auto">
-		<table class="w-full border-collapse border border-black text-[11px]">
+		<table class="w-full border-collapse border border-border text-[11px] text-foreground">
 			<thead>
-				<tr class="bg-gray-100 uppercase">
-					<th class="w-8 border border-black px-1 py-2" rowspan="2">No Urt</th>
-					<th class="border border-black px-2 py-2" rowspan="2">No Kat / Kode Barang</th>
-					<th class="border border-black px-2 py-2" rowspan="2">Nama Material</th>
-					<th class="border border-black px-2 py-2" rowspan="2">Merek / Type</th>
-					<th class="border border-black px-2 py-2" rowspan="2">Satuan</th>
-					<th class="border border-black px-2 py-2" rowspan="2">No. Senjata / Rangka / Mesin</th>
-					<th class="border border-black px-2 py-1" colspan="3">Kondisi</th>
-					<th class="border border-black px-2 py-2" rowspan="2">Ket</th>
+				<tr class="bg-muted uppercase">
+					<th class="w-8 border border-border px-1 py-2" rowspan="2">No Urt</th>
+					<th class="border border-border px-2 py-2" rowspan="2">No Kat / Kode Barang</th>
+					<th class="border border-border px-2 py-2" rowspan="2">Nama Material</th>
+					<th class="border border-border px-2 py-2" rowspan="2">Merek / Type</th>
+					<th class="border border-border px-2 py-2" rowspan="2">Satuan</th>
+					<th class="border border-border px-2 py-2" rowspan="2">No. Senjata / Rangka / Mesin</th>
+					<th class="border border-border px-2 py-1" colspan="3">Kondisi</th>
+					<th class="border border-border px-2 py-2" rowspan="2">Ket</th>
 				</tr>
-				<tr class="bg-gray-100">
-					<th class="w-8 border border-black px-1 py-1 text-center">B</th>
-					<th class="w-8 border border-black px-1 py-1 text-center">RR</th>
-					<th class="w-8 border border-black px-1 py-1 text-center">RB</th>
+				<tr class="bg-muted">
+					<th class="w-8 border border-border px-1 py-1 text-center">B</th>
+					<th class="w-8 border border-border px-1 py-1 text-center">RR</th>
+					<th class="w-8 border border-border px-1 py-1 text-center">RB</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each data.reports as row, i}
-					<tr class="uppercase hover:bg-gray-50">
-						<td class="border border-black p-1 text-center">{i + 1}</td>
-						<td class="border border-black p-1 px-2 font-mono">{row.itemId.slice(0, 8)}</td>
-						<td class="border border-black p-1 px-2 font-semibold">{row.itemName}</td>
-						<td class="border border-black p-1 px-2">{row.brand || '-'}</td>
-						<td class="border border-black p-1 text-center">{row.unit}</td>
-						<td class="border border-black p-1 px-2 text-center">{row.serialNumber || '-'}</td>
+					<tr class="uppercase hover:bg-muted/50 transition-colors">
+						<td class="border border-border p-1 text-center">{i + 1}</td>
+						<td class="border border-border p-1 px-2 font-mono">{row.itemId.slice(0, 8)}</td>
+						<td class="border border-border p-1 px-2 font-semibold">{row.itemName}</td>
+						<td class="border border-border p-1 px-2">{row.brand || '-'}</td>
+						<td class="border border-border p-1 text-center">{row.unit}</td>
+						<td class="border border-border p-1 px-2 text-center">{row.serialNumber || '-'}</td>
 
-						<td class="border border-black p-1 text-center font-bold">
+						<td class="border border-border p-1 text-center font-bold">
 							{row.condition === 'BAIK' ? '✓' : ''}
 						</td>
-						<td class="border border-black p-1 text-center font-bold">
+						<td class="border border-border p-1 text-center font-bold">
 							{row.condition === 'RUSAK_RINGAN' ? '✓' : ''}
 						</td>
-						<td class="border border-black p-1 text-center font-bold">
+						<td class="border border-border p-1 text-center font-bold">
 							{row.condition === 'RUSAK_BERAT' ? '✓' : ''}
 						</td>
 
-						<td class="border border-black p-1 px-2 text-[10px] lowercase italic">
+						<td class="border border-border p-1 px-2 text-[10px] lowercase italic">
 							{row.itemDescription || '-'}
 						</td>
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="11" class="border border-black p-4 text-center text-gray-500">
+						<td colspan="11" class="border border-border p-4 text-center text-muted-foreground">
 							Data tidak tersedia.
 						</td>
 					</tr>

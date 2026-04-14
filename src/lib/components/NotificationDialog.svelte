@@ -24,21 +24,24 @@
 	// Konfigurasi style
 	const configs = {
 		success: {
-			color: 'text-green-500',
-			bg: 'bg-green-500',
-			border: 'border-t-green-500',
+			color: 'text-success',
+			bg: 'bg-success',
+			fg: 'text-success-foreground',
+			border: 'border-t-success',
 			icon: Check
 		},
 		error: {
-			color: 'text-red-500',
-			bg: 'bg-red-500',
-			border: 'border-t-red-500',
+			color: 'text-destructive',
+			bg: 'bg-destructive',
+			fg: 'text-destructive-foreground',
+			border: 'border-t-destructive',
 			icon: X
 		},
 		info: {
-			color: 'text-blue-500',
-			bg: 'bg-blue-500',
-			border: 'border-t-blue-500',
+			color: 'text-primary',
+			bg: 'bg-primary',
+			fg: 'text-primary-foreground',
+			border: 'border-t-primary',
 			icon: Info
 		}
 	};
@@ -53,7 +56,7 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class={cn('overflow-visible border-t-4 p-0 sm:max-w-[400px]', config.border)}>
 		<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
-			<div class={cn('rounded-full border-4 border-white p-3 text-white shadow-lg', config.bg)}>
+			<div class={cn('rounded-full border-4 border-card p-3 shadow-lg', config.bg, config.fg)}>
 				{#if config.icon}
 					{@const Icon = config.icon}
 					<Icon size={32} strokeWidth={3} />
@@ -75,7 +78,7 @@
 				<!-- <Dialog.Close class={buttonVariants({ variant: 'outline' })}>
 					Continue shopping
 				</Dialog.Close> -->
-				<Button class={cn('min-w-[120px]', config.bg, 'hover:opacity-90')} onclick={onAction}>
+				<Button class={cn('min-w-[120px]', config.bg, config.fg, 'hover:opacity-90')} onclick={onAction}>
 					{actionLabel}
 				</Button>
 			</div>

@@ -73,9 +73,9 @@
 	}
 
 	const priorityColors = {
-		LOW: 'bg-blue-100 text-blue-700',
-		MEDIUM: 'bg-yellow-100 text-yellow-700',
-		HIGH: 'bg-red-100 text-red-700'
+		LOW: 'bg-primary/10 text-primary',
+		MEDIUM: 'bg-warning/10 text-warning',
+		HIGH: 'bg-destructive/10 text-destructive'
 	};
 </script>
 
@@ -91,7 +91,7 @@
 				<Bell class="h-5 w-5" />
 				{#if unreadCount > 0}
 					<span
-						class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white"
+						class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground"
 					>
 						{unreadCount > 99 ? '99+' : unreadCount}
 					</span>

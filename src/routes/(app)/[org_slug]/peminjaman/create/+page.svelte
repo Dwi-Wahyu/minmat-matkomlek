@@ -123,11 +123,11 @@
 	function getConditionColor(condition: string) {
 		switch (condition) {
 			case 'BAIK':
-				return 'bg-green-100 text-green-700 border-green-200';
+				return 'bg-success/10 text-success border-success/20';
 			case 'RUSAK_RINGAN':
-				return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+				return 'bg-primary/10 text-primary border-primary/20';
 			case 'RUSAK_BERAT':
-				return 'bg-red-100 text-red-700 border-red-200';
+				return 'bg-destructive/10 text-destructive border-destructive/20';
 			default:
 				return 'bg-muted text-muted-foreground';
 		}
@@ -248,14 +248,14 @@
 
 					{#if purpose === 'PERINTAH_LANGSUNG'}
 						<div class="col-span-2 space-y-2">
-							<Label for="overrideReason" class="font-bold text-orange-700"
+							<Label for="overrideReason" class="font-bold text-primary"
 								>Keterangan Perintah Langsung (Wajib)</Label
 							>
 							<Input
 								id="overrideReason"
 								name="overrideReason"
 								placeholder="Contoh: Operasi mendesak atas perintah pimpinan..."
-								class="border-orange-200 focus-visible:ring-orange-500"
+								class="border-primary/20 focus-visible:ring-primary"
 								required
 							/>
 						</div>
@@ -338,11 +338,11 @@
 					{:else}
 						<div class="grid gap-3">
 							{#each filteredEquipment as group (group.id)}
-								<div class="flex flex-col overflow-hidden rounded-lg border">
+								<div class="flex flex-col overflow-hidden rounded-lg border border-border">
 									<div
 										class="flex items-center gap-4 p-4 transition-colors {selectedItems[group.id]
 											?.selected
-											? 'border-blue-200 bg-blue-50/50'
+											? 'border-primary/20 bg-primary/5'
 											: 'hover:bg-muted/30'}"
 									>
 										<Checkbox
@@ -353,10 +353,10 @@
 
 										<div class="flex-1">
 											<div class="flex items-center gap-2">
-												<Label for={group.id} class="block cursor-pointer font-bold">
+												<Label for={group.id} class="block cursor-pointer font-bold text-foreground">
 													{group.name}
 												</Label>
-												<span class="text-xs font-bold text-blue-600"
+												<span class="text-xs font-bold text-primary"
 													>{group.totalAvailable} Unit</span
 												>
 											</div>
@@ -450,7 +450,7 @@
 															</Badge>
 															<Badge
 																variant="outline"
-																class="h-4 border-blue-200 bg-blue-50 px-1 py-0 text-[10px] text-blue-700"
+																class="h-4 border-primary/20 bg-primary/10 px-1 py-0 text-[10px] text-primary"
 															>
 																{eq.status}
 															</Badge>
@@ -459,7 +459,7 @@
 												{/each}
 											</div>
 											{#if selectedItems[group.id]?.manualIds.length > 0}
-												<p class="mt-3 text-[10px] text-blue-600 italic">
+												<p class="mt-3 text-[10px] text-primary italic">
 													* Mode pemilihan manual aktif. Jumlah dikunci sesuai unit yang dipilih.
 												</p>
 											{/if}

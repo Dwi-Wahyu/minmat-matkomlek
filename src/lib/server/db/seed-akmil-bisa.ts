@@ -343,6 +343,16 @@ async function main() {
 	console.log(`\n  🏢 Organisasi : ${existingOrg.name} (${existingOrg.id})`);
 	console.log(`  🏭 Gudang     : ${existingWarehouse.name} (${existingWarehouse.id})`);
 
+	// ─── Cleanup Data Existing (AKMIL Only) ───────────────────────────────────
+	console.log('\n🧹 Step 0: Membersihkan data AKMIL lama...');
+	// Hapus movement yang terkait dengan organizationId AKMIL
+	await db.delete(schema.movement).where(sql`${schema.movement.organizationId} = ${existingOrg.id}`);
+	// Hapus equipment yang terkait dengan organizationId AKMIL
+	await db.delete(schema.equipment).where(sql`${schema.equipment.organizationId} = ${existingOrg.id}`);
+	// Hapus stock yang terkait dengan warehouseId AKMIL
+	await db.delete(schema.stock).where(sql`${schema.stock.warehouseId} = ${existingWarehouse.id}`);
+	console.log('  ✅ Data lama berhasil dibersihkan.');
+
 	// await seedOrganizationAndWarehouse();
 	await seedItems();
 	await seedEquipment(existingOrg.id, existingWarehouse.id);

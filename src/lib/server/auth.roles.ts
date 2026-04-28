@@ -32,3 +32,11 @@ export const operatorPusatDanDaerah = accessControl.newRole({
 export const operatorBinmatDanBekharrah = accessControl.newRole({
 	inventory: ['view', 'update']
 });
+
+export const roles = {
+	superadmin,
+	pimpinan,
+	kakomlek,
+	operatorPusatDanDaerah,
+	operatorBinmatDanBekharrah
+};

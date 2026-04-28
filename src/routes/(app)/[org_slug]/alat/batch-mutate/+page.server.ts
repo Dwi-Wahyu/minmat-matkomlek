@@ -4,17 +4,31 @@ import { eq, inArray } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = async ({ params, locals, url }) => {
 	const { user } = locals;
 	if (!user) throw redirect(302, '/login');
 
+	const ids = url.searchParams.get('ids')?.split(',') || [];
+
 	// Fetch available warehouses for the organization
-	const warehouses = await db.query.warehouse.findMany({
-		where: eq(warehouse.organizationId, user.organization.id)
-	});
+	const [warehouses, selectedEquipment] = await Promise.all([
+		db.query.warehouse.findMany({
+			where: eq(warehouse.organizationId, user.organization.id)
+		}),
+		ids.length > 0
+			? db.query.equipment.findMany({
+					where: inArray(equipment.id, ids),
+					with: {
+						item: true,
+						warehouse: true
+					}
+				})
+			: Promise.resolve([])
+	]);
 
 	return {
-		warehouses
+		warehouses,
+		selectedEquipment
 	};
 };
 
@@ -44,13 +58,12 @@ export const actions: Actions = {
 					if (!currentEquipment) continue;
 
 					let fromWhId = currentEquipment.warehouseId;
-					let toWhId = toWarehouseId;
+					let toWhId = toWarehouseId || null; // Sanitize empty string to null
 					let equipmentUpdate: any = {};
 
 					switch (eventType) {
 						case 'RECEIVE':
 							fromWhId = null;
-							toWhId = toWarehouseId;
 							equipmentUpdate = { warehouseId: toWhId, status: 'READY' };
 							break;
 						case 'ISSUE':
@@ -60,17 +73,14 @@ export const actions: Actions = {
 							break;
 						case 'TRANSFER_OUT':
 							fromWhId = currentEquipment.warehouseId;
-							toWhId = toWarehouseId;
 							equipmentUpdate = { warehouseId: toWhId, status: 'TRANSIT' };
 							break;
 						case 'TRANSFER_IN':
 							fromWhId = currentEquipment.warehouseId;
-							toWhId = toWarehouseId;
 							equipmentUpdate = { warehouseId: toWhId, status: 'READY' };
 							break;
 						default:
 							fromWhId = currentEquipment.warehouseId;
-							toWhId = toWarehouseId;
 					}
 
 					// Update Equipment

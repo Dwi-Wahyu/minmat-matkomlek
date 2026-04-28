@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { accessControl } from './auth.roles';
+import { accessControl, roles } from './auth.roles';
 
 /**
  * Memastikan user sudah login. Jika tidak, lempar error 401.
@@ -14,10 +14,10 @@ export function requireAuth(locals: App.Locals) {
 /**
  * Memastikan user memiliki role tertentu. Jika tidak, lempar error 403.
  */
-export function requireRole(locals: App.Locals, roles: string | string[]) {
+export function requireRole(locals: App.Locals, rolesAllowed: string | string[]) {
 	const { user } = requireAuth(locals);
 
-	const allowedRoles = Array.isArray(roles) ? roles : [roles];
+	const allowedRoles = Array.isArray(rolesAllowed) ? rolesAllowed : [rolesAllowed];
 
 	if (!allowedRoles.includes(user.role)) {
 		throw error(403, `Forbidden: Anda tidak memiliki akses (${user.role} tidak diizinkan)`);
@@ -37,11 +37,16 @@ export function requirePermission(
 ) {
 	const { user } = requireAuth(locals);
 
-	// Cek apakah role user memiliki permission untuk resource dan action tersebut
-	// @ts-ignore - accessControl.check is dynamic based on schema
-	const hasPermission = accessControl.check(user.role, resource, action);
+	// Ambil objek role dari map, jika tidak ada fallback ke user.role (string)
+	const userRole = roles[user.role as keyof typeof roles] || user.role;
 
-	if (!hasPermission) {
+	// Cek apakah role user memiliki permission untuk resource dan action tersebut
+	const { can } = accessControl.authorize(userRole as any, {
+		resource: resource as any,
+		action: action as any
+	});
+
+	if (!can) {
 		throw error(403, `Forbidden: Role ${user.role} tidak memiliki izin ${action} pada ${resource}`);
 	}
 

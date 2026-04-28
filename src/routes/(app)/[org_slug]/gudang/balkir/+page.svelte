@@ -75,9 +75,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-4">
 		<header class="flex flex-col gap-1">
 			<h1 class="text-2xl font-bold tracking-tight">Gudang Balkir</h1>
-			<p class="text-sm text-muted-foreground">
-				Barang dalam tahap persiapan penghapusan atau ekspedisi.
-			</p>
+			<p class="text-sm text-muted-foreground">Barang dalam tahap persiapan penghapusan.</p>
 			{#if data.isMabes}
 				<p class="text-xs text-muted-foreground">
 					Kesatuan: <span class="font-semibold text-primary">{selectedOrgName}</span>
@@ -124,7 +122,7 @@
 		</div>
 	</div>
 
-	<div class="rounded-lg bg-card shadow-sm border">
+	<div class="rounded-lg border bg-card shadow-sm">
 		<Table.Root>
 			<Table.Header>
 				<Table.Row>
@@ -183,7 +181,7 @@
 	type="error"
 	title="Hapus Permanen Barang?"
 	description="Tindakan ini akan mencatat status ISSUE (Keluar Permanen) untuk {selectedItemName}. Barang akan dihapus dari stok aktif dan tidak dapat dikembalikan."
-	loading={loading}
+	{loading}
 	onAction={handleConfirm}
 />
 

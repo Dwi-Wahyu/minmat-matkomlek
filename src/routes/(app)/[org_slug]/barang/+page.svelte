@@ -1,18 +1,52 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import * as Table from '$lib/components/ui/table';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 	import * as Select from '$lib/components/ui/select';
 	import ConfirmationDialog from '$lib/components/ConfirmationDialog.svelte';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
-	import { Search, Plus, Pencil, Trash2, ArrowRightLeft, Ellipsis } from '@lucide/svelte';
+	import {
+		Search,
+		Plus,
+		Pencil,
+		Trash2,
+		ArrowRightLeft,
+		Ellipsis,
+		Package,
+		Info,
+		Box
+	} from '@lucide/svelte';
 
 	let { data } = $props();
+
+	// Selection state
+	let selectedIds = $state<string[]>([]);
+	const isAllSelected = $derived(
+		data.consumables.length > 0 && selectedIds.length === data.consumables.length
+	);
+
+	function toggleSelectAll() {
+		if (isAllSelected) {
+			selectedIds = [];
+		} else {
+			selectedIds = data.consumables.map((item) => item.id);
+		}
+	}
+
+	function toggleSelect(id: string) {
+		if (selectedIds.includes(id)) {
+			selectedIds = selectedIds.filter((i) => i !== id);
+		} else {
+			selectedIds = [...selectedIds, id];
+		}
+	}
 
 	// State Dialogs
 	let notificationOpen = $state(false);
@@ -87,18 +121,32 @@
 </script>
 
 <div class="flex flex-col gap-6 p-6">
-	<header class="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+	<div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
 		<div>
-			<h1 class="text-3xl font-bold tracking-tight text-foreground">Barang Habis Pakai</h1>
+			<h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+				Barang Habis Pakai
+			</h1>
 			<p class="text-sm text-muted-foreground">
-				Total {data.pagination.totalItems} jenis barang ditemukan di organisasi Anda.
+				Kelola stok barang habis pakai dan materiil konsumsi.
 			</p>
 		</div>
-		<Button href="/{page.params.org_slug}/barang/create" class="gap-2">
-			<Plus class="size-4" />
-			Tambah Barang
-		</Button>
-	</header>
+		<div class="flex flex-wrap gap-2 md:gap-3">
+			<!-- <Button
+				href="/{page.params.org_slug}/barang/batch-mutate{selectedIds.length > 0
+					? `?ids=${selectedIds.join(',')}`
+					: ''}"
+				variant="outline"
+				class="gap-2"
+			>
+				<ArrowRightLeft class="size-4" />
+				Mutasi Batch {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+			</Button> -->
+			<Button href="/{page.params.org_slug}/barang/create" class="gap-2">
+				<Plus class="size-4" />
+				Tambah Barang
+			</Button>
+		</div>
+	</div>
 
 	<div class="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm">
 		<div class="relative flex-1">
@@ -106,7 +154,7 @@
 			<form method="GET" class="w-full">
 				<Input
 					name="name"
-					placeholder="Cari nama barang..."
+					placeholder="Cari nama barang atau deskripsi..."
 					class="pl-10"
 					value={data.filters.name}
 				/>
@@ -115,118 +163,127 @@
 	</div>
 
 	<div class="overflow-hidden rounded-lg border bg-card shadow-sm">
-		<Table.Root>
-			<Table.Header>
-				<Table.Row class="bg-muted/50">
-					<Table.Head class="text-center">No</Table.Head>
-					<Table.Head>Nama Barang</Table.Head>
-					<Table.Head class="text-center">Stok</Table.Head>
-					<Table.Head>Satuan Dasar</Table.Head>
-					<Table.Head class="text-right">Aksi</Table.Head>
-				</Table.Row>
-			</Table.Header>
-			<Table.Body>
-				{#each data.consumables as item, i (item.id)}
-					<Table.Row class="transition-colors hover:bg-muted/30">
-						<Table.Cell class="text-center font-medium text-muted-foreground">
-							{i + 1 + (data.pagination.currentPage - 1) * 10}
-						</Table.Cell>
-						<Table.Cell>
-							<div class="flex flex-col">
-								<span class="font-semibold text-foreground">{item.name}</span>
-								<span class="font-mono text-[10px] text-muted-foreground"
-									>ID: {item.id.slice(0, 8)}</span
-								>
-							</div>
-						</Table.Cell>
-						<Table.Cell class="text-center">
-							<div class="flex flex-col items-center">
-								<span class="">
-									{formatStock(item.totalStock || 0, item.baseUnit, item.conversions || [])}
-								</span>
-								{#if item.conversions?.length > 0 && Number(item.totalStock || 0) > 0}
-									<span class="text-[10px] text-muted-foreground italic">
-										(Total: {Number(item.totalStock)}
-										{item.baseUnit})
+		<div class="overflow-x-auto">
+			<Table.Root>
+				<Table.Header>
+					<Table.Row class="bg-muted/50">
+						<Table.Head class="w-[50px] text-center">
+							<Checkbox
+								checked={isAllSelected}
+								onCheckedChange={toggleSelectAll}
+								aria-label="Pilih semua"
+							/>
+						</Table.Head>
+						<Table.Head class="w-[50px] text-center">No</Table.Head>
+						<Table.Head class="min-w-[200px]">Nama Barang</Table.Head>
+						<Table.Head class="text-center">Total Stok</Table.Head>
+						<Table.Head>Satuan Dasar</Table.Head>
+						<Table.Head class="text-right">Aksi</Table.Head>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{#each data.consumables as item, i (item.id)}
+						<Table.Row class="transition-colors hover:bg-muted/30">
+							<Table.Cell class="text-center">
+								<Checkbox
+									checked={selectedIds.includes(item.id)}
+									onCheckedChange={() => toggleSelect(item.id)}
+									aria-label="Pilih item"
+								/>
+							</Table.Cell>
+							<Table.Cell class="text-center font-medium text-muted-foreground">
+								{i + 1 + (data.pagination.currentPage - 1) * 10}
+							</Table.Cell>
+							<Table.Cell>
+								<div class="flex flex-col gap-1">
+									<span class="font-semibold text-foreground">{item.name}</span>
+									<span class="font-mono text-[10px] text-muted-foreground"
+										>ID: {item.id.slice(0, 8)}</span
+									>
+								</div>
+							</Table.Cell>
+							<Table.Cell class="text-center">
+								<div class="flex flex-col items-center gap-0.5">
+									<span class="font-medium text-foreground">
+										{formatStock(item.totalStock || 0, item.baseUnit, item.conversions || [])}
 									</span>
-								{/if}
-							</div>
-						</Table.Cell>
-						<Table.Cell>
-							<span
-								class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
-							>
-								{item.baseUnit}
-							</span>
-						</Table.Cell>
-						<Table.Cell class="text-right">
-							<div class="flex justify-end gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									class="h-8 gap-1.5 px-2"
-									onclick={() => openMutate(item.id)}
-								>
-									<ArrowRightLeft class="size-3.5" />
-									<span class="hidden lg:inline">Mutasi</span>
-								</Button>
-
-								<Button
-									variant="outline"
-									size="sm"
-									class="h-8 gap-1.5 px-2"
-									onclick={() => goto(`/${page.params.org_slug}/barang/edit/${item.id}`)}
-								>
-									<Pencil class="size-3.5" />
-									<span class="hidden lg:inline">Edit</span>
-								</Button>
-
-								<Button
-									variant="outline"
-									size="sm"
-									class="h-8 border-red-200 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
-									onclick={() => confirmDelete(item.id)}
-								>
-									<Trash2 class="size-3.5" />
-								</Button>
-							</div>
-						</Table.Cell>
-					</Table.Row>
-				{:else}
-					<Table.Row>
-						<Table.Cell colspan={5} class="h-32 text-center text-muted-foreground italic">
-							Tidak ada data barang ditemukan.
-						</Table.Cell>
-					</Table.Row>
-				{/each}
-			</Table.Body>
-		</Table.Root>
+									{#if item.conversions?.length > 0 && Number(item.totalStock || 0) > 0}
+										<span class="text-[10px] text-muted-foreground italic">
+											(Total: {Number(item.totalStock)}
+											{item.baseUnit})
+										</span>
+									{/if}
+								</div>
+							</Table.Cell>
+							<Table.Cell>
+								<Badge variant="outline" class="border-blue-200 bg-blue-50 text-blue-700">
+									{item.baseUnit}
+								</Badge>
+							</Table.Cell>
+							<Table.Cell class="text-right">
+								<DropdownMenu.Root>
+									<DropdownMenu.Trigger>
+										<Ellipsis class="size-4" />
+									</DropdownMenu.Trigger>
+									<DropdownMenu.Content align="end" class="w-48">
+										<DropdownMenu.Item onclick={() => openMutate(item.id)} class="gap-2">
+											<ArrowRightLeft class="size-4" /> Mutasi Manual
+										</DropdownMenu.Item>
+										<DropdownMenu.Item
+											onclick={() => goto(`/${page.params.org_slug}/barang/edit/${item.id}`)}
+											class="gap-2"
+										>
+											<Pencil class="size-4" /> Edit Data
+										</DropdownMenu.Item>
+										<DropdownMenu.Separator />
+										<DropdownMenu.Item
+											onclick={() => confirmDelete(item.id)}
+											class="gap-2 text-red-600"
+										>
+											<Trash2 class="size-4" /> Hapus Barang
+										</DropdownMenu.Item>
+									</DropdownMenu.Content>
+								</DropdownMenu.Root>
+							</Table.Cell>
+						</Table.Row>
+					{:else}
+						<Table.Row>
+							<Table.Cell colspan={6} class="h-32 text-center text-muted-foreground italic">
+								Tidak ada data barang ditemukan.
+							</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+		</div>
 
 		{#if data.pagination.totalPages > 1}
-			<footer class="flex items-center justify-between border-t bg-muted/20 px-6 py-4">
-				<div class="text-xs font-medium text-muted-foreground">
+			<div
+				class="flex flex-col gap-4 border-t bg-muted/20 px-6 py-4 md:flex-row md:items-center md:justify-between"
+			>
+				<p class="text-sm font-medium text-muted-foreground">
 					Halaman <span class="font-bold text-foreground">{data.pagination.currentPage}</span> dari {data
 						.pagination.totalPages}
-				</div>
+				</p>
 				<div class="flex gap-2">
 					<Button
 						variant="outline"
 						size="sm"
-						href="?page={data.pagination.currentPage - 1}&name={data.filters.name}"
 						disabled={data.pagination.currentPage <= 1}
+						href="?page={data.pagination.currentPage - 1}&name={data.filters.name}"
 					>
 						Sebelumnya
 					</Button>
 					<Button
 						variant="outline"
 						size="sm"
-						href="?page={data.pagination.currentPage + 1}&name={data.filters.name}"
 						disabled={data.pagination.currentPage >= data.pagination.totalPages}
+						href="?page={data.pagination.currentPage + 1}&name={data.filters.name}"
 					>
 						Selanjutnya
 					</Button>
 				</div>
-			</footer>
+			</div>
 		{/if}
 	</div>
 </div>

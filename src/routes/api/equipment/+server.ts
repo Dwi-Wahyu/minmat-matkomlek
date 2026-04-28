@@ -2,13 +2,16 @@ import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { equipment, item } from '$lib/server/db/schema';
 import { requirePermission } from '$lib/server/auth.utils';
-import { eq, and, or, like } from 'drizzle-orm';
+import { eq, and, or, like, desc, sql } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
 // GET: List equipment untuk organisasi user saat ini
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const { user } = requirePermission(locals, 'inventory', 'view');
 	const search = url.searchParams.get('q');
+	const page = Number(url.searchParams.get('page')) || 1;
+	const limit = Number(url.searchParams.get('limit')) || 20;
+	const offset = (page - 1) * limit;
 
 	let whereClause;
 	
@@ -30,10 +33,29 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 			item: true,
 			warehouse: true
 		},
-		limit: search ? 20 : 100 // Limit results if searching
+		limit: limit,
+		offset: offset,
+		orderBy: [desc(equipment.createdAt)]
 	});
 
-	return json(list);
+	// Get total count for pagination metadata
+	const totalResult = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(equipment)
+		.innerJoin(item, eq(equipment.itemId, item.id))
+		.where(whereClause);
+
+	const total = totalResult[0].count;
+
+	return json({
+		data: list,
+		pagination: {
+			total,
+			page,
+			limit,
+			totalPages: Math.ceil(total / limit)
+		}
+	});
 };
 
 // POST: Tambah equipment baru

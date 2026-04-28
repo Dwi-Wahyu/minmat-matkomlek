@@ -156,7 +156,7 @@
 				</div>
 				<div class="flex-1 space-y-4 p-5">
 					<div class="flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Masuk (Pra-Hapus)</span>
+						<span class="text-muted-foreground">Masuk</span>
 						<span class="font-bold text-foreground">{balkir.incoming}</span>
 					</div>
 					<div class="flex items-center justify-between text-sm">

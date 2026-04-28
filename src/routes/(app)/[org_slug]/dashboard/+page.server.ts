@@ -121,6 +121,30 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			)
 		);
 
+	const [balkirIncoming] = await db
+		.select({ count: count() })
+		.from(movement)
+		.where(
+			and(
+				eq(movement.organizationId, orgId),
+				eq(movement.classification, 'BALKIR'),
+				eq(movement.eventType, 'RECEIVE'),
+				gte(movement.createdAt, firstDayOfMonth)
+			)
+		);
+
+	const [balkirOutgoing] = await db
+		.select({ count: count() })
+		.from(movement)
+		.where(
+			and(
+				eq(movement.organizationId, orgId),
+				eq(movement.classification, 'BALKIR'),
+				eq(movement.eventType, 'ISSUE'),
+				gte(movement.createdAt, firstDayOfMonth)
+			)
+		);
+
 	// Daftar Alat Terbaru - Menggunakan join eksplisit untuk menghindari LEFT JOIN LATERAL
 	const recentEquipmentsResults = await db
 		.select({
@@ -156,7 +180,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			total: Number(balkirTotal?.count) || 0,
 			used: Number(komoditiActive?.count) || 0,
 			ready: Number(balkirTotal?.count) || 0,
-			damaged: Number(balkirDamaged?.count) || 0
+			damaged: Number(balkirDamaged?.count) || 0,
+			incoming: Number(balkirIncoming?.count) || 0,
+			outgoing: Number(balkirOutgoing?.count) || 0
 		},
 		recentEquipments: recentEquipmentsResults.map((r) => ({
 			id: r.equipment.id,

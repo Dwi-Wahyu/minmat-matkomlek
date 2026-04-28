@@ -63,23 +63,21 @@ export const item = mysqlTable('item', {
 	// Only applicable if type is ASSET
 	equipmentType: mysqlEnum('equipment_type', ['ALKOMLEK', 'PERNIKA_LEK']),
 
-	baseUnit: mysqlEnum('base_unit', [
-		'PCS',
-		'BOX',
-		'METER',
-		'LOT',
-		'BUAH',
-		'ROLL',
-		'UNIT',
-		'SET',
-		'PAKET',
-		'CABINET'
-	]).notNull(),
+	baseUnit: varchar('base_unit', { length: 21 })
+		.notNull()
+		.references(() => unit.id), // Reference to unit table
 
 	description: text('description'),
 
 	imagePath: text('image_path'),
 
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const unit = mysqlTable('unit', {
+	id: varchar('id', { length: 21 }).primaryKey(),
+	name: varchar('name', { length: 20 }).notNull().unique(), // PCS, BOX, etc
+	description: text('description'),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
@@ -336,6 +334,21 @@ export const auditLog = mysqlTable('audit_log', {
 	oldValue: text('old_value'),
 	newValue: text('new_value'),
 
+	createdAt: timestamp('created_at').defaultNow().notNull()
+});
+
+export const importLog = mysqlTable('import_log', {
+	id: varchar('id', { length: 36 }).primaryKey(),
+	organizationId: varchar('organization_id', { length: 36 }).references(() => organization.id, {
+		onDelete: 'cascade'
+	}),
+	userId: varchar('user_id', { length: 36 }).references(() => user.id),
+	filename: varchar('filename', { length: 255 }).notNull(),
+	status: mysqlEnum('status', ['SUCCESS', 'FAILED', 'PARTIAL']).default('SUCCESS'),
+	totalRows: decimal('total_rows', { precision: 12, scale: 0 }).default('0'),
+	successRows: decimal('success_rows', { precision: 12, scale: 0 }).default('0'),
+	errorRows: decimal('error_rows', { precision: 12, scale: 0 }).default('0'),
+	errorMessage: text('error_message'),
 	createdAt: timestamp('created_at').defaultNow().notNull()
 });
 
@@ -624,6 +637,17 @@ export const buildingRelations = relations(building, ({ one }) => ({
 	organization: one(organization, {
 		fields: [building.organizationId],
 		references: [organization.id]
+	})
+}));
+
+export const importLogRelations = relations(importLog, ({ one }) => ({
+	organization: one(organization, {
+		fields: [importLog.organizationId],
+		references: [organization.id]
+	}),
+	user: one(user, {
+		fields: [importLog.userId],
+		references: [user.id]
 	})
 }));
 

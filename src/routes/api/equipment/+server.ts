@@ -1,20 +1,36 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
-import { equipment } from '$lib/server/db/schema';
+import { equipment, item } from '$lib/server/db/schema';
 import { requirePermission } from '$lib/server/auth.utils';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, like } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 
 // GET: List equipment untuk organisasi user saat ini
-export const GET: RequestHandler = async ({ locals }) => {
+export const GET: RequestHandler = async ({ locals, url }) => {
 	const { user } = requirePermission(locals, 'inventory', 'view');
+	const search = url.searchParams.get('q');
+
+	let whereClause;
+	
+	if (search) {
+		whereClause = and(
+			eq(equipment.organizationId, user.organization.id),
+			or(
+				like(equipment.serialNumber, `%${search}%`),
+				like(item.name, `%${search}%`)
+			)
+		);
+	} else {
+		whereClause = eq(equipment.organizationId, user.organization.id);
+	}
 
 	const list = await db.query.equipment.findMany({
-		where: eq(equipment.organizationId, user.organization.id),
+		where: whereClause,
 		with: {
 			item: true,
 			warehouse: true
-		}
+		},
+		limit: search ? 20 : 100 // Limit results if searching
 	});
 
 	return json(list);

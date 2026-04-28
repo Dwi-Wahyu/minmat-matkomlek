@@ -134,23 +134,16 @@
 				</Card.Title>
 			</Card.Header>
 			<Card.Content class="space-y-6">
-				<div class="flex items-start gap-3">
-					<Building2 class="mt-0.5 size-5 text-muted-foreground" />
-					<div>
-						<span class="text-xs font-semibold text-muted-foreground uppercase">Satuan Pemilik</span
-						>
-						<p class="text-sm font-medium">
-							{data.equipment.warehouse?.organization?.name || 'Tidak diketahui'}
-						</p>
-					</div>
+				<div class="space-y-1">
+					<span class="text-xs font-semibold text-muted-foreground uppercase">Satuan Pemilik</span>
+					<p class="text-sm font-medium">
+						{data.equipment.warehouse?.organization?.name || 'Tidak diketahui'}
+					</p>
 				</div>
-				<div class="flex items-start gap-3">
-					<Package class="mt-0.5 size-5 text-muted-foreground" />
-					<div>
-						<span class="text-xs font-semibold text-muted-foreground uppercase">Gudang</span>
-						<p class="text-sm font-medium">{data.equipment.warehouse?.name || 'Tanpa Gudang'}</p>
-						<p class="text-xs text-muted-foreground">{data.equipment.warehouse?.location || '-'}</p>
-					</div>
+				<div class="space-y-1">
+					<span class="text-xs font-semibold text-muted-foreground uppercase">Gudang</span>
+					<p class="text-sm font-medium">{data.equipment.warehouse?.name || 'Tanpa Gudang'}</p>
+					<p class="text-xs text-muted-foreground">{data.equipment.warehouse?.location || '-'}</p>
 				</div>
 				<div class="border-t pt-4">
 					<div class="flex items-center gap-2 text-xs text-muted-foreground">
@@ -171,7 +164,7 @@
 			</Card.Header>
 			<Card.Content>
 				<div
-					class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-slate-200 md:before:left-1/2 md:before:ml-0"
+					class="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:h-full before:w-0.5 before:bg-border md:before:left-1/2 md:before:ml-0"
 				>
 					{#each data.history as log (log.id)}
 						<div
@@ -179,22 +172,22 @@
 						>
 							<!-- Icon/Dot -->
 							<div
-								class="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-white bg-blue-500 text-white shadow md:absolute md:left-1/2 md:-translate-x-1/2"
+								class="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow md:absolute md:left-1/2 md:-translate-x-1/2"
 							>
 								<Package class="size-5" />
 							</div>
 
 							<!-- Content Card -->
 							<div
-								class="w-[calc(100%-4rem)] rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:w-[calc(50%-2.5rem)]"
+								class="w-[calc(100%-4rem)] rounded-lg border border-border bg-muted/30 p-4 shadow-sm md:w-[calc(50%-2.5rem)]"
 							>
 								<div class="mb-1 flex items-center justify-between space-x-2">
-									<div class="font-bold text-slate-900">{log.eventType.replace('_', ' ')}</div>
-									<time class="font-mono text-xs text-blue-500"
+									<div class="font-bold text-foreground">{log.eventType.replace('_', ' ')}</div>
+									<time class="font-mono text-xs text-primary"
 										>{new Date(log.createdAt).toLocaleDateString()}</time
 									>
 								</div>
-								<div class="text-sm text-slate-500">
+								<div class="text-sm text-muted-foreground">
 									{log.notes ||
 										`Pergerakan material dari ${log.fromWarehouse?.name || 'Sumber'} ke ${log.toWarehouse?.name || 'Tujuan'}`}
 								</div>

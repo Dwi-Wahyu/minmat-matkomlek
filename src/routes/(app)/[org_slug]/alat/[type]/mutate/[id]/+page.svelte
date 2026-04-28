@@ -7,8 +7,17 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as Card from '$lib/components/ui/card';
-	import { ArrowLeft, ArrowRightLeft, Package, MapPin, ClipboardList } from '@lucide/svelte';
+	import {
+		ArrowLeft,
+		ArrowRightLeft,
+		Package,
+		MapPin,
+		ClipboardList,
+		BookOpen,
+		Info
+	} from '@lucide/svelte';
 	import NotificationDialog from '$lib/components/NotificationDialog.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	let { data, form } = $props();
 
@@ -16,6 +25,8 @@
 	let notificationOpen = $state(false);
 	let notificationMsg = $state('');
 	let notificationType = $state<'success' | 'error' | 'info'>('success');
+
+	let guideOpen = $state(false);
 
 	// Form states
 	let eventType = $state('RECEIVE');
@@ -47,10 +58,25 @@
 		{ value: 'TRANSFER_IN', label: 'Transfer Masuk (Internal)' }
 	];
 
+	const eventDescriptions = {
+		RECEIVE:
+			'Barang masuk dari luar sistem (pengadaan/hibah). Gudang asal kosong, status menjadi READY.',
+		ISSUE:
+			'Barang keluar sistem secara permanen (penghapusan/lelang). Gudang tujuan kosong, data alat dihapus dari stok aktif.',
+		TRANSFER_OUT:
+			'Kirim barang antar gudang internal. Status menjadi TRANSIT (tidak bisa dipinjam/digunakan di jalan).',
+		TRANSFER_IN:
+			'Konfirmasi barang sampai di gudang tujuan. Status kembali menjadi READY di lokasi baru.'
+	};
+
+	const selectedEventDescription = $derived(
+		eventDescriptions[eventType as keyof typeof eventDescriptions]
+	);
+
 	const classifications = [
-		{ value: 'KOMUNITY', label: 'Komunity (Satuan Pemakai)' },
-		{ value: 'BALKIR', label: 'Balkir (Dalam Pengiriman)' },
-		{ value: 'TRANSITO', label: 'Transito (Gudang Transit)' }
+		{ value: 'KOMUNITY', label: 'Komunity' },
+		{ value: 'BALKIR', label: 'Balkir' },
+		{ value: 'TRANSITO', label: 'Transito' }
 	];
 
 	// Derived logic for UI
@@ -59,16 +85,22 @@
 </script>
 
 <div class="mx-auto flex max-w-4xl flex-col gap-6 py-6">
-	<div class="flex items-center gap-4 px-6 md:px-0">
-		<Button variant="outline" size="icon" onclick={handleBack}>
-			<ArrowLeft class="size-4" />
-		</Button>
-		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Catat Mutasi Alat</h1>
-			<p class="text-sm text-muted-foreground">
-				Sesuai aturan bisnis mutasi inventaris Puskomlekad.
-			</p>
+	<div class="flex items-center justify-between px-6 md:px-0">
+		<div class="flex items-center gap-4">
+			<Button variant="outline" size="icon" onclick={handleBack}>
+				<ArrowLeft class="size-4" />
+			</Button>
+			<div>
+				<h1 class="text-2xl font-bold tracking-tight">Catat Mutasi Alat</h1>
+				<p class="text-sm text-muted-foreground">
+					Sesuai aturan bisnis mutasi inventaris Puskomlekad.
+				</p>
+			</div>
 		</div>
+		<Button variant="outline" class="gap-2" onclick={() => (guideOpen = true)}>
+			<BookOpen class="size-4" />
+			Baca Panduan
+		</Button>
 	</div>
 
 	<div class="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -169,6 +201,15 @@
 								</select>
 							</div>
 						</div>
+
+						{#if selectedEventDescription}
+							<div
+								class="flex items-start gap-3 rounded-lg border bg-blue-50/50 p-3 text-sm text-blue-900 dark:bg-blue-900/20 dark:text-blue-200"
+							>
+								<Info class="mt-0.5 size-4 shrink-0" />
+								<p>{selectedEventDescription}</p>
+							</div>
+						{/if}
 
 						<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 							<div class="space-y-2">
@@ -276,3 +317,93 @@
 		}
 	}}
 />
+
+<Dialog.Root bind:open={guideOpen}>
+	<Dialog.Content class="sm:max-w-3xl">
+		<Dialog.Header>
+			<Dialog.Title>Panduan Alur Mutasi Inventaris</Dialog.Title>
+			<Dialog.Description>
+				Penjelasan mengenai alur perpindahan barang di sistem Inventaris Puskomlekad.
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="max-h-[65vh] space-y-6 overflow-y-auto py-4 pr-2">
+			<section class="space-y-4">
+				<h3 class="flex items-center gap-2 font-semibold text-primary">
+					<Info class="size-4" />
+					Jenis Kejadian
+				</h3>
+				<div class="grid gap-4 sm:grid-cols-2">
+					<div class="rounded-lg border p-3 shadow-sm">
+						<p class="font-medium text-blue-600 dark:text-blue-400">
+							Penerimaan / Masuk (Eksternal)
+						</p>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Barang masuk dari sumber luar (pengadaan, hibah, dll). Gudang asal dikosongkan karena
+							datang dari luar sistem. Alat otomatis siap digunakan (READY).
+						</p>
+					</div>
+					<div class="rounded-lg border p-3 shadow-sm">
+						<p class="font-medium text-orange-600 dark:text-orange-400">
+							Pengeluaran / Keluar (Permanen)
+						</p>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Barang keluar dari sistem secara permanen (lelang, penghapusan, atau rusak total).
+							Gudang tujuan dikosongkan karena barang tidak lagi dalam pengawasan sistem.
+						</p>
+					</div>
+					<div class="rounded-lg border p-3 shadow-sm">
+						<p class="font-medium text-purple-600 dark:text-purple-400">
+							Transfer Keluar (Internal)
+						</p>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Mengirim barang antar gudang dalam organisasi. Alat akan berstatus TRANSIT (dalam
+							perjalanan) dan tidak bisa dipinjam/digunakan sementara waktu.
+						</p>
+					</div>
+					<div class="rounded-lg border p-3 shadow-sm">
+						<p class="font-medium text-green-600 dark:text-green-400">
+							Transfer Masuk (Internal)
+						</p>
+						<p class="mt-1 text-sm text-muted-foreground">
+							Konfirmasi bahwa barang yang dikirim (Transfer Keluar) telah sampai di tujuan. Alat
+							kembali berstatus READY di gudang yang baru.
+						</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="space-y-4 border-t pt-6">
+				<h3 class="flex items-center gap-2 font-semibold text-primary">
+					<Package class="size-4" />
+					Klasifikasi
+				</h3>
+				<div class="grid gap-3 sm:grid-cols-3">
+					<div class="rounded-md bg-muted p-3 text-sm">
+						<p class="mb-1 font-semibold">Komunity</p>
+						<p class="text-xs text-muted-foreground">
+							Digunakan jika mutasi adalah serah terima ke satuan pemakai (siap pakai).
+						</p>
+					</div>
+					<div class="rounded-md bg-muted p-3 text-sm">
+						<p class="mb-1 font-semibold">Balkir</p>
+						<p class="text-xs text-muted-foreground">
+							Digunakan jika mutasi dalam rangka persiapan penghapusan atau ekspedisi.
+						</p>
+					</div>
+					<div class="rounded-md bg-muted p-3 text-sm">
+						<p class="mb-1 font-semibold">Transito</p>
+						<p class="text-xs text-muted-foreground">
+							Titipan sementara di gudang transit sebelum dikirim ke lokasi akhir.
+						</p>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<Dialog.Footer>
+			<Button onclick={() => (guideOpen = false)}>Mengerti</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+

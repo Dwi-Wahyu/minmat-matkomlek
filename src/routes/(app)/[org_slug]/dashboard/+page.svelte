@@ -28,8 +28,8 @@
 	// Data untuk chart pergerakan
 	const chartData = $derived([
 		{ label: 'Transito', value: transito.incoming, color: 'bg-blue-500' },
-		{ label: 'Komoditi', value: komoditi.outgoing, color: 'bg-orange-500' },
-		{ label: 'Balkir', value: transito.outgoing, color: 'bg-emerald-500' }
+		{ label: 'Komunity', value: komoditi.outgoing, color: 'bg-orange-500' },
+		{ label: 'Balkir', value: balkir.incoming, color: 'bg-emerald-500' }
 	]);
 
 	const maxChartValue = $derived(Math.max(...chartData.map((d) => d.value), 10));
@@ -73,7 +73,9 @@
 				<AlertTriangle size={24} />
 			</div>
 			<div>
-				<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Barang Rusak</p>
+				<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					Barang Rusak
+				</p>
 				<p class="text-2xl font-bold text-foreground">{summary.damagedItems.toLocaleString()}</p>
 			</div>
 		</div>
@@ -88,7 +90,9 @@
 				<p class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
 					Mutasi Bulan Ini
 				</p>
-				<p class="text-2xl font-bold text-foreground">{summary.monthlyMovements.toLocaleString()}</p>
+				<p class="text-2xl font-bold text-foreground">
+					{summary.monthlyMovements.toLocaleString()}
+				</p>
 			</div>
 		</div>
 	</div>
@@ -97,9 +101,7 @@
 		<!-- Logistic Groups -->
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-3 lg:col-span-2">
 			<!-- Transito -->
-			<div
-				class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-			>
+			<div class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 				<div class="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-4">
 					<Truck size={18} class="text-primary" />
 					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Transito</h3>
@@ -123,12 +125,10 @@
 			</div>
 
 			<!-- Komoditi -->
-			<div
-				class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-			>
+			<div class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 				<div class="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-4">
 					<Home size={18} class="text-success" />
-					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Komoditi</h3>
+					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Komunity</h3>
 				</div>
 				<div class="flex-1 space-y-4 p-5">
 					<div class="flex items-center justify-between text-sm">
@@ -149,29 +149,25 @@
 			</div>
 
 			<!-- Balkir -->
-			<div
-				class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-			>
+			<div class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
 				<div class="flex items-center gap-2 border-b border-border bg-muted/50 px-5 py-4">
-					<Warehouse size={18} class="text-primary" />
+					<Warehouse size={18} class="text-destructive" />
 					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Balkir</h3>
 				</div>
 				<div class="flex-1 space-y-4 p-5">
 					<div class="flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Inventaris</span>
-						<span class="font-bold text-foreground">{balkir.total.toLocaleString()}</span>
+						<span class="text-muted-foreground">Masuk (Pra-Hapus)</span>
+						<span class="font-bold text-foreground">{balkir.incoming}</span>
 					</div>
 					<div class="flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Digunakan</span>
-						<span class="font-bold text-foreground"
-							>{balkir.used.toLocaleString()}</span
-						>
+						<span class="text-muted-foreground">Barang Dihapus</span>
+						<span class="font-bold text-foreground">{balkir.outgoing}</span>
 					</div>
-					<div class="flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Cadangan</span>
-						<span class="font-bold text-foreground"
-							>{balkir.ready.toLocaleString()}</span
-						>
+					<div
+						class="flex items-center justify-between border-t border-border pt-2 text-sm font-semibold text-destructive"
+					>
+						<span>Total di Balkir</span>
+						<span>{balkir.incoming - balkir.outgoing} Item</span>
 					</div>
 				</div>
 			</div>
@@ -183,7 +179,9 @@
 						<BarChart2 size={18} class="text-muted-foreground" />
 						Pergerakan Barang
 					</h3>
-					<div class="text-xs font-medium text-muted-foreground">Periode {new Date().getFullYear()}</div>
+					<div class="text-xs font-medium text-muted-foreground">
+						Periode {new Date().getFullYear()}
+					</div>
 				</div>
 
 				<div class="flex h-48 items-end gap-8 border-b border-border px-4 pb-2">
@@ -225,7 +223,9 @@
 				</div>
 				<div class="space-y-6">
 					<div>
-						<div class="mb-2 flex justify-between text-xs font-bold text-muted-foreground uppercase">
+						<div
+							class="mb-2 flex justify-between text-xs font-bold text-muted-foreground uppercase"
+						>
 							<span>Kesiapan Material</span>
 							<span>{Math.round((balkir.ready / (balkir.total || 1)) * 100)}%</span>
 						</div>
@@ -237,7 +237,9 @@
 						</div>
 					</div>
 					<div>
-						<div class="mb-2 flex justify-between text-xs font-bold text-muted-foreground uppercase">
+						<div
+							class="mb-2 flex justify-between text-xs font-bold text-muted-foreground uppercase"
+						>
 							<span>Tingkat Kerusakan</span>
 							<span
 								>{Math.round((summary.damagedItems / (summary.activeInventory || 1)) * 100)}%</span
@@ -270,7 +272,9 @@
 							</div>
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-sm font-bold text-foreground">{eq.name}</p>
-								<p class="font-mono text-[10px] text-muted-foreground">{eq.serialNumber || 'No SN'}</p>
+								<p class="font-mono text-[10px] text-muted-foreground">
+									{eq.serialNumber || 'No SN'}
+								</p>
 							</div>
 							<div
 								class="rounded px-2 py-1 text-[10px] font-bold uppercase {eq.condition === 'BAIK'

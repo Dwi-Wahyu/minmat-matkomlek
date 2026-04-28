@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { buttonVariants } from '$lib/components/ui/button/index.js';
+	import { buttonVariants, Button } from '$lib/components/ui/button/index.js';
 	import { Check, X, Info, Loader2 } from '@lucide/svelte';
 	import { cn } from '$lib/utils.js';
 
@@ -94,11 +94,11 @@
 					{cancelLabel}
 				</AlertDialog.Cancel>
 
-				<AlertDialog.Action
+				<Button
 					class={cn('min-w-[120px]', config.bg, config.fg, 'hover:opacity-90')}
-					onclick={(e) => {
-						e.preventDefault();
+					onclick={() => {
 						onAction();
+						if (!loading) open = false;
 					}}
 					disabled={loading}
 				>
@@ -108,7 +108,7 @@
 					{:else}
 						{actionLabel}
 					{/if}
-				</AlertDialog.Action>
+				</Button>
 			</AlertDialog.Footer>
 		</div>
 	</AlertDialog.Content>

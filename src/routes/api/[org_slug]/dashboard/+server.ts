@@ -37,6 +37,8 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 		komoditiOutgoing,
 		balkirTotal,
 		balkirDamaged,
+		balkirIncoming,
+		balkirOutgoing,
 		recentEquipments
 	] = await Promise.all([
 		// Summary Stats
@@ -115,6 +117,28 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 					sql`${equipment.condition} != 'BAIK'`
 				)
 			),
+		db
+			.select({ count: count() })
+			.from(movement)
+			.where(
+				and(
+					eq(movement.organizationId, orgId),
+					eq(movement.classification, 'BALKIR'),
+					eq(movement.eventType, 'RECEIVE'),
+					gte(movement.createdAt, firstDayOfMonth)
+				)
+			),
+		db
+			.select({ count: count() })
+			.from(movement)
+			.where(
+				and(
+					eq(movement.organizationId, orgId),
+					eq(movement.classification, 'BALKIR'),
+					eq(movement.eventType, 'ISSUE'),
+					gte(movement.createdAt, firstDayOfMonth)
+				)
+			),
 
 		// Recent Equipment
 		db
@@ -157,7 +181,9 @@ export const GET: RequestHandler = async ({ locals, params }) => {
 		balkir: {
 			total: Number(balkirTotal[0]?.count) || 0,
 			ready: Number(balkirTotal[0]?.count) || 0,
-			damaged: Number(balkirDamaged[0]?.count) || 0
+			damaged: Number(balkirDamaged[0]?.count) || 0,
+			incoming: Number(balkirIncoming[0]?.count) || 0,
+			outgoing: Number(balkirOutgoing[0]?.count) || 0
 		},
 		recentEquipments: recentEquipments.map((e) => ({
 			id: e.id,

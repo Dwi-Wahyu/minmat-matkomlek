@@ -119,8 +119,8 @@
 			children: [
 				{ name: 'Alkomlek', path: getPath('/alat/alkomlek') },
 				{ name: 'Alpernika & Lek', path: getPath('/alat/alpernika') },
-				{ name: 'Barang Habis Pakai', path: getPath('/barang') },
-				{ name: 'Import Inventaris', path: getPath('/materiil/import') }
+				{ name: 'Barang Habis Pakai', path: getPath('/barang') }
+				// { name: 'Import Inventaris', path: getPath('/materiil/import') }
 			]
 		},
 		{
@@ -168,8 +168,8 @@
 					path: getPath('/pengaturan/pengguna'),
 					role: ['superadmin', 'parent']
 				},
-				{ name: 'Audit Log', path: getPath('/audit-log'), role: ['superadmin', 'kakomlek'] },
-				{ name: 'Konversi Unit', path: getPath('/konversi-unit') }
+				{ name: 'Audit Log', path: getPath('/audit-log'), role: ['superadmin', 'kakomlek'] }
+				// { name: 'Konversi Unit', path: getPath('/konversi-unit') }
 			]
 		}
 	];

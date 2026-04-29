@@ -6,17 +6,30 @@
 		Activity,
 		Search,
 		Calendar,
-		Info
+		Info,
+		X,
+		Filter
 	} from '@lucide/svelte';
 	import * as Table from '$lib/components/ui/table';
 	import { Badge } from '$lib/components/ui/badge';
 	import Modal from '$lib/components/Modal.svelte';
+	import Input from '@/components/ui/input/input.svelte';
+	import Button from '@/components/ui/button/button.svelte';
+	import { Label } from '@/components/ui/label';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 
 	let { data } = $props();
 
 	const logs = $derived(data.logs);
 	let selectedLog = $state<any>(null);
 	let isModalOpen = $state(false);
+	let isFilterModalOpen = $state(false);
+
+	// Filter states
+	let searchQuery = $state(data.filters.search || '');
+	let startDate = $state(data.filters.startDate || '');
+	let endDate = $state(data.filters.endDate || '');
 
 	function formatDate(date: Date) {
 		return new Intl.DateTimeFormat('id-ID', {
@@ -43,61 +56,96 @@
 	function formatJson(json: string | null) {
 		if (!json || json === 'null') return '-';
 		try {
-			// Jika sudah object, stringify saja
 			if (typeof json === 'object') return JSON.stringify(json, null, 2);
-
-			// Jika string, coba parse
 			const obj = JSON.parse(json);
 			return JSON.stringify(obj, null, 2);
 		} catch (e) {
 			return json;
 		}
 	}
+
+	function applyFilters() {
+		const url = new URL(page.url);
+		if (searchQuery) url.searchParams.set('search', searchQuery);
+		else url.searchParams.delete('search');
+
+		if (startDate) url.searchParams.set('start_date', startDate);
+		else url.searchParams.delete('start_date');
+
+		if (endDate) url.searchParams.set('end_date', endDate);
+		else url.searchParams.delete('end_date');
+
+		goto(url.toString(), { keepFocus: true, noScroll: true });
+		isFilterModalOpen = false;
+	}
+
+	function resetFilters() {
+		searchQuery = '';
+		startDate = '';
+		endDate = '';
+		applyFilters();
+	}
+
+	let searchTimeout: any;
+	function handleSearchInput() {
+		clearTimeout(searchTimeout);
+		searchTimeout = setTimeout(() => {
+			applyFilters();
+		}, 500);
+	}
 </script>
 
 <div class="space-y-8 p-8">
 	<div class="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
 		<div>
-			<h1 class="flex items-center gap-3 text-2xl font-bold text-slate-900">Audit Log Sistem</h1>
+			<h1 class="flex items-center gap-3 text-2xl font-bold">Audit Log Sistem</h1>
 			<p class="mt-1 text-slate-500">Memantau seluruh aktivitas perubahan data dalam sistem</p>
 		</div>
 
 		<div class="flex gap-3">
 			<div class="relative">
 				<Search class="absolute top-1/2 left-3 -translate-y-1/2 text-slate-400" size={16} />
-				<input
+				<Input
 					type="text"
 					placeholder="Cari aksi, tabel..."
-					class="w-64 rounded-lg border border-slate-200 bg-white py-2 pr-4 pl-10 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900"
+					class="w-64 pl-10"
+					bind:value={searchQuery}
+					oninput={handleSearchInput}
 				/>
 			</div>
-			<button
-				class="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-slate-50"
-			>
+			<Button variant="outline" onclick={() => (isFilterModalOpen = true)} class="gap-2">
 				<Calendar size={16} />
-				Filter Tanggal
-			</button>
+				{startDate || endDate ? 'Filter Aktif' : 'Filter Tanggal'}
+				{#if startDate || endDate}
+					<Badge variant="secondary" class="ml-1 h-5 px-1 text-[10px]">1</Badge>
+				{/if}
+			</Button>
+			{#if searchQuery || startDate || endDate}
+				<Button variant="ghost" onclick={resetFilters} class="px-2 text-slate-500">
+					<X size={16} />
+				</Button>
+			{/if}
 		</div>
 	</div>
 
-	<div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+	<div class="overflow-hidden rounded-2xl shadow-sm border">
 		<Table.Root>
-			<Table.Header class="bg-slate-50/50">
+			<Table.Header>
 				<Table.Row>
 					<Table.Head>Waktu</Table.Head>
 					<Table.Head>Pengguna</Table.Head>
 					<Table.Head>Aksi</Table.Head>
 					<Table.Head>Tabel</Table.Head>
 					<Table.Head>ID Record</Table.Head>
-					<!-- <Table.Head class="text-right">Detail</Table.Head> -->
+					<Table.Head class="text-right">Detail</Table.Head>
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
 				{#each logs as log (log.id)}
 					<Table.Row class="transition-colors hover:bg-slate-50/50">
-						<Table.Cell class="font-medium text-slate-600">
+						<Table.Cell class="font-medium">
 							<div class="flex flex-col">
-								<span class="text-slate-900">{formatDate(log.createdAt)}</span>
+								<span class="">{formatDate(log.createdAt)}</span>
 							</div>
 						</Table.Cell>
 						<Table.Cell>
@@ -108,9 +156,7 @@
 									<User size={14} />
 								</div>
 								<div class="flex flex-col">
-									<span class="text-sm font-semibold text-slate-900"
-										>{log.userName || 'System'}</span
-									>
+									<span class="text-sm font-semibold">{log.userName || 'System'}</span>
 									<span class="font-mono text-[10px] text-slate-400">{log.userEmail || ''}</span>
 								</div>
 							</div>
@@ -129,14 +175,14 @@
 						<Table.Cell>
 							<span class="font-mono text-[10px] text-slate-400">{log.recordId || '-'}</span>
 						</Table.Cell>
-						<!-- <Table.Cell class="text-right">
+						<Table.Cell class="text-right">
 							<button
 								onclick={() => showDetail(log)}
 								class="rounded-lg p-2 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-900"
 							>
 								<Activity size={16} title="Lihat Perubahan" />
 							</button>
-						</Table.Cell> -->
+						</Table.Cell>
 					</Table.Row>
 				{:else}
 					<Table.Row>
@@ -151,25 +197,45 @@
 			</Table.Body>
 		</Table.Root>
 
-		<div class="flex items-center justify-between border-t border-slate-100 bg-slate-50/30 p-4">
-			<span class="text-xs font-medium text-slate-500 italic"
-				>Menampilkan 100 aktivitas terbaru</span
-			>
+		<div class="flex items-center justify-between border-t p-4">
+			<span class="text-xs font-medium text-slate-400 italic">
+				{#if logs.length > 0}
+					Menampilkan {logs.length} aktivitas terbaru
+				{:else}
+					Tidak ada data yang ditemukan
+				{/if}
+			</span>
 			<div class="flex gap-2">
-				<button
-					disabled
-					class="cursor-not-allowed rounded border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-400"
-					>Previous</button
-				>
-				<button
-					disabled
-					class="cursor-not-allowed rounded border border-slate-200 bg-white px-3 py-1 text-xs font-bold text-slate-400"
-					>Next</button
-				>
+				<Button variant="outline" size="sm" disabled>Previous</Button>
+				<Button variant="outline" size="sm" disabled>Next</Button>
 			</div>
 		</div>
 	</div>
 </div>
+
+<!-- Modal Filter Tanggal -->
+<Modal
+	bind:show={isFilterModalOpen}
+	title="Filter Berdasarkan Tanggal"
+	description="Pilih rentang tanggal untuk mempersempit hasil audit log."
+>
+	<div class="space-y-4 py-4">
+		<div class="grid grid-cols-2 gap-4">
+			<div class="space-y-2">
+				<Label for="start-date">Tanggal Mulai</Label>
+				<Input type="date" id="start-date" bind:value={startDate} />
+			</div>
+			<div class="space-y-2">
+				<Label for="end-date">Tanggal Akhir</Label>
+				<Input type="date" id="end-date" bind:value={endDate} />
+			</div>
+		</div>
+	</div>
+	<div class="flex justify-end gap-3 pt-4">
+		<Button variant="outline" onclick={() => (isFilterModalOpen = false)}>Batal</Button>
+		<Button onclick={applyFilters}>Terapkan Filter</Button>
+	</div>
+</Modal>
 
 <Modal
 	bind:show={isModalOpen}

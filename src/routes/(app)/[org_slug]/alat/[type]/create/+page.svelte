@@ -80,7 +80,7 @@
 			<div class="space-y-2">
 				<Label for="serialNumber">Serial Number (SN)</Label>
 				<Input name="serialNumber" id="serialNumber" placeholder="Contoh: SN-12345678" />
-				<p class="text-xs text-muted-foreground">Nomor seri unik untuk alat ini (opsional).</p>
+				<p class="text-xs text-muted-foreground">Nomor seri unik untuk alat ini</p>
 			</div>
 
 			<div class="space-y-2">
@@ -127,6 +127,21 @@
 					<option value="TRANSIT">Transit (Dalam Pengiriman)</option>
 					<option value="MAINTENANCE">Maintenance (Perbaikan)</option>
 				</select>
+			</div>
+
+			<div class="space-y-2">
+				<Label for="classification">Klasifikasi Mutasi</Label>
+				<select
+					name="classification"
+					id="classification"
+					class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+				>
+					<option value="">-- Pilih Klasifikasi --</option>
+					<option value="TRANSITO">Transito</option>
+					<option value="BALKIR">Balkir</option>
+					<option value="KOMUNITY">Komunity</option>
+				</select>
+				<p class="text-xs text-muted-foreground">Catat mutasi awal saat penambahan alat.</p>
 			</div>
 
 			<div class="space-y-2 md:col-span-2">

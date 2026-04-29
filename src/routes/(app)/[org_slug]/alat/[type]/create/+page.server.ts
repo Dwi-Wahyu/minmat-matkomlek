@@ -1,5 +1,5 @@
 import { db } from '$lib/server/db';
-import { equipment, item, warehouse, organization } from '$lib/server/db/schema';
+import { equipment, item, warehouse, organization, movement } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
@@ -29,7 +29,7 @@ export const load: PageServerLoad = async ({ params }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, params }) => {
+	default: async ({ request, params, locals }) => {
 		const { org_slug, type } = params;
 		const formData = await request.formData();
 
@@ -39,6 +39,11 @@ export const actions: Actions = {
 		const warehouseId = formData.get('warehouseId') as string;
 		const condition = formData.get('condition') as 'BAIK' | 'RUSAK_RINGAN' | 'RUSAK_BERAT';
 		const status = formData.get('status') as 'READY' | 'IN_USE' | 'TRANSIT' | 'MAINTENANCE';
+		const classification = formData.get('classification') as
+			| 'BALKIR'
+			| 'KOMUNITY'
+			| 'TRANSITO'
+			| '';
 		const imageFile = formData.get('image') as File;
 
 		if (!itemName) return fail(400, { message: 'Nama Alat harus diisi' });
@@ -56,7 +61,7 @@ export const actions: Actions = {
 				.from(organization)
 				.where(eq(organization.slug, org_slug))
 				.limit(1);
-			
+
 			if (orgResults.length === 0) return fail(404, { message: 'Organisasi tidak ditemukan' });
 			const org = orgResults[0];
 
@@ -86,8 +91,9 @@ export const actions: Actions = {
 				});
 			}
 
+			const equipmentId = crypto.randomUUID();
 			await db.insert(equipment).values({
-				id: crypto.randomUUID(),
+				id: equipmentId,
 				itemId,
 				serialNumber: serialNumber || null,
 				brand: brand || null,
@@ -96,6 +102,22 @@ export const actions: Actions = {
 				condition: condition || 'BAIK',
 				status: status || 'READY'
 			});
+
+			// Create movement record if classification is provided
+			if (classification) {
+				await db.insert(movement).values({
+					id: crypto.randomUUID(),
+					itemId,
+					equipmentId,
+					eventType: 'RECEIVE',
+					qty: '1.0000',
+					classification,
+					toWarehouseId: warehouseId || null,
+					organizationId: org.id,
+					picId: locals.user?.id,
+					notes: `Penambahan alat baru dengan klasifikasi ${classification}`
+				});
+			}
 
 			return { success: true, message: 'Alat berhasil ditambahkan' };
 		} catch (error: any) {

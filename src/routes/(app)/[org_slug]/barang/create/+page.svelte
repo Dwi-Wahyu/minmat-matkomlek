@@ -78,9 +78,7 @@
 				<ArrowLeft size={18} />
 			</Button>
 			<div>
-				<h1 class="flex items-center gap-2 text-2xl font-bold text-slate-900">
-					Tambah Barang Habis Pakai
-				</h1>
+				<h1 class="flex items-center gap-2 text-2xl font-bold">Tambah Barang Habis Pakai</h1>
 				<p class="text-sm text-slate-500">Daftarkan definisi barang baru untuk inventaris.</p>
 			</div>
 		</div>
@@ -88,11 +86,6 @@
 
 	<Card.Root>
 		<Card.Content class="space-y-6">
-			<div>
-				<Card.Title>Tambah Barang Habis Pakai</Card.Title>
-				<Card.Description>Daftarkan definisi barang baru untuk inventaris.</Card.Description>
-			</div>
-
 			<form
 				method="POST"
 				enctype="multipart/form-data"
@@ -121,7 +114,7 @@
 					<Label for="image">Foto Barang</Label>
 					<div class="flex flex-col gap-4 sm:flex-row sm:items-center">
 						<div
-							class="flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed bg-slate-50"
+							class="flex h-32 w-32 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed"
 						>
 							{#if imagePreview}
 								<img src={imagePreview} alt="Preview" class="h-full w-full object-cover" />

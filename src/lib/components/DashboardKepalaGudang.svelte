@@ -11,7 +11,8 @@
 		ChevronRight,
 		Warehouse as WarehouseIcon,
 		CheckCircle2,
-		Clock
+		Clock,
+		SquareArrowOutUpRight
 	} from '@lucide/svelte';
 
 	// Tipe data dashboard kepala gudang — sesuai return value dari load function di server
@@ -29,23 +30,15 @@
 		};
 		// Khusus Transito
 		transito?: {
-			menungguKonfirmasi: number;
-			masukBulanIni: number;
-			keluarBulanIni: number;
+			total: number;
 		};
 		// Khusus Balkir
 		balkir?: {
-			rusakRingan: number;
-			rusakBerat: number;
-			rusakTotal: number;
-			kandidatPenghapusan: number;
-			sudahDihapuskan: number;
+			total: number;
 		};
 		// Khusus Komunity
 		komunity?: {
-			sedangDipinjam: number;
-			distribusiPending: number;
-			rusakDiLapangan: number;
+			total: number;
 		};
 		pemeliharaanPending: {
 			id: string;
@@ -240,83 +233,54 @@
 
 		{#if data.transito && data.warehouseHeadType !== 'ALL'}
 			<div class="rounded-2xl border border-border bg-card shadow-sm">
-				<div class="flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4">
-					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Status Transito</h3>
-					{#if data.transito.menungguKonfirmasi > 0}
-						<span
-							class="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-bold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-						>
-							{data.transito.menungguKonfirmasi} Menunggu
-						</span>
-					{/if}
-				</div>
-				<div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-orange-600">
-							{data.transito.menungguKonfirmasi}
-						</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Menunggu Konfirmasi</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-foreground">{data.transito.masukBulanIni}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Masuk Bulan Ini</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-foreground">{data.transito.keluarBulanIni}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Keluar Bulan Ini</p>
-					</div>
+				<a
+					href={resolve('/(app)/[org_slug]/stok/transito', { org_slug })}
+					class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
+				>
+					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+						Status Transito
+					</h3>
+					<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+				</a>
+				<div class="p-6 text-center">
+					<p class="text-4xl font-extrabold text-primary">{data.transito.total}</p>
+					<p class="mt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Total Item Transito</p>
 				</div>
 			</div>
 		{/if}
 
 		{#if data.balkir && data.warehouseHeadType !== 'ALL'}
 			<div class="rounded-2xl border border-border bg-card shadow-sm">
-				<div class="border-b border-border bg-muted/50 px-5 py-4">
-					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Materiil Balkir</h3>
-				</div>
-				<div class="grid grid-cols-2 gap-4 p-5 sm:grid-cols-4">
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-amber-600">{data.balkir.rusakRingan}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Rusak Ringan</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-destructive">{data.balkir.rusakBerat}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Rusak Berat</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-destructive">{data.balkir.rusakTotal}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Rusak Total</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-success">{data.balkir.kandidatPenghapusan}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Belum Penghapusan</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-primary">{data.balkir.sudahDihapuskan}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Sudah Dihapuskan</p>
-					</div>
+				<a
+					href={resolve('/(app)/[org_slug]/stok/balkir', { org_slug })}
+					class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
+				>
+					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+						Materiil Balkir
+					</h3>
+					<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+				</a>
+				<div class="p-6 text-center">
+					<p class="text-4xl font-extrabold text-amber-600 dark:text-amber-400">{data.balkir.total}</p>
+					<p class="mt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Total Item Balkir</p>
 				</div>
 			</div>
 		{/if}
 
 		{#if data.komunity && data.warehouseHeadType !== 'ALL'}
 			<div class="rounded-2xl border border-border bg-card shadow-sm">
-				<div class="border-b border-border bg-muted/50 px-5 py-4">
-					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Status Komunity</h3>
-				</div>
-				<div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-blue-600">{data.komunity.sedangDipinjam}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Sedang Dipinjam</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-orange-600">{data.komunity.distribusiPending}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Distribusi Pending</p>
-					</div>
-					<div class="rounded-xl bg-muted/30 p-4 text-center">
-						<p class="text-2xl font-bold text-destructive">{data.komunity.rusakDiLapangan}</p>
-						<p class="mt-1 text-xs font-medium text-muted-foreground">Rusak di Lapangan</p>
-					</div>
+				<a
+					href={resolve('/(app)/[org_slug]/stok/komunity', { org_slug })}
+					class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
+				>
+					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+						Status Komunity
+					</h3>
+					<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+				</a>
+				<div class="p-6 text-center">
+					<p class="text-4xl font-extrabold text-blue-600 dark:text-blue-400">{data.komunity.total}</p>
+					<p class="mt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">Total Item Komunity</p>
 				</div>
 			</div>
 		{/if}

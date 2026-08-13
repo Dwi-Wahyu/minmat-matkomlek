@@ -23,12 +23,13 @@ const client = mysql.createPool(process.env.DATABASE_URL ?? '');
 const db = drizzle(client, { schema: { ...schema, ...authSchema }, mode: 'default' });
 
 const allAuthRoles = {
-	pimpinan,
 	superadmin,
 	kakomlek,
 	operatorPusatDanDaerah,
 	operatorBinmatDanBekharrah
 };
+
+
 
 export const auth = betterAuth({
 	baseURL: process.env.ORIGIN,

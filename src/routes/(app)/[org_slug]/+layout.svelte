@@ -36,8 +36,6 @@
 	function handleLogout() {
 		goto(resolve('/logout'));
 	}
-
-
 </script>
 
 <div class="flex h-screen overflow-hidden bg-background">
@@ -66,7 +64,7 @@
 							<span class="text-xs text-muted-foreground">{data.user.role}</span>
 						</div>
 						<Avatar.Root class="h-9 w-9 border border-border">
-							<Avatar.Image src="https://github.com/shadcn.png" alt="@shadcn" />
+							<Avatar.Image src="/uploads/avatar/default.png" alt="Profile" />
 							<Avatar.Fallback>{data.user.name.charAt(0)}</Avatar.Fallback>
 						</Avatar.Root>
 					</DropdownMenu.Trigger>
@@ -120,5 +118,3 @@
 	cancelLabel="Batal"
 	onAction={handleLogout}
 />
-
-

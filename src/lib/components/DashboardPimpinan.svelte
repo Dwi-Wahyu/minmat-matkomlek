@@ -10,7 +10,8 @@
 		Activity,
 		Box,
 		ChevronRight,
-		PocketKnife
+		PocketKnife,
+		SquareArrowOutUpRight
 	} from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -26,16 +27,9 @@
 			damagedItems: number;
 			monthlyMovements: number;
 		};
-		transito: { incoming: number; outgoing: number; pending: number };
-		komoditi: { active: number; outgoing: number; damaged: number };
-		balkir: {
-			total: number;
-			used: number;
-			ready: number;
-			damaged: number;
-			incoming: number;
-			outgoing: number;
-		};
+		transito: { total: number };
+		komoditi: { total: number };
+		balkir: { total: number };
 		recentEquipments: {
 			id: string;
 			name: string;
@@ -48,12 +42,7 @@
 	};
 
 	// activeFilters diterima terpisah agar filter toolbar bisa render sebelum Promise resolved
-	let {
-		data,
-		activeFilters,
-		userRole,
-		org_slug
-	} = $props<{
+	let { data, activeFilters, userRole, org_slug } = $props<{
 		data: DashboardData;
 		activeFilters: { period: string; equipmentType: string };
 		userRole: string;
@@ -63,11 +52,9 @@
 	const summary = $derived(
 		data.summary ?? { activeInventory: 0, warehouseStock: 0, damagedItems: 0, monthlyMovements: 0 }
 	);
-	const transito = $derived(data.transito ?? { incoming: 0, outgoing: 0, pending: 0 });
-	const komoditi = $derived(data.komoditi ?? { active: 0, outgoing: 0, damaged: 0 });
-	const balkir = $derived(
-		data.balkir ?? { total: 0, used: 0, ready: 0, damaged: 0, incoming: 0, outgoing: 0 }
-	);
+	const transito = $derived(data.transito ?? { total: 0 });
+	const komoditi = $derived(data.komoditi ?? { total: 0 });
+	const balkir = $derived(data.balkir ?? { total: 0 });
 	const recentEquipments = $derived(data.recentEquipments ?? []);
 
 	const periods = [
@@ -95,9 +82,9 @@
 	const isSubordinate = $derived(page.data.user?.organization?.parentId !== null);
 
 	const chartData = $derived([
-		{ label: 'Transito', value: transito.incoming, color: 'bg-blue-500' },
-		{ label: 'Komunity', value: komoditi.outgoing, color: 'bg-orange-500' },
-		{ label: 'Balkir', value: balkir.incoming, color: 'bg-emerald-500' }
+		{ label: 'Transito', value: transito.total, color: 'bg-blue-500' },
+		{ label: 'Komunity', value: komoditi.total, color: 'bg-orange-500' },
+		{ label: 'Balkir', value: balkir.total, color: 'bg-emerald-500' }
 	]);
 
 	const maxChartValue = $derived(Math.max(...chartData.map((d) => d.value), 10));
@@ -110,7 +97,7 @@
 			onclick={() => applyFilter(p.value, activeFilters.equipmentType)}
 			class="rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-300 {activeFilters.period ===
 			p.value
-				? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105'
+				? 'scale-105 bg-primary text-primary-foreground shadow-lg shadow-primary/20'
 				: 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			{p.label}
@@ -124,7 +111,7 @@
 			onclick={() => applyFilter(activeFilters.period, type.value)}
 			class="rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-300 {activeFilters.equipmentType ===
 			type.value
-				? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105'
+				? 'scale-105 bg-primary text-primary-foreground shadow-lg shadow-primary/20'
 				: 'bg-card text-muted-foreground hover:bg-muted hover:text-foreground'}"
 		>
 			{type.label}
@@ -197,86 +184,76 @@
 
 <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
 	<!-- Logistic Groups -->
-	<div class="grid grid-cols-1 gap-6 {isSubordinate ? 'md:grid-cols-2' : 'md:grid-cols-3'} lg:col-span-2">
+	<div
+		class="grid grid-cols-1 gap-6 {isSubordinate
+			? 'md:grid-cols-2'
+			: 'md:grid-cols-3'} lg:col-span-2"
+	>
 		<!-- Transito -->
 		{#if !isSubordinate}
 			<div class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-				<div class="border-b border-border bg-muted/50 px-5 py-4">
-					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Transito</h3>
-				</div>
-				<div class="flex flex-1 flex-col justify-between space-y-4 p-5">
-					<div>
-						<div class="mb-4 flex items-center justify-between text-sm">
-							<span class="text-muted-foreground">Barang Masuk</span>
-							<span class="font-bold text-foreground">{transito.incoming}</span>
-						</div>
-						<div class="flex items-center justify-between text-sm">
-							<span class="text-muted-foreground">Barang Keluar</span>
-							<span class="font-bold text-foreground">{transito.outgoing}</span>
-						</div>
-					</div>
-					<div
-						class="flex items-center justify-between border-t border-border pt-2 text-sm font-semibold text-primary"
-					>
-						<span>Pending</span>
-						<span>{transito.pending} Item</span>
-					</div>
+				<a
+					href={resolve('/(app)/[org_slug]/stok/transito', { org_slug })}
+					class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
+				>
+					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+						Transito
+					</h3>
+					<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+				</a>
+				<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
+					<p class="text-4xl font-extrabold text-primary">{transito.total.toLocaleString()}</p>
+					<p class="mt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+						Total Item
+					</p>
 				</div>
 			</div>
 		{/if}
 
 		<!-- Komoditi -->
 		<div class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-			<div class="border-b border-border bg-muted/50 px-5 py-4">
-				<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Komunity</h3>
-			</div>
-			<div class="flex flex-1 flex-col justify-between space-y-4 p-5">
-				<div>
-					<div class="mb-4 flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Stok Aktif</span>
-						<span class="font-bold text-foreground">{komoditi.active.toLocaleString()}</span>
-					</div>
-					<div class="flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Barang Keluar</span>
-						<span class="font-bold text-foreground">{komoditi.outgoing}</span>
-					</div>
-				</div>
-				<div
-					class="flex items-center justify-between border-t border-border pt-2 text-sm font-semibold text-success"
-				>
-					<span>Barang Rusak</span>
-					<span>{komoditi.damaged}</span>
-				</div>
+			<a
+				href={resolve('/(app)/[org_slug]/stok/komunity', { org_slug })}
+				class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
+			>
+				<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+					Komunity
+				</h3>
+				<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+			</a>
+			<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
+				<p class="text-4xl font-extrabold text-blue-600 dark:text-blue-400">
+					{komoditi.total.toLocaleString()}
+				</p>
+				<p class="mt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					Total Item
+				</p>
 			</div>
 		</div>
 
 		<!-- Balkir -->
 		<div class="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-			<div class="border-b border-border bg-muted/50 px-5 py-4">
-				<h3 class="text-sm font-bold tracking-wide text-foreground uppercase">Gudang Balkir</h3>
-			</div>
-			<div class="flex flex-1 flex-col justify-between space-y-4 p-5">
-				<div>
-					<div class="mb-4 flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Masuk</span>
-						<span class="font-bold text-foreground">{balkir.incoming}</span>
-					</div>
-					<div class="flex items-center justify-between text-sm">
-						<span class="text-muted-foreground">Barang Dihapus</span>
-						<span class="font-bold text-foreground">{balkir.outgoing}</span>
-					</div>
-				</div>
-				<div
-					class="flex items-center justify-between border-t border-border pt-2 text-sm font-semibold text-destructive"
-				>
-					<span>Total di Balkir</span>
-					<span>{balkir.incoming - balkir.outgoing} Item</span>
-				</div>
+			<a
+				href={resolve('/(app)/[org_slug]/stok/balkir', { org_slug })}
+				class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
+			>
+				<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+					Balkir
+				</h3>
+				<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+			</a>
+			<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
+				<p class="text-4xl font-extrabold text-amber-600 dark:text-amber-400">
+					{balkir.total.toLocaleString()}
+				</p>
+				<p class="mt-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+					Total Item
+				</p>
 			</div>
 		</div>
 
 		<!-- Chart -->
-		<div class="rounded-2xl border border-border bg-card p-6 shadow-sm md:col-span-3">
+		<div class="rounded-2xl border border-border bg-card p-6 pb-0 shadow-sm md:col-span-3">
 			<div class="mb-8 flex items-center justify-between">
 				<h3 class="flex items-center gap-2 font-bold text-foreground">
 					<BarChart2 size={18} class="text-muted-foreground" /> Pergerakan Barang
@@ -294,7 +271,7 @@
 				</div>
 			</div>
 
-			<div class="flex h-48 items-end gap-8 border-b border-border px-4 pb-2">
+			<div class="flex h-48 items-end gap-8 border-b border-border px-4">
 				{#each chartData as bar (bar.label)}
 					<div class="group relative flex h-full flex-1 flex-col items-center justify-end">
 						<div
@@ -346,8 +323,7 @@
 				<div>
 					<div class="mb-2 flex justify-between text-xs font-bold text-muted-foreground uppercase">
 						<span>Tingkat Kerusakan</span>
-						<span
-							>{Math.round((summary.damagedItems / (summary.activeInventory || 1)) * 100)}%</span
+						<span>{Math.round((summary.damagedItems / (summary.activeInventory || 1)) * 100)}%</span
 						>
 					</div>
 					<div class="h-2 overflow-hidden rounded-full bg-muted">

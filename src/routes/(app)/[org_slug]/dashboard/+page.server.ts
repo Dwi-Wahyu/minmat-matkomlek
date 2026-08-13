@@ -13,7 +13,7 @@ import {
 	maintenance,
 	distribution
 } from '$lib/server/db/schema';
-import { eq, and, count, sum, gte, desc, sql, inArray, ne } from 'drizzle-orm';
+import { eq, and, count, sum, gte, desc, sql, inArray, ne, or } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import { getOrSetCache, CacheTTL } from '$lib/server/redis';
 
@@ -333,150 +333,50 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 				let transito, balkir, komunity;
 
 				if (headType === 'TRANSITO' || headType === 'ALL') {
-					const [menungguKonfirmasi] = await db
+					const [transitoTotal] = await db
 						.select({ count: count() })
 						.from(equipment)
-						.where(and(eq(equipment.organizationId, orgId), eq(equipment.status, 'TRANSIT')));
-
-					const [masukBulanIni] = await db
-						.select({ count: count() })
-						.from(movement)
 						.where(
 							and(
-								eq(movement.organizationId, orgId),
-								eq(movement.classification, 'TRANSITO'),
-								inArray(movement.eventType, ['RECEIVE', 'TRANSFER_IN']),
-								gte(movement.createdAt, startOfMonth)
-							)
-						);
-
-					const [keluarBulanIni] = await db
-						.select({ count: count() })
-						.from(movement)
-						.where(
-							and(
-								eq(movement.organizationId, orgId),
-								eq(movement.classification, 'TRANSITO'),
-								inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT']),
-								gte(movement.createdAt, startOfMonth)
+								eq(equipment.organizationId, orgId),
+								or(eq(equipment.classification, 'TRANSITO'), eq(equipment.status, 'TRANSIT'))
 							)
 						);
 
 					transito = {
-						menungguKonfirmasi: Number(menungguKonfirmasi?.count) || 0,
-						masukBulanIni: Number(masukBulanIni?.count) || 0,
-						keluarBulanIni: Number(keluarBulanIni?.count) || 0
+						total: Number(transitoTotal?.count) || 0
 					};
 				}
 
 				if (headType === 'BALKIR' || headType === 'ALL') {
-					const [ready] = await db
+					const [balkirTotal] = await db
 						.select({ count: count() })
 						.from(equipment)
 						.where(
 							and(
 								eq(equipment.organizationId, orgId),
-								eq(equipment.status, 'READY'),
-								eq(equipment.condition, 'BAIK')
-							)
-						);
-
-					const [rusakRingan] = await db
-						.select({ count: count() })
-						.from(equipment)
-						.where(
-							and(
-								eq(equipment.organizationId, orgId),
-								eq(equipment.classification, 'BALKIR'),
-								eq(equipment.condition, 'RUSAK_RINGAN')
-							)
-						);
-
-					const [rusakBerat] = await db
-						.select({ count: count() })
-						.from(equipment)
-						.where(
-							and(
-								eq(equipment.organizationId, orgId),
-								eq(equipment.classification, 'BALKIR'),
-								inArray(equipment.condition, ['RUSAK_BERAT'])
-							)
-						);
-
-					const [rusakTotal] = await db
-						.select({ count: count() })
-						.from(equipment)
-						.where(
-							and(
-								eq(equipment.organizationId, orgId),
-								eq(equipment.classification, 'BALKIR'),
-								eq(equipment.condition, 'RUSAK_TOTAL')
-							)
-						);
-
-					const [kandidatPenghapusan] = await db
-						.select({ count: count() })
-						.from(equipment)
-						.where(
-							and(
-								eq(equipment.organizationId, orgId),
-								eq(equipment.classification, 'BALKIR'),
-								eq(equipment.condition, 'RUSAK_TOTAL'),
-								ne(equipment.status, 'DISPOSED')
-							)
-						);
-
-					const [sudahDihapuskan] = await db
-						.select({ count: count() })
-						.from(equipment)
-						.where(
-							and(
-								eq(equipment.organizationId, orgId),
-								eq(equipment.classification, 'BALKIR'),
-								eq(equipment.status, 'DISPOSED')
+								eq(equipment.classification, 'BALKIR')
 							)
 						);
 
 					balkir = {
-						rusakRingan: Number(rusakRingan?.count) || 0,
-						rusakBerat: Number(rusakBerat?.count) || 0,
-						rusakTotal: Number(rusakTotal?.count) || 0,
-						kandidatPenghapusan: Number(kandidatPenghapusan?.count) || 0,
-						sudahDihapuskan: Number(sudahDihapuskan?.count) || 0
+						total: Number(balkirTotal?.count) || 0
 					};
 				}
 
 				if (headType === 'KOMUNITY' || headType === 'ALL') {
-					const [sedangDipinjam] = await db
-						.select({ count: count() })
-						.from(equipment)
-						.where(and(eq(equipment.organizationId, orgId), eq(equipment.status, 'IN_USE')));
-
-					const [distribusiPending] = await db
-						.select({ count: count() })
-						.from(distribution)
-						.where(
-							and(
-								eq(distribution.toOrganizationId, orgId),
-								inArray(distribution.status, ['VALIDATED', 'APPROVED', 'SHIPPED'])
-							)
-						);
-
-					const [rusakDiLapangan] = await db
+					const [komunityTotal] = await db
 						.select({ count: count() })
 						.from(equipment)
 						.where(
 							and(
 								eq(equipment.organizationId, orgId),
-								eq(equipment.status, 'IN_USE'),
-								sql`${equipment.condition} != 'BAIK'`
+								or(eq(equipment.classification, 'KOMUNITY'), eq(equipment.status, 'IN_USE'))
 							)
 						);
 
 					komunity = {
-						sedangDipinjam: Number(sedangDipinjam?.count) || 0,
-						distribusiPending: Number(distribusiPending?.count) || 0,
-						rusakDiLapangan: Number(rusakDiLapangan?.count) || 0
+						total: Number(komunityTotal?.count) || 0
 					};
 				}
 
@@ -622,152 +522,41 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 				.where(and(eq(movement.organizationId, orgId), gte(movement.createdAt, startDate)));
 
 			// Transito Stats
-			const [transitoIncoming] = await db
-				.select({ count: count() })
-				.from(movement)
-				.where(
-					and(
-						eq(movement.organizationId, orgId),
-						eq(movement.classification, 'TRANSITO'),
-						inArray(movement.eventType, ['RECEIVE', 'TRANSFER_IN']),
-						gte(movement.createdAt, startDate)
-					)
-				);
-
-			const [transitoOutgoing] = await db
-				.select({ count: count() })
-				.from(movement)
-				.where(
-					and(
-						eq(movement.organizationId, orgId),
-						eq(movement.classification, 'TRANSITO'),
-						inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT']),
-						gte(movement.createdAt, startDate)
-					)
-				);
-
-			const [transitoPending] = await db
+			const [transitoCount] = await db
 				.select({ count: count() })
 				.from(equipment)
 				.innerJoin(item, eq(equipment.itemId, item.id))
 				.where(
 					and(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'TRANSIT'),
-							equipmentTypeFilter
-						)
+						eq(equipment.organizationId, orgId),
+						or(eq(equipment.classification, 'TRANSITO'), eq(equipment.status, 'TRANSIT')),
+						equipmentTypeFilter
 					)
 				);
 
 			// Komoditi Stats
-			const [komoditiActive] = await db
+			const [komoditiCount] = await db
 				.select({ count: count() })
 				.from(equipment)
 				.innerJoin(item, eq(equipment.itemId, item.id))
 				.where(
 					and(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'IN_USE'),
-							equipmentTypeFilter
-						)
+						eq(equipment.organizationId, orgId),
+						or(eq(equipment.classification, 'KOMUNITY'), eq(equipment.status, 'IN_USE')),
+						equipmentTypeFilter
 					)
 				);
 
-			const [komoditiOutgoing] = await db
-				.select({ count: count() })
-				.from(movement)
-				.where(
-					and(
-						eq(movement.organizationId, orgId),
-						eq(movement.classification, 'KOMUNITY'),
-						inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT', 'DISTRIBUTE_OUT']),
-						gte(movement.createdAt, startDate)
-					)
-				);
-
-			const [komoditiDamaged] = await db
+			// Balkir Stats
+			const [balkirCount] = await db
 				.select({ count: count() })
 				.from(equipment)
 				.innerJoin(item, eq(equipment.itemId, item.id))
 				.where(
 					and(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'IN_USE'),
-							sql`${equipment.condition} != 'BAIK'`,
-							equipmentTypeFilter
-						)
-					)
-				);
-
-			// Balkir Stats (Ready Stock/Main Inventory)
-			const [balkirTotal] = await db
-				.select({ count: count() })
-				.from(equipment)
-				.innerJoin(item, eq(equipment.itemId, item.id))
-				.where(
-					and(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'READY'),
-							equipmentTypeFilter
-						)
-					)
-				);
-
-			const [balkirReady] = await db
-				.select({ count: count() })
-				.from(equipment)
-				.innerJoin(item, eq(equipment.itemId, item.id))
-				.where(
-					and(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'READY'),
-							eq(equipment.condition, 'BAIK'),
-							equipmentTypeFilter
-						)
-					)
-				);
-
-			const [balkirDamaged] = await db
-				.select({ count: count() })
-				.from(equipment)
-				.innerJoin(item, eq(equipment.itemId, item.id))
-				.where(
-					and(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'READY'),
-							sql`${equipment.condition} != 'BAIK'`,
-							equipmentTypeFilter
-						)
-					)
-				);
-
-			const [balkirIncoming] = await db
-				.select({ count: count() })
-				.from(movement)
-				.where(
-					and(
-						eq(movement.organizationId, orgId),
-						eq(movement.classification, 'BALKIR'),
-						inArray(movement.eventType, ['RECEIVE', 'TRANSFER_IN']),
-						gte(movement.createdAt, startDate)
-					)
-				);
-
-			const [balkirOutgoing] = await db
-				.select({ count: count() })
-				.from(movement)
-				.where(
-					and(
-						eq(movement.organizationId, orgId),
-						eq(movement.classification, 'BALKIR'),
-						inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT']),
-						gte(movement.createdAt, startDate)
+						eq(equipment.organizationId, orgId),
+						eq(equipment.classification, 'BALKIR'),
+						equipmentTypeFilter
 					)
 				);
 
@@ -796,22 +585,13 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 					monthlyMovements: Number(monthlyMovementsCount?.count) || 0
 				},
 				transito: {
-					incoming: Number(transitoIncoming?.count) || 0,
-					outgoing: Number(transitoOutgoing?.count) || 0,
-					pending: Number(transitoPending?.count) || 0
+					total: Number(transitoCount?.count) || 0
 				},
 				komoditi: {
-					active: Number(komoditiActive?.count) || 0,
-					outgoing: Number(komoditiOutgoing?.count) || 0,
-					damaged: Number(komoditiDamaged?.count) || 0
+					total: Number(komoditiCount?.count) || 0
 				},
 				balkir: {
-					total: Number(balkirTotal?.count) || 0,
-					used: Number(komoditiActive?.count) || 0,
-					ready: Number(balkirReady?.count) || 0,
-					damaged: Number(balkirDamaged?.count) || 0,
-					incoming: Number(balkirIncoming?.count) || 0,
-					outgoing: Number(balkirOutgoing?.count) || 0
+					total: Number(balkirCount?.count) || 0
 				},
 				recentEquipments: recentEquipmentsResults.map((r) => ({
 					id: r.equipment.id,

@@ -21,6 +21,7 @@
 		"db:pull": "drizzle-kit pull",
 		"db:seed": "bun run src/lib/server/db/seed",
 		"db:seed-superadmin": "bun run src/lib/server/db/seed/superadmin.ts",
+		"db:seed-pimpinan": "bun run src/lib/server/db/seed/pimpinan.ts",
 		"db:seed-akmil": "bun run src/lib/server/db/seed/akmil.ts",
 		"db:seed-puskomlekad": "bun run src/lib/server/db/seed/puskomlekad.ts",
 		"db:seed-another-missing-satuan": "bun run src/lib/server/db/seed/another-missing-satuan.ts",

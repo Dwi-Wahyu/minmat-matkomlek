@@ -1,7 +1,7 @@
 import { json, error } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { equipment, item, stock, movement, warehouse, organization } from '$lib/server/db/schema';
-import { eq, and, count, sum, gte, sql, desc, inArray } from 'drizzle-orm';
+import { eq, and, count, sum, gte, sql, desc, inArray, or } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
 import { getOrSetCache, CacheKeys, CacheTTL } from '$lib/server/redis';
 
@@ -62,17 +62,9 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 				warehouseStockSum,
 				damagedItemsCount,
 				monthlyMovementsCount,
-				transitoIncoming,
-				transitoOutgoing,
-				transitoPending,
-				komoditiActive,
-				komoditiOutgoing,
-				komoditiDamaged,
-				balkirTotal,
-				balkirReady,
-				balkirDamaged,
-				balkirIncoming,
-				balkirOutgoing,
+				transitoCount,
+				komoditiCount,
+				balkirCount,
 				recentEquipments
 			] = await Promise.all([
 				// Summary Stats
@@ -107,29 +99,7 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					.from(movement)
 					.where(and(eq(movement.organizationId, orgId), gte(movement.createdAt, startDate))),
 
-				// Transito
-				db
-					.select({ count: count() })
-					.from(movement)
-					.where(
-						and(
-							eq(movement.organizationId, orgId),
-							eq(movement.classification, 'TRANSITO'),
-							inArray(movement.eventType, ['RECEIVE', 'TRANSFER_IN']),
-							gte(movement.createdAt, startDate)
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(movement)
-					.where(
-						and(
-							eq(movement.organizationId, orgId),
-							eq(movement.classification, 'TRANSITO'),
-							inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT']),
-							gte(movement.createdAt, startDate)
-						)
-					),
+				// Transito Total
 				db
 					.select({ count: count() })
 					.from(equipment)
@@ -137,12 +107,12 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					.where(
 						and(
 							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'TRANSIT'),
+							or(eq(equipment.classification, 'TRANSITO'), eq(equipment.status, 'TRANSIT')),
 							equipmentTypeFilter
 						)
 					),
 
-				// Komoditi
+				// Komoditi Total
 				db
 					.select({ count: count() })
 					.from(equipment)
@@ -150,35 +120,12 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					.where(
 						and(
 							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'IN_USE'),
-							equipmentTypeFilter
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(movement)
-					.where(
-						and(
-							eq(movement.organizationId, orgId),
-							eq(movement.classification, 'KOMUNITY'),
-							inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT', 'DISTRIBUTE_OUT']),
-							gte(movement.createdAt, startDate)
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(equipment)
-					.innerJoin(item, eq(equipment.itemId, item.id))
-					.where(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'IN_USE'),
-							sql`${equipment.condition} != 'BAIK'`,
+							or(eq(equipment.classification, 'KOMUNITY'), eq(equipment.status, 'IN_USE')),
 							equipmentTypeFilter
 						)
 					),
 
-				// Balkir
+				// Balkir Total
 				db
 					.select({ count: count() })
 					.from(equipment)
@@ -186,54 +133,8 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					.where(
 						and(
 							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'READY'),
+							eq(equipment.classification, 'BALKIR'),
 							equipmentTypeFilter
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(equipment)
-					.innerJoin(item, eq(equipment.itemId, item.id))
-					.where(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'READY'),
-							eq(equipment.condition, 'BAIK'),
-							equipmentTypeFilter
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(equipment)
-					.innerJoin(item, eq(equipment.itemId, item.id))
-					.where(
-						and(
-							eq(equipment.organizationId, orgId),
-							eq(equipment.status, 'READY'),
-							sql`${equipment.condition} != 'BAIK'`,
-							equipmentTypeFilter
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(movement)
-					.where(
-						and(
-							eq(movement.organizationId, orgId),
-							eq(movement.classification, 'BALKIR'),
-							inArray(movement.eventType, ['RECEIVE', 'TRANSFER_IN']),
-							gte(movement.createdAt, startDate)
-						)
-					),
-				db
-					.select({ count: count() })
-					.from(movement)
-					.where(
-						and(
-							eq(movement.organizationId, orgId),
-							eq(movement.classification, 'BALKIR'),
-							inArray(movement.eventType, ['ISSUE', 'TRANSFER_OUT']),
-							gte(movement.createdAt, startDate)
 						)
 					),
 
@@ -275,21 +176,13 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					monthlyMovements: Number(monthlyMovementsCount[0]?.count) || 0
 				},
 				transito: {
-					incoming: Number(transitoIncoming[0]?.count) || 0,
-					outgoing: Number(transitoOutgoing[0]?.count) || 0,
-					pending: Number(transitoPending[0]?.count) || 0
+					total: Number(transitoCount[0]?.count) || 0
 				},
 				komoditi: {
-					active: Number(komoditiActive[0]?.count) || 0,
-					outgoing: Number(komoditiOutgoing[0]?.count) || 0,
-					damaged: Number(komoditiDamaged[0]?.count) || 0
+					total: Number(komoditiCount[0]?.count) || 0
 				},
 				balkir: {
-					total: Number(balkirTotal[0]?.count) || 0,
-					ready: Number(balkirReady[0]?.count) || 0,
-					damaged: Number(balkirDamaged[0]?.count) || 0,
-					incoming: Number(balkirIncoming[0]?.count) || 0,
-					outgoing: Number(balkirOutgoing[0]?.count) || 0
+					total: Number(balkirCount[0]?.count) || 0
 				},
 				recentEquipments: recentEquipments.map((e) => ({
 					id: e.id,

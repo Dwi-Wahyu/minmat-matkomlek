@@ -5,7 +5,7 @@ import { eq, desc, and, like, or, exists, sql } from 'drizzle-orm';
 import { getOrSetCache, CacheKeys, CacheTTL } from '$lib/server/redis';
 
 /** @type {import('./$types').RequestHandler} */
-export const GET: import("./$types").RequestHandler = async ({ url, params, locals }) => {
+export const GET: import('./$types').RequestHandler = async ({ url, params, locals }) => {
 	// Validasi Sesi & Organisasi
 	if (!locals.user || !locals.user.organization) {
 		return json({ message: 'Unauthorized' }, { status: 401 });
@@ -27,7 +27,10 @@ export const GET: import("./$types").RequestHandler = async ({ url, params, loca
 				cacheKey,
 				async () => {
 					const movements = await db.query.movement.findMany({
-						where: and(eq(movement.classification, 'TRANSITO'), eq(movement.organizationId, organizationId)),
+						where: and(
+							eq(movement.classification, 'TRANSITO'),
+							eq(movement.organizationId, organizationId)
+						),
 						with: {
 							equipment: {
 								with: {

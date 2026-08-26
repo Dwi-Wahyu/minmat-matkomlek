@@ -19,18 +19,13 @@ export const load: PageServerLoad = async ({ locals }) => {
 
 	// Ambil konversi yang itemnya ada di stok organisasi ini
 	const conversions = await db.query.itemUnitConversion.findMany({
-		where: (table, { exists, and, eq }) => 
+		where: (table, { exists, and, eq }) =>
 			exists(
 				db
 					.select()
 					.from(stock)
 					.innerJoin(warehouse, eq(stock.warehouseId, warehouse.id))
-					.where(
-						and(
-							eq(stock.itemId, table.itemId),
-							eq(warehouse.organizationId, organizationId)
-						)
-					)
+					.where(and(eq(stock.itemId, table.itemId), eq(warehouse.organizationId, organizationId)))
 			),
 		with: {
 			item: true

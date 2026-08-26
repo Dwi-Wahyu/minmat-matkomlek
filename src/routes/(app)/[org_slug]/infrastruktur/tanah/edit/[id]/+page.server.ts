@@ -61,10 +61,7 @@ export const actions: Actions = {
 				updateData.photoPath = fileName;
 			}
 
-			await db
-				.update(land)
-				.set(updateData)
-				.where(eq(land.id, id));
+			await db.update(land).set(updateData).where(eq(land.id, id));
 
 			return { success: true, message: 'Data tanah berhasil diperbarui' };
 		} catch (error) {

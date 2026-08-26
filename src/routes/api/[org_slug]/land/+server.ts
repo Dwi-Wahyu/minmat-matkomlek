@@ -37,7 +37,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 // POST: Create a new land record (Multipart/form-data for image)
 export const POST: RequestHandler = async ({ params, request, locals }) => {
 	const { org_slug } = params;
-	
+
 	// Ensure organization exists
 	const org = await db.query.organization.findFirst({
 		where: eq(organization.slug, org_slug)
@@ -48,7 +48,7 @@ export const POST: RequestHandler = async ({ params, request, locals }) => {
 	}
 
 	const formData = await request.formData();
-	
+
 	const certificateNumber = formData.get('certificateNumber') as string;
 	const location = formData.get('location') as string;
 	const area = formData.get('area') as string;

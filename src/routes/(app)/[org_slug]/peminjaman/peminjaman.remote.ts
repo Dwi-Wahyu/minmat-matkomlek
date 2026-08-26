@@ -16,61 +16,64 @@ export type PeminjamanListData = {
 	isInduk: boolean;
 };
 
-export const getPeminjamanData = query(peminjamanSchema, async (args): Promise<PeminjamanListData> => {
-	const { user: currentUser } = requireAuth();
-	const { orgSlug, q: searchQuery, status: statusFilter } = args;
+export const getPeminjamanData = query(
+	peminjamanSchema,
+	async (args): Promise<PeminjamanListData> => {
+		const { user: currentUser } = requireAuth();
+		const { orgSlug, q: searchQuery, status: statusFilter } = args;
 
-	// Resolve organization ID from slug
-	const org = await db.query.organization.findFirst({
-		where: eq(organization.slug, orgSlug)
-	});
+		// Resolve organization ID from slug
+		const org = await db.query.organization.findFirst({
+			where: eq(organization.slug, orgSlug)
+		});
 
-	if (!org) {
-		throw new Error('Organisasi tidak ditemukan');
+		if (!org) {
+			throw new Error('Organisasi tidak ditemukan');
+		}
+
+		const organizationId = org.id;
+
+		const orgUserIdsSubquery = db
+			.select({ id: member.userId })
+			.from(member)
+			.where(eq(member.organizationId, organizationId));
+
+		const isInduk = org.parentId === null;
+
+		const filters = isInduk
+			? [eq(lending.organizationId, organizationId)]
+			: [
+					or(
+						eq(lending.organizationId, organizationId),
+						inArray(lending.requestedBy, orgUserIdsSubquery)
+					)
+				];
+
+		if (statusFilter !== 'ALL') {
+			filters.push(eq(lending.status, statusFilter as any));
+		}
+
+		if (searchQuery) {
+			filters.push(like(lending.unit, `%${searchQuery}%`));
+		}
+
+		const data = await db.query.lending.findMany({
+			where: and(...filters),
+			with: {
+				organization: true,
+				requestedByUser: {
+					columns: { name: true }
+				}
+			},
+			orderBy: [desc(lending.createdAt)]
+		});
+
+		return {
+			lendingList: data,
+			isInduk
+		};
 	}
-
-	const organizationId = org.id;
-
-	const orgUserIdsSubquery = db
-		.select({ id: member.userId })
-		.from(member)
-		.where(eq(member.organizationId, organizationId));
-
-	const isInduk = org.parentId === null;
-
-	const filters = isInduk
-		? [eq(lending.organizationId, organizationId)]
-		: [
-				or(
-					eq(lending.organizationId, organizationId),
-					inArray(lending.requestedBy, orgUserIdsSubquery)
-				)
-			];
-
-	if (statusFilter !== 'ALL') {
-		filters.push(eq(lending.status, statusFilter as any));
-	}
-
-	if (searchQuery) {
-		filters.push(like(lending.unit, `%${searchQuery}%`));
-	}
-
-	const data = await db.query.lending.findMany({
-		where: and(...filters),
-		with: {
-			organization: true,
-			requestedByUser: {
-				columns: { name: true }
-			}
-		},
-		orderBy: [desc(lending.createdAt)]
-	});
-
-	return {
-		lendingList: data,
-		isInduk
-	};
-});
+);
 
 const availableEquipmentSchema = v.object({
 	targetOrgId: v.string(),
@@ -92,7 +95,13 @@ export type GroupedEquipmentData = {
 export const getAvailableEquipment = query(
 	availableEquipmentSchema,
 	async (args): Promise<GroupedEquipmentData> => {
-		const { targetOrgId, q: searchQuery = '', page = 1, preselectedEquipmentId = '', preselectedEquipmentIds = [] } = args;
+		const {
+			targetOrgId,
+			q: searchQuery = '',
+			page = 1,
+			preselectedEquipmentId = '',
+			preselectedEquipmentIds = []
+		} = args;
 		const limit = 10;
 		const offset = (page - 1) * limit;
 
@@ -148,16 +157,16 @@ export const getAvailableEquipment = query(
 			}
 		});
 
-
 		let groupedList = Object.values(groups);
 
 		// 3. Filter by search query if present
 		if (searchQuery) {
 			const lowerQ = searchQuery.toLowerCase();
-			groupedList = groupedList.filter((g: any) => 
-				g.name.toLowerCase().includes(lowerQ) ||
-				(g.brand && g.brand.toLowerCase().includes(lowerQ)) ||
-				(g.warehouseName && g.warehouseName.toLowerCase().includes(lowerQ))
+			groupedList = groupedList.filter(
+				(g: any) =>
+					g.name.toLowerCase().includes(lowerQ) ||
+					(g.brand && g.brand.toLowerCase().includes(lowerQ)) ||
+					(g.warehouseName && g.warehouseName.toLowerCase().includes(lowerQ))
 			);
 		}
 
@@ -175,4 +184,3 @@ export const getAvailableEquipment = query(
 		};
 	}
 );
-

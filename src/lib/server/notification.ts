@@ -53,20 +53,23 @@ export async function createNotification(params: CreateNotificationParams) {
 
 	// Invalidasi cache layout notifikasi untuk semua member dalam organisasi
 	if (organizationId) {
-		db.query.member.findMany({
-			where: eq(member.organizationId, organizationId),
-			columns: { userId: true }
-		}).then((members) => {
-			for (const m of members) {
-				if (m.userId) {
-					invalidateNotifCache(m.userId).catch((err) => {
-						console.error('Error invalidating notification cache for org member:', err);
-					});
+		db.query.member
+			.findMany({
+				where: eq(member.organizationId, organizationId),
+				columns: { userId: true }
+			})
+			.then((members) => {
+				for (const m of members) {
+					if (m.userId) {
+						invalidateNotifCache(m.userId).catch((err) => {
+							console.error('Error invalidating notification cache for org member:', err);
+						});
+					}
 				}
-			}
-		}).catch((err) => {
-			console.error('Error finding members for cache invalidation:', err);
-		});
+			})
+			.catch((err) => {
+				console.error('Error finding members for cache invalidation:', err);
+			});
 	}
 
 	return result;

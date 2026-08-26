@@ -6,7 +6,7 @@ import { error, fail } from '@sveltejs/kit';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const load: import("./$types").PageServerLoad = async ({ params, locals }) => {
+export const load: import('./$types').PageServerLoad = async ({ params, locals }) => {
 	const sessionUser = locals.user;
 	if (!sessionUser) throw error(401, 'Unauthorized');
 
@@ -88,7 +88,7 @@ export const actions = {
 				const newFilename = `${uuidv4()}${fileExt}`;
 				savedFilePath = `/uploads/import/${newFilename}`;
 				const fullPath = path.join(uploadDir, newFilename);
-				
+
 				const arrayBuffer = await file.arrayBuffer();
 				const buffer = Buffer.from(arrayBuffer);
 				fs.writeFileSync(fullPath, buffer);
@@ -172,7 +172,10 @@ export const actions = {
 							if (existingStock) {
 								await tx
 									.update(stock)
-									.set({ qty: (Number(existingStock.qty) + Number(row.Jumlah || 0)).toString(), updatedAt: new Date() })
+									.set({
+										qty: (Number(existingStock.qty) + Number(row.Jumlah || 0)).toString(),
+										updatedAt: new Date()
+									})
 									.where(eq(stock.id, existingStock.id));
 							} else {
 								await tx.insert(stock).values({

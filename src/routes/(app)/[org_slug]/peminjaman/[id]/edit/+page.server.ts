@@ -235,7 +235,9 @@ export const actions: Actions = {
 			return message(form, 'Perubahan peminjaman berhasil disimpan');
 		} catch (err) {
 			console.error('Error updating lending:', err);
-			return message(form, ((err as any).message as string) || 'Kesalahan server internal', { status: 500 });
+			return message(form, ((err as any).message as string) || 'Kesalahan server internal', {
+				status: 500
+			});
 		}
 	}
 };

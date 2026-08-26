@@ -15,18 +15,13 @@ export const getKonversiUnitData = query(async (): Promise<KonversiUnitListData>
 	const organizationId = user.organization.id;
 
 	const conversions = await db.query.itemUnitConversion.findMany({
-		where: (table, { exists, and, eq }) => 
+		where: (table, { exists, and, eq }) =>
 			exists(
 				db
 					.select()
 					.from(stock)
 					.innerJoin(warehouse, eq(stock.warehouseId, warehouse.id))
-					.where(
-						and(
-							eq(stock.itemId, table.itemId),
-							eq(warehouse.organizationId, organizationId)
-						)
-					)
+					.where(and(eq(stock.itemId, table.itemId), eq(warehouse.organizationId, organizationId)))
 			),
 		with: {
 			item: true

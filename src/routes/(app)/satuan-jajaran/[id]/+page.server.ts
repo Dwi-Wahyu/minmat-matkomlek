@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 
 	// 2. Query Inventaris
 	// Kita akan mengambil Equipment (Aset) dan Stock (Consumable) yang dimiliki organisasi ini
-	
+
 	const filters: import('drizzle-orm').SQL[] = [];
 	if (searchQuery) {
 		filters.push(like(item.name, `%${searchQuery}%`));
@@ -51,10 +51,10 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 			.where(
 				and(
 					eq(equipment.organizationId, id),
-					filterType === 'ALL' 
-						? sql`1=1` 
-						: filterType === 'CONSUMABLE' 
-							? sql`1=0` 
+					filterType === 'ALL'
+						? sql`1=1`
+						: filterType === 'CONSUMABLE'
+							? sql`1=0`
 							: eq(item.equipmentType, filterType as any),
 					...filters
 				)
@@ -95,7 +95,9 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		}));
 
 		// Gabungkan hasil dan urutkan
-		const allInventory = [...equipments, ...formattedStocks].sort((a, b) => a.name.localeCompare(b.name));
+		const allInventory = [...equipments, ...formattedStocks].sort((a, b) =>
+			a.name.localeCompare(b.name)
+		);
 
 		const totalItems = allInventory.length;
 		const totalPages = Math.ceil(totalItems / limit) || 1;

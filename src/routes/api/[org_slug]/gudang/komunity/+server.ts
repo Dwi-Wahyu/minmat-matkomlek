@@ -5,7 +5,7 @@ import { eq, desc, and, like, or } from 'drizzle-orm';
 import { getOrSetCache, CacheKeys, CacheTTL } from '$lib/server/redis';
 
 /** @type {import('./$types').RequestHandler} */
-export const GET: import("./$types").RequestHandler = async ({ url, params, locals }) => {
+export const GET: import('./$types').RequestHandler = async ({ url, params, locals }) => {
 	// Validasi Sesi & Organisasi
 	if (!locals.user || !locals.user.organization) {
 		return json({ success: false, message: 'Unauthorized' }, { status: 401 });
@@ -92,7 +92,10 @@ export const GET: import("./$types").RequestHandler = async ({ url, params, loca
 
 					// 2. Ambil DATA CONSUMABLE
 					const consumableMovements = await db.query.movement.findMany({
-						where: and(eq(movement.classification, 'KOMUNITY'), eq(movement.organizationId, organizationId)),
+						where: and(
+							eq(movement.classification, 'KOMUNITY'),
+							eq(movement.organizationId, organizationId)
+						),
 						with: {
 							item: true
 						}
@@ -160,7 +163,10 @@ export const GET: import("./$types").RequestHandler = async ({ url, params, loca
 					if (searchName) {
 						conds.push(
 							exists(
-								db.select().from(item).where(and(eq(item.id, equip.itemId), like(item.name, `%${searchName}%`)))
+								db
+									.select()
+									.from(item)
+									.where(and(eq(item.id, equip.itemId), like(item.name, `%${searchName}%`)))
 							)
 						);
 					}
@@ -180,7 +186,11 @@ export const GET: import("./$types").RequestHandler = async ({ url, params, loca
 				let totalKeluar = 0;
 
 				equip.movements.forEach((m) => {
-					if (m.eventType === 'RECEIVE' || m.eventType === 'TRANSFER_IN' || m.eventType === 'DISTRIBUTE_IN') {
+					if (
+						m.eventType === 'RECEIVE' ||
+						m.eventType === 'TRANSFER_IN' ||
+						m.eventType === 'DISTRIBUTE_IN'
+					) {
 						totalMasuk += Number(m.qty);
 					} else if (
 						m.eventType === 'ISSUE' ||
@@ -258,9 +268,17 @@ export const GET: import("./$types").RequestHandler = async ({ url, params, loca
 				}
 
 				const entry = consumableMap.get(m.itemId);
-				if (m.eventType === 'RECEIVE' || m.eventType === 'TRANSFER_IN' || m.eventType === 'DISTRIBUTE_IN') {
+				if (
+					m.eventType === 'RECEIVE' ||
+					m.eventType === 'TRANSFER_IN' ||
+					m.eventType === 'DISTRIBUTE_IN'
+				) {
 					entry.masuk += Number(m.qty);
-				} else if (m.eventType === 'ISSUE' || m.eventType === 'TRANSFER_OUT' || m.eventType === 'DISTRIBUTE_OUT') {
+				} else if (
+					m.eventType === 'ISSUE' ||
+					m.eventType === 'TRANSFER_OUT' ||
+					m.eventType === 'DISTRIBUTE_OUT'
+				) {
 					entry.keluar += Number(m.qty);
 				}
 				entry.stok = entry.masuk - entry.keluar;
@@ -270,7 +288,9 @@ export const GET: import("./$types").RequestHandler = async ({ url, params, loca
 			results = [...results, ...Array.from(consumableMap.values())];
 		}
 
-		const filteredItems = results.filter((item) => item.stok > 0 || item.masuk > 0 || item.keluar > 0);
+		const filteredItems = results.filter(
+			(item) => item.stok > 0 || item.masuk > 0 || item.keluar > 0
+		);
 
 		const totalItems = filteredItems.length;
 		const totalPages = Math.ceil(totalItems / limit);

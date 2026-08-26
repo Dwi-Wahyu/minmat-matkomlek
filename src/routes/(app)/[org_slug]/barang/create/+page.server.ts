@@ -23,10 +23,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const orgId = orgResults[0].id;
 
-	const warehouses = await db
-		.select()
-		.from(warehouse)
-		.where(eq(warehouse.organizationId, orgId));
+	const warehouses = await db.select().from(warehouse).where(eq(warehouse.organizationId, orgId));
 
 	const form = await superValidate(yup(itemSchema));
 

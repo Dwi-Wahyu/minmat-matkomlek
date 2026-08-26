@@ -56,11 +56,11 @@ You can preview the production build with `npm run preview`.
 - Visit /demo/better-auth route to view the demo
 
 ┌────────────────┬────────┬───────────────────────────┐
-│ Aksi           │ Method │ URL Endpoint              │
+│ Aksi │ Method │ URL Endpoint │
 ├────────────────┼────────┼───────────────────────────┤
-│ Login          │ POST   │ /api/auth/sign-in/email   │
-│ Register       │ POST   │ /api/auth/sign-up/email   │
-│ Logout         │ POST   │ /api/auth/sign-out        │
-│ Cek Session    │ GET    │ /api/auth/get-session     │
-│ Ganti Password │ POST   │ /api/auth/change-password │
+│ Login │ POST │ /api/auth/sign-in/email │
+│ Register │ POST │ /api/auth/sign-up/email │
+│ Logout │ POST │ /api/auth/sign-out │
+│ Cek Session │ GET │ /api/auth/get-session │
+│ Ganti Password │ POST │ /api/auth/change-password │
 └────────────────┴────────┴───────────────────────────┘

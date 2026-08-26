@@ -3,7 +3,7 @@ import { db } from '$lib/server/db';
 import { item, stock, warehouse } from '$lib/server/db/schema';
 import { eq, and, like, sql } from 'drizzle-orm';
 
-export const GET: import("./$types").RequestHandler = async ({ url, locals }) => {
+export const GET: import('./$types').RequestHandler = async ({ url, locals }) => {
 	if (!locals.user?.organization) {
 		return json({ success: false, message: 'Unauthorized' }, { status: 401 });
 	}
@@ -19,10 +19,12 @@ export const GET: import("./$types").RequestHandler = async ({ url, locals }) =>
 		const items = await db
 			.select()
 			.from(item)
-			.where(and(
-				eq(item.type, 'CONSUMABLE'),
-				nameFilter ? like(item.name, `%${nameFilter}%`) : undefined
-			))
+			.where(
+				and(
+					eq(item.type, 'CONSUMABLE'),
+					nameFilter ? like(item.name, `%${nameFilter}%`) : undefined
+				)
+			)
 			.limit(limit)
 			.offset(offset);
 
@@ -30,7 +32,7 @@ export const GET: import("./$types").RequestHandler = async ({ url, locals }) =>
 			return json({ success: true, data: [], pagination: { page, limit } });
 		}
 
-		const itemIds = items.map(i => i.id);
+		const itemIds = items.map((i) => i.id);
 
 		// 2. Ambil stok untuk item-item tersebut di organisasi ini
 		const stocksResults = await db
@@ -41,16 +43,16 @@ export const GET: import("./$types").RequestHandler = async ({ url, locals }) =>
 			})
 			.from(stock)
 			.innerJoin(warehouse, eq(stock.warehouseId, warehouse.id))
-			.where(and(
-				sql`${stock.itemId} IN ${itemIds}`,
-				eq(warehouse.organizationId, organizationId)
-			));
+			.where(and(sql`${stock.itemId} IN ${itemIds}`, eq(warehouse.organizationId, organizationId)));
 
 		// 3. Gabungkan data
 		const finalData = items.map((i) => {
-			const itemStocks = stocksResults.filter(s => s.itemId === i.id);
+			const itemStocks = stocksResults.filter((s) => s.itemId === i.id);
 			const totalQty = itemStocks.reduce((acc, curr) => acc + Number(curr.qty), 0);
-			const lokasi = itemStocks.map(s => s.warehouseName).filter(Boolean).join(', ');
+			const lokasi = itemStocks
+				.map((s) => s.warehouseName)
+				.filter(Boolean)
+				.join(', ');
 
 			return {
 				id: i.id,
@@ -63,8 +65,8 @@ export const GET: import("./$types").RequestHandler = async ({ url, locals }) =>
 			};
 		});
 
-		return json({ 
-			success: true, 
+		return json({
+			success: true,
 			data: finalData,
 			pagination: {
 				page,

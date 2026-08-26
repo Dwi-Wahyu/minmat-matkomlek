@@ -36,7 +36,11 @@ export async function createDistribution(params: CreateDistributionParams) {
 	return await db.transaction(async (tx) => {
 		const distributionId = uuidv4();
 
-		const isAutoValidated = ['operatorBinmatDanBekharrah', 'operatorPusatDanDaerah', 'superadmin'].includes(params.requesterRole);
+		const isAutoValidated = [
+			'operatorBinmatDanBekharrah',
+			'operatorPusatDanDaerah',
+			'superadmin'
+		].includes(params.requesterRole);
 		const initialStatus = isAutoValidated ? 'VALIDATED' : 'DRAFT';
 
 		// Insert into distribution
@@ -86,7 +90,11 @@ export async function createDistribution(params: CreateDistributionParams) {
 			const validators = await tx.query.member.findMany({
 				where: and(
 					eq(member.organizationId, params.fromOrganizationId),
-					inArray(member.role, ['operatorBinmatDanBekharrah', 'operatorPusatDanDaerah', 'superadmin'])
+					inArray(member.role, [
+						'operatorBinmatDanBekharrah',
+						'operatorPusatDanDaerah',
+						'superadmin'
+					])
 				),
 				columns: { userId: true },
 				with: {

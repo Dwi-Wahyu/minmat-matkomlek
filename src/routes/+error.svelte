@@ -30,13 +30,13 @@
 >
 	<div class="relative mb-8">
 		<h1
-			class="select-none text-9xl font-black tracking-tighter text-slate-200 dark:text-slate-800 md:text-[12rem]"
+			class="text-9xl font-black tracking-tighter text-slate-200 select-none md:text-[12rem] dark:text-slate-800"
 		>
 			{status || 404}
 		</h1>
 		<div class="absolute inset-0 flex items-center justify-center">
 			<div class="space-y-2">
-				<h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 md:text-3xl">
+				<h2 class="text-2xl font-bold text-slate-900 md:text-3xl dark:text-slate-100">
 					{status === 404 ? 'Halaman Tidak Ditemukan' : 'Terjadi Kesalahan'}
 				</h2>
 				<p class="mx-auto max-w-xs text-sm text-slate-500 md:text-base">

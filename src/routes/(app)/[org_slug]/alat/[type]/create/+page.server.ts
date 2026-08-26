@@ -1,5 +1,12 @@
 import { db } from '$lib/server/db';
-import { equipment, item, warehouse, organization, movement, itemCategory } from '$lib/server/db/schema';
+import {
+	equipment,
+	item,
+	warehouse,
+	organization,
+	movement,
+	itemCategory
+} from '$lib/server/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
@@ -180,7 +187,8 @@ export const actions: Actions = {
 						createdAt: new Date()
 					});
 
-					await tx.update(equipment)
+					await tx
+						.update(equipment)
 						.set({
 							classification: classification as 'BALKIR' | 'KOMUNITY' | 'TRANSITO'
 						})

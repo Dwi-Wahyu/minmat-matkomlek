@@ -52,7 +52,7 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 	if (imageFile && imageFile.size > 0) {
 		const { fileName: newFileName, error: uploadError } = await uploadFile(imageFile, 'land');
 		if (uploadError) return json({ message: uploadError }, { status: 400 });
-		
+
 		// Delete old file if new one uploaded
 		if (existingLand.photoPath) {
 			deleteFile(existingLand.photoPath, 'land');
@@ -61,7 +61,8 @@ export const PATCH: RequestHandler = async ({ params, request }) => {
 	}
 
 	try {
-		await db.update(land)
+		await db
+			.update(land)
 			.set({
 				certificateNumber: certificateNumber ?? existingLand.certificateNumber,
 				location: location ?? existingLand.location,

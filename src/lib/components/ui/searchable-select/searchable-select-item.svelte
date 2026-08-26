@@ -14,12 +14,14 @@
 		...restProps
 	}: WithoutChild<SelectPrimitive.ItemProps> = $props();
 
-	const searchState = getContext<{ searchValue: string } | undefined>('SEARCHABLE_SELECT_SEARCH_STATE');
+	const searchState = getContext<{ searchValue: string } | undefined>(
+		'SEARCHABLE_SELECT_SEARCH_STATE'
+	);
 
 	const isVisible = $derived.by(() => {
 		if (!searchState?.searchValue) return true;
 		const search = searchState.searchValue.toLowerCase();
-		const l = (label || "").toLowerCase();
+		const l = (label || '').toLowerCase();
 		const v = String(value).toLowerCase();
 		return l.includes(search) || v.includes(search);
 	});

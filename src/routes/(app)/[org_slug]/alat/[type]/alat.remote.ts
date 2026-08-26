@@ -41,10 +41,7 @@ export const getAlatData = query(alatSchema, async (args): Promise<AlatListData>
 
 	const equipmentType = type.toUpperCase() === 'ALPERNIKA' ? 'PERNIKA_LEK' : 'ALKOMLEK';
 
-	const filters = [
-		eq(item.equipmentType, equipmentType),
-		eq(equipment.organizationId, orgId)
-	];
+	const filters = [eq(item.equipmentType, equipmentType), eq(equipment.organizationId, orgId)];
 
 	if (searchQuery) {
 		filters.push(
@@ -104,7 +101,10 @@ export const getAlatData = query(alatSchema, async (args): Promise<AlatListData>
 			.from(movement)
 			.innerJoin(
 				subquery,
-				and(eq(movement.equipmentId, subquery.equipmentId), eq(movement.createdAt, subquery.maxDate))
+				and(
+					eq(movement.equipmentId, subquery.equipmentId),
+					eq(movement.createdAt, subquery.maxDate)
+				)
 			);
 	}
 

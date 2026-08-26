@@ -435,10 +435,7 @@ export const actions: Actions = {
 			if (requesterOrgId) {
 				// Kirim notifikasi ke kepala gudang di org peminjam
 				const borrowerKGMembers = await db.query.member.findMany({
-					where: and(
-						eq(member.organizationId, requesterOrgId),
-						eq(member.role, 'kepalaGudang')
-					),
+					where: and(eq(member.organizationId, requesterOrgId), eq(member.role, 'kepalaGudang')),
 					columns: { userId: true }
 				});
 
@@ -629,7 +626,10 @@ export const actions: Actions = {
 					if (!memberRecord) continue;
 
 					// Hanya kirim notifikasi ke kepalaGudang jika warehouseHeadType === 'KOMUNITY'
-					if (memberRecord.role === 'kepalaGudang' && memberRecord.warehouseHeadType !== 'KOMUNITY') {
+					if (
+						memberRecord.role === 'kepalaGudang' &&
+						memberRecord.warehouseHeadType !== 'KOMUNITY'
+					) {
 						continue;
 					}
 

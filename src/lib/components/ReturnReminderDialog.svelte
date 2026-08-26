@@ -62,7 +62,7 @@
 							? 'border-red-200 bg-red-100 text-red-700'
 							: 'border-yellow-200 bg-yellow-100 text-yellow-700'}
 					>
-						<Clock class="size-3 mr-1" />
+						<Clock class="mr-1 size-3" />
 						{r.isOverdue ? 'Terlambat' : `s/d ${formatDate(r.endDate)}`}
 					</Badge>
 				</a>

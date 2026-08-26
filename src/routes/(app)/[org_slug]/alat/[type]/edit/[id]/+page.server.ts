@@ -201,7 +201,8 @@ export const actions: Actions = {
 						warehouseId: warehouseId || null,
 						condition: (condition as 'BAIK' | 'RUSAK_RINGAN' | 'RUSAK_BERAT') || 'BAIK',
 						status:
-							(finalStatus as 'READY' | 'IN_USE' | 'TRANSIT' | 'MAINTENANCE' | 'DISPOSED') || 'READY',
+							(finalStatus as 'READY' | 'IN_USE' | 'TRANSIT' | 'MAINTENANCE' | 'DISPOSED') ||
+							'READY',
 						updatedAt: new Date()
 					})
 					.where(eq(equipment.id, id));

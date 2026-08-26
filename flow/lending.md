@@ -165,7 +165,7 @@ overrideReason wajib diisi
 Jika tidak:
 
 ```ts
-throw Error("OVERRIDE_REASON_REQUIRED")
+throw Error('OVERRIDE_REASON_REQUIRED');
 ```
 
 ---
@@ -181,9 +181,9 @@ throw Error("OVERRIDE_REASON_REQUIRED")
 ### AUDIT LOG (WAJIB)
 
 ```ts
-action = "COMMAND_OVERRIDE"
-performedBy = overrideBy
-reason = overrideReason
+action = 'COMMAND_OVERRIDE';
+performedBy = overrideBy;
+reason = overrideReason;
 ```
 
 ---
@@ -224,7 +224,7 @@ PERINTAH_LANGSUNG → DIPINJAM
 Jika gagal:
 
 ```ts
-throw Error("LENDING_VALIDATION_FAILED")
+throw Error('LENDING_VALIDATION_FAILED');
 ```
 
 ---
@@ -234,7 +234,7 @@ throw Error("LENDING_VALIDATION_FAILED")
 1. Update equipment:
 
 ```ts
-status = IN_USE
+status = IN_USE;
 ```
 
 ---
@@ -242,17 +242,17 @@ status = IN_USE
 2. Buat movement (WAJIB):
 
 ```ts
-eventType = LOAN_OUT
-classification = KOMUNITY
+eventType = LOAN_OUT;
+classification = KOMUNITY;
 
-equipmentId = equipment.id
-organizationId = lending.organizationId
+equipmentId = equipment.id;
+organizationId = lending.organizationId;
 
-referenceType = LENDING
-referenceId = lending.id
+referenceType = LENDING;
+referenceId = lending.id;
 
-specificLocationName = lending.unit
-picId = lending.requestedBy
+specificLocationName = lending.unit;
+picId = lending.requestedBy;
 ```
 
 ---
@@ -282,7 +282,7 @@ lending.status → KEMBALI
 Jika tidak:
 
 ```ts
-throw Error("LENDING_VALIDATION_FAILED")
+throw Error('LENDING_VALIDATION_FAILED');
 ```
 
 ---
@@ -292,7 +292,7 @@ throw Error("LENDING_VALIDATION_FAILED")
 1. Update equipment:
 
 ```ts
-status = READY
+status = READY;
 ```
 
 ---
@@ -300,17 +300,17 @@ status = READY
 2. Buat movement:
 
 ```ts
-eventType = LOAN_RETURN
-classification = KOMUNITY
+eventType = LOAN_RETURN;
+classification = KOMUNITY;
 
-equipmentId = equipment.id
-organizationId = lending.organizationId
+equipmentId = equipment.id;
+organizationId = lending.organizationId;
 
-referenceType = LENDING
-referenceId = lending.id
+referenceType = LENDING;
+referenceId = lending.id;
 
-specificLocationName = "Gudang"
-picId = lending.requestedBy
+specificLocationName = 'Gudang';
+picId = lending.requestedBy;
 ```
 
 ---
@@ -333,12 +333,12 @@ tetapi juga merepresentasikan PROGRESS VISUAL (STEPPER UI).
 
 ```ts
 [
-  { status: 'DRAFT', label: 'Draft' },
-  { status: 'APPROVED', label: 'Disetujui' },
-  { status: 'PERINTAH_LANGSUNG', label: 'Perintah Langsung (Override)' },
-  { status: 'DIPINJAM', label: 'Dipinjam' },
-  { status: 'KEMBALI', label: 'Dikembalikan' }
-]
+	{ status: 'DRAFT', label: 'Draft' },
+	{ status: 'APPROVED', label: 'Disetujui' },
+	{ status: 'PERINTAH_LANGSUNG', label: 'Perintah Langsung (Override)' },
+	{ status: 'DIPINJAM', label: 'Dipinjam' },
+	{ status: 'KEMBALI', label: 'Dikembalikan' }
+];
 ```
 
 ---
@@ -367,8 +367,8 @@ Tidak boleh batch tanpa detail
 ## RULE 4 — HARUS ADA REFERENCE
 
 ```ts
-referenceType = LENDING
-referenceId = lending.id
+referenceType = LENDING;
+referenceId = lending.id;
 ```
 
 ---
@@ -407,7 +407,7 @@ Agent TIDAK BOLEH:
 # ⚠️ ERROR HANDLING
 
 ```ts
-throw Error("LENDING_VALIDATION_FAILED")
+throw Error('LENDING_VALIDATION_FAILED');
 ```
 
 ---

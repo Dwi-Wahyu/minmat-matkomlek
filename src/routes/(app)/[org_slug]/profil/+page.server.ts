@@ -149,7 +149,8 @@ export const actions: Actions = {
 		const usernameRegex = /^[a-zA-Z0-9._-]+$/;
 		if (!usernameRegex.test(usernameVal)) {
 			return fail(400, {
-				message: 'Username hanya boleh mengandung huruf, angka, titik, tanda hubung (-), dan garis bawah (_)'
+				message:
+					'Username hanya boleh mengandung huruf, angka, titik, tanda hubung (-), dan garis bawah (_)'
 			});
 		}
 
@@ -201,8 +202,13 @@ export const actions: Actions = {
 			}
 
 			// 5. Update name, username and email in db
-			const oldData = { name: currentUser.name, username: currentUser.username, email: currentUser.email };
-			await db.update(user)
+			const oldData = {
+				name: currentUser.name,
+				username: currentUser.username,
+				email: currentUser.email
+			};
+			await db
+				.update(user)
 				.set({ name: nameVal, username: usernameVal, email: emailVal })
 				.where(eq(user.id, currentUser.id));
 
@@ -214,12 +220,17 @@ export const actions: Actions = {
 				tableName: 'user',
 				recordId: currentUser.id,
 				oldValue: JSON.stringify(oldData),
-				newValue: JSON.stringify({ name: nameVal, username: usernameVal, email: emailVal, passwordChanged }),
+				newValue: JSON.stringify({
+					name: nameVal,
+					username: usernameVal,
+					email: emailVal,
+					passwordChanged
+				}),
 				createdAt: new Date()
 			});
 
-			const msg = passwordChanged 
-				? 'Profil dan password berhasil diperbarui. Sesi lain telah dihapus.' 
+			const msg = passwordChanged
+				? 'Profil dan password berhasil diperbarui. Sesi lain telah dihapus.'
 				: 'Profil berhasil diperbarui. Silakan refresh halaman jika data pada sidebar belum berubah.';
 
 			return { success: true, message: msg };

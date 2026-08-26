@@ -14,39 +14,45 @@ export type PemeliharaanListData = {
 	equipment: any[];
 };
 
-export const getPemeliharaanData = query(pemeliharaanSchema, async (args): Promise<PemeliharaanListData> => {
-	const { user } = requireAuth();
-	const orgId = user.organization.id;
-	const { equipmentIds } = args;
+export const getPemeliharaanData = query(
+	pemeliharaanSchema,
+	async (args): Promise<PemeliharaanListData> => {
+		const { user } = requireAuth();
+		const orgId = user.organization.id;
+		const { equipmentIds } = args;
 
-	const maintenanceList = await db.query.maintenance.findMany({
-		where: equipmentIds && equipmentIds.length > 0 ? inArray(maintenance.equipmentId, equipmentIds) : undefined,
-		with: {
-			equipment: {
-				with: {
-					item: true
+		const maintenanceList = await db.query.maintenance.findMany({
+			where:
+				equipmentIds && equipmentIds.length > 0
+					? inArray(maintenance.equipmentId, equipmentIds)
+					: undefined,
+			with: {
+				equipment: {
+					with: {
+						item: true
+					}
 				}
+			},
+			orderBy: [desc(maintenance.scheduledDate)]
+		});
+
+		const equipmentList = await db.query.equipment.findMany({
+			where: eq(equipment.organizationId, orgId),
+			with: {
+				item: true
 			}
-		},
-		orderBy: [desc(maintenance.scheduledDate)]
-	});
+		});
 
-	const equipmentList = await db.query.equipment.findMany({
-		where: eq(equipment.organizationId, orgId),
-		with: {
-			item: true
-		}
-	});
+		const filteredMaintenance = maintenanceList.filter(
+			(m) => m.equipment?.organizationId === orgId
+		);
 
-	const filteredMaintenance = maintenanceList.filter(
-		(m) => m.equipment?.organizationId === orgId
-	);
-
-	return {
-		maintenance: filteredMaintenance,
-		equipment: equipmentList
-	};
-});
+		return {
+			maintenance: filteredMaintenance,
+			equipment: equipmentList
+		};
+	}
+);
 
 const equipmentQuerySchema = v.object({
 	q: v.optional(v.string(), ''),
@@ -82,9 +88,7 @@ export const getAvailableEquipmentForMaintenance = query(
 		let filtered = rawEquipment;
 		if (q) {
 			const lowerQ = q.toLowerCase();
-			filtered = rawEquipment.filter((eqp) =>
-				eqp.item?.name?.toLowerCase().includes(lowerQ)
-			);
+			filtered = rawEquipment.filter((eqp) => eqp.item?.name?.toLowerCase().includes(lowerQ));
 		}
 
 		// Sort by item name

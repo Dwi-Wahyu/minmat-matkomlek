@@ -88,12 +88,15 @@
 			<Button
 				variant="outline"
 				href="/{page.params.org_slug}/alat/{page.params.type}/batch-create"
-				class="w-full md:w-fit gap-2"
+				class="w-full gap-2 md:w-fit"
 			>
 				<Plus class="size-4" />
 				Batch Input Alat
 			</Button>
-			<Button href="/{page.params.org_slug}/alat/{page.params.type}/create" class="w-full md:w-fit gap-2">
+			<Button
+				href="/{page.params.org_slug}/alat/{page.params.type}/create"
+				class="w-full gap-2 md:w-fit"
+			>
 				<Plus class="size-4" />
 				Tambah Alat
 			</Button>

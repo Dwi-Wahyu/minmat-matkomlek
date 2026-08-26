@@ -29,8 +29,6 @@ const allAuthRoles = {
 	operatorBinmatDanBekharrah
 };
 
-
-
 export const auth = betterAuth({
 	baseURL: process.env.ORIGIN,
 	secret: process.env.BETTER_AUTH_SECRET,

@@ -1,5 +1,17 @@
 import { db } from '$lib/server/db';
-import { equipment, item, warehouse, organization, movement, lending, lendingItem, distribution, distributionEquipment, auditLog, itemCategory } from '$lib/server/db/schema';
+import {
+	equipment,
+	item,
+	warehouse,
+	organization,
+	movement,
+	lending,
+	lendingItem,
+	distribution,
+	distributionEquipment,
+	auditLog,
+	itemCategory
+} from '$lib/server/db/schema';
 import { eq, and, asc } from 'drizzle-orm';
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
@@ -126,7 +138,8 @@ export const actions: Actions = {
 
 		if (!defaultWarehouse) {
 			return fail(400, {
-				message: 'Gudang default tidak ditemukan. Silahkan buat gudang terlebih dahulu di menu Infrastruktur.'
+				message:
+					'Gudang default tidak ditemukan. Silahkan buat gudang terlebih dahulu di menu Infrastruktur.'
 			});
 		}
 
@@ -170,7 +183,10 @@ export const actions: Actions = {
 					if (existingItem) {
 						finalItemId = existingItem.id;
 						if (finalCategoryId && !existingItem.categoryId) {
-							await tx.update(item).set({ categoryId: finalCategoryId }).where(eq(item.id, finalItemId));
+							await tx
+								.update(item)
+								.set({ categoryId: finalCategoryId })
+								.where(eq(item.id, finalItemId));
 						}
 					} else {
 						finalItemId = crypto.randomUUID();
@@ -295,7 +311,11 @@ export const actions: Actions = {
 				if (user.warehouseHeadType === 'TRANSITO' && transitoDists.size > 0) {
 					for (const [subId, eqpIds] of transitoDists.entries()) {
 						const distId = crypto.randomUUID();
-						const isAutoValidated = ['operatorBinmatDanBekharrah', 'operatorPusatDanDaerah', 'superadmin'].includes(user.role);
+						const isAutoValidated = [
+							'operatorBinmatDanBekharrah',
+							'operatorPusatDanDaerah',
+							'superadmin'
+						].includes(user.role);
 						const initialStatus = isAutoValidated ? 'VALIDATED' : 'DRAFT';
 
 						// Insert ke distribution

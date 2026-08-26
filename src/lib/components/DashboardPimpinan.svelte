@@ -196,10 +196,14 @@
 					href={resolve('/(app)/[org_slug]/stok/transito', { org_slug })}
 					class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
 				>
-					<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+					<h3
+						class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary"
+					>
 						Transito
 					</h3>
-					<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+					<SquareArrowOutUpRight
+						class="h-4 w-4 text-foreground transition-colors group-hover:text-primary"
+					/>
 				</a>
 				<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
 					<p class="text-4xl font-extrabold text-primary">{transito.total.toLocaleString()}</p>
@@ -216,10 +220,14 @@
 				href={resolve('/(app)/[org_slug]/stok/komunity', { org_slug })}
 				class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
 			>
-				<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+				<h3
+					class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary"
+				>
 					Komunity
 				</h3>
-				<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+				<SquareArrowOutUpRight
+					class="h-4 w-4 text-foreground transition-colors group-hover:text-primary"
+				/>
 			</a>
 			<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
 				<p class="text-4xl font-extrabold text-blue-600 dark:text-blue-400">
@@ -237,10 +245,14 @@
 				href={resolve('/(app)/[org_slug]/stok/balkir', { org_slug })}
 				class="group flex items-center justify-between border-b border-border bg-muted/50 px-5 py-4 transition-colors hover:bg-muted"
 			>
-				<h3 class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary">
+				<h3
+					class="text-sm font-bold tracking-wide text-foreground uppercase transition-colors group-hover:text-primary"
+				>
 					Balkir
 				</h3>
-				<SquareArrowOutUpRight class="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+				<SquareArrowOutUpRight
+					class="h-4 w-4 text-foreground transition-colors group-hover:text-primary"
+				/>
 			</a>
 			<div class="flex flex-1 flex-col items-center justify-center p-6 text-center">
 				<p class="text-4xl font-extrabold text-amber-600 dark:text-amber-400">

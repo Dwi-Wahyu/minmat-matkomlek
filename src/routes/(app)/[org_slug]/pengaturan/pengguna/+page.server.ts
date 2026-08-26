@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	});
 
 	return {
-		members: filteredMembers.map(m => ({
+		members: filteredMembers.map((m) => ({
 			...m,
 			lastLogin: m.user?.sessions?.[0]?.createdAt || null
 		})),

@@ -5,22 +5,24 @@ Dokumen ini membagi Use Case Diagram ke dalam beberapa fitur utama agar lebih mu
 ---
 
 ## 1. Manajemen User
+
 Fokus pada pengelolaan hak akses dan akun pengguna oleh administrator.
 
 ```mermaid
 flowchart LR
     Admin["Superadmin"]
-    
+
     subgraph "Manajemen User"
         UC_ManageUsers["Kelola Akun & Role"]
     end
-    
+
     Admin --> UC_ManageUsers
 ```
 
 ---
 
 ## 2. Manajemen Inventaris
+
 Fokus pada pengelolaan data alat, gudang, dan stok material.
 
 ```mermaid
@@ -48,6 +50,7 @@ flowchart LR
 ---
 
 ## 3. Operasional & Mutasi
+
 Fokus pada alur kerja harian seperti peminjaman, pergerakan barang (mutasi), distribusi, dan pemeliharaan.
 
 ```mermaid
@@ -80,6 +83,7 @@ flowchart LR
 ---
 
 ## 4. Laporan & Monitoring
+
 Fokus pada transparansi data, audit log, dan pelaporan berkala.
 
 ```mermaid
@@ -104,6 +108,7 @@ flowchart LR
 ---
 
 ### Daftar Aktor & Peran:
+
 - **Superadmin**: Mengelola infrastruktur data (user, gudang, audit log).
 - **Pimpinan / Kakomlek**: Melakukan pengawasan dan memberikan otorisasi (approval).
 - **Operator (Pusat/Daerah)**: Pelaksana operasional inventaris dan logistik.

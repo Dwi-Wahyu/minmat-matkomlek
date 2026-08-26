@@ -10,10 +10,10 @@ Mengambil informasi lengkap sebuah barang, termasuk stok di gudang, daftar aset 
 
 ## Path Parameters
 
-| Parameter | Tipe | Deskripsi |
-| :--- | :--- | :--- |
+| Parameter  | Tipe     | Deskripsi                                        |
+| :--------- | :------- | :----------------------------------------------- |
 | `org_slug` | `string` | Slug organisasi (contoh: `pussenif`, `mabes-ad`) |
-| `id` | `uuid` | ID unik barang (`item.id`) |
+| `id`       | `uuid`   | ID unik barang (`item.id`)                       |
 
 ---
 
@@ -21,64 +21,64 @@ Mengambil informasi lengkap sebuah barang, termasuk stok di gudang, daftar aset 
 
 ```json
 {
-  "id": "uuid-barang",
-  "name": "Radio Alkomlek Type A",
-  "type": "ASSET", // "ASSET" atau "CONSUMABLE"
-  "equipmentType": "ALKOMLEK", // Opsional, hanya jika ASSET
-  "baseUnit": "PCS",
-  "description": "Keterangan detail barang...",
-  "createdAt": "2024-03-29T10:00:00.000Z",
-  
-  "stocks": [
-    {
-      "id": "uuid-stock",
-      "qty": "25.0000",
-      "updatedAt": "2024-03-29T11:00:00.000Z",
-      "warehouse": {
-        "id": "uuid-gudang",
-        "name": "Gudang Utama Pussenif",
-        "location": "Bandung"
-      }
-    }
-  ],
-  
-  "equipments": [
-    {
-      "id": "uuid-alat",
-      "serialNumber": "SN-12345",
-      "brand": "Harris",
-      "condition": "BAIK",
-      "status": "READY",
-      "warehouse": {
-        "name": "Gudang Alkom"
-      }
-    }
-  ],
-  
-  "movements": [
-    {
-      "id": "uuid-movement",
-      "eventType": "RECEIVE",
-      "qty": "10.0000",
-      "unit": "BOX",
-      "createdAt": "2024-03-29T09:00:00.000Z",
-      "fromWarehouse": null,
-      "toWarehouse": { "name": "Gudang Utama" },
-      "pic": {
-        "id": "uuid-user",
-        "name": "Sertu Budi"
-      }
-    }
-  ],
-  
-  "unitConversions": [
-    {
-      "id": "uuid-conv",
-      "fromUnit": "BOX",
-      "toUnit": "PCS",
-      "multiplier": "12.0000"
-    }
-  ]
+	"id": "uuid-barang",
+	"name": "Radio Alkomlek Type A",
+	"type": "ASSET", // "ASSET" atau "CONSUMABLE"
+	"equipmentType": "ALKOMLEK", // Opsional, hanya jika ASSET
+	"baseUnit": "PCS",
+	"description": "Keterangan detail barang...",
+	"createdAt": "2024-03-29T10:00:00.000Z",
+
+	"stocks": [
+		{
+			"id": "uuid-stock",
+			"qty": "25.0000",
+			"updatedAt": "2024-03-29T11:00:00.000Z",
+			"warehouse": {
+				"id": "uuid-gudang",
+				"name": "Gudang Utama Pussenif",
+				"location": "Bandung"
+			}
+		}
+	],
+
+	"equipments": [
+		{
+			"id": "uuid-alat",
+			"serialNumber": "SN-12345",
+			"brand": "Harris",
+			"condition": "BAIK",
+			"status": "READY",
+			"warehouse": {
+				"name": "Gudang Alkom"
+			}
+		}
+	],
+
+	"movements": [
+		{
+			"id": "uuid-movement",
+			"eventType": "RECEIVE",
+			"qty": "10.0000",
+			"unit": "BOX",
+			"createdAt": "2024-03-29T09:00:00.000Z",
+			"fromWarehouse": null,
+			"toWarehouse": { "name": "Gudang Utama" },
+			"pic": {
+				"id": "uuid-user",
+				"name": "Sertu Budi"
+			}
+		}
+	],
+
+	"unitConversions": [
+		{
+			"id": "uuid-conv",
+			"fromUnit": "BOX",
+			"toUnit": "PCS",
+			"multiplier": "12.0000"
+		}
+	]
 }
 ```
 
@@ -91,15 +91,15 @@ Mengambil informasi lengkap sebuah barang, termasuk stok di gudang, daftar aset 
    - `equipments`: Hanya menampilkan daftar alat yang terdaftar di bawah organisasi tersebut.
    - `movements`: Hanya menampilkan riwayat transaksi yang melibatkan organisasi tersebut (maksimal 5 riwayat terbaru).
 2. **Decimal Handling**: Nilai `qty` dan `multiplier` dikembalikan dalam format `string` dengan presisi 4 desimal (standar database MySQL Decimal) untuk menghindari masalah pembulatan pada JavaScript.
-3. **Relation Loading**: Menggunakan *eager loading* (Drizzle `with`) untuk meminimalkan jumlah *query* ke database.
+3. **Relation Loading**: Menggunakan _eager loading_ (Drizzle `with`) untuk meminimalkan jumlah _query_ ke database.
 
 ---
 
 ## Error Responses
 
-| Status Code | Kondisi | Pesan Error |
-| :--- | :--- | :--- |
-| `401 Unauthorized` | Pengguna belum login atau sesi berakhir. | `Unauthorized` |
-| `404 Not Found` | Organisasi tidak ditemukan berdasarkan slug. | `Organization not found` |
-| `404 Not Found` | Barang tidak ditemukan berdasarkan ID. | `Item tidak ditemukan` |
-| `500 Internal Error`| Terjadi kegagalan server. | `Kesalahan server internal` |
+| Status Code          | Kondisi                                      | Pesan Error                 |
+| :------------------- | :------------------------------------------- | :-------------------------- |
+| `401 Unauthorized`   | Pengguna belum login atau sesi berakhir.     | `Unauthorized`              |
+| `404 Not Found`      | Organisasi tidak ditemukan berdasarkan slug. | `Organization not found`    |
+| `404 Not Found`      | Barang tidak ditemukan berdasarkan ID.       | `Item tidak ditemukan`      |
+| `500 Internal Error` | Terjadi kegagalan server.                    | `Kesalahan server internal` |

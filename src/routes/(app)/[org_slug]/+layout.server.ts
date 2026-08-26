@@ -19,7 +19,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		async () => {
 			const [latestNotifications, [unreadCountResult]] = await Promise.all([
 				db.query.notification.findMany({
-					where: (notif, { eq, or }) => or(eq(notif.userId, userId), eq(notif.organizationId, orgId)),
+					where: (notif, { eq, or }) =>
+						or(eq(notif.userId, userId), eq(notif.organizationId, orgId)),
 					orderBy: [desc(notification.createdAt)],
 					limit: 5
 				}),

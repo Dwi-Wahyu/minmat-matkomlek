@@ -16,13 +16,10 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 	const isCentralOrSuper = user.role === 'superadmin' || user.organization?.parentId === null;
 
 	let whereClause;
-	
+
 	if (isCentralOrSuper) {
 		if (search) {
-			whereClause = or(
-				like(equipment.serialNumber, `%${search}%`),
-				like(item.name, `%${search}%`)
-			);
+			whereClause = or(like(equipment.serialNumber, `%${search}%`), like(item.name, `%${search}%`));
 		} else {
 			whereClause = undefined;
 		}
@@ -30,10 +27,7 @@ export const GET: RequestHandler = async ({ locals, url }) => {
 		if (search) {
 			whereClause = and(
 				eq(equipment.organizationId, user.organization.id),
-				or(
-					like(equipment.serialNumber, `%${search}%`),
-					like(item.name, `%${search}%`)
-				)
+				or(like(equipment.serialNumber, `%${search}%`), like(item.name, `%${search}%`))
 			);
 		} else {
 			whereClause = eq(equipment.organizationId, user.organization.id);
@@ -96,4 +90,3 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	return json({ success: true, id: newEquipment[0].insertId }, { status: 201 });
 };
-

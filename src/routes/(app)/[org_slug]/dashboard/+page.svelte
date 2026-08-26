@@ -79,7 +79,11 @@
 			</div>
 		{:then kgData}
 			{#if kgData}
-				<DashboardKepalaGudang data={kgData as any} org_slug={data.org_slug} returnReminders={data.returnReminders} />
+				<DashboardKepalaGudang
+					data={kgData as any}
+					org_slug={data.org_slug}
+					returnReminders={data.returnReminders}
+				/>
 			{/if}
 		{:catch err}
 			<div

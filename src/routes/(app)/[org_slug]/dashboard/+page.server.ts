@@ -39,7 +39,10 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const isSatuanBawahan = locals.user?.organization?.parentId !== null;
 	const REMINDER_ROLES = ['kepalaGudang', 'operatorPusatDanDaerah', 'operatorBinmatDanBekharrah'];
 	const roleAllowed = locals.user?.role ? REMINDER_ROLES.includes(locals.user.role) : false;
-	const isCentralKomunityKG = !isSatuanBawahan && locals.user?.role === 'kepalaGudang' && locals.user?.warehouseHeadType === 'KOMUNITY';
+	const isCentralKomunityKG =
+		!isSatuanBawahan &&
+		locals.user?.role === 'kepalaGudang' &&
+		locals.user?.warehouseHeadType === 'KOMUNITY';
 
 	let returnReminders: {
 		lendingId: string;
@@ -353,10 +356,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 						.select({ count: count() })
 						.from(equipment)
 						.where(
-							and(
-								eq(equipment.organizationId, orgId),
-								eq(equipment.classification, 'BALKIR')
-							)
+							and(eq(equipment.organizationId, orgId), eq(equipment.classification, 'BALKIR'))
 						);
 
 					balkir = {

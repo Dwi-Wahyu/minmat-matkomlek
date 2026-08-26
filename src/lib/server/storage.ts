@@ -17,7 +17,10 @@ export async function uploadFile(
 
 	const extension = extname(file.name).toLowerCase();
 	if (!allowedExtensions.includes(extension)) {
-		return { fileName: null, error: `Ekstensi file ${extension} tidak diizinkan. Gunakan ${allowedExtensions.join(', ')}` };
+		return {
+			fileName: null,
+			error: `Ekstensi file ${extension} tidak diizinkan. Gunakan ${allowedExtensions.join(', ')}`
+		};
 	}
 
 	const fileName = `${crypto.randomUUID()}${extension}`;
@@ -42,9 +45,9 @@ export async function uploadFile(
 
 export function deleteFile(fileName: string | null, subfolder: string) {
 	if (!fileName) return;
-	
+
 	const fsPath = join(UPLOAD_ROOT, subfolder, fileName);
-	
+
 	try {
 		if (existsSync(fsPath)) {
 			unlinkSync(fsPath);

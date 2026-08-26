@@ -180,7 +180,9 @@ export const equipment = mysqlTable(
 );
 
 export const itemCategory = mysqlTable('item_category', {
-	id: varchar('id', { length: 36 }).primaryKey().$defaultFn(() => crypto.randomUUID()),
+	id: varchar('id', { length: 36 })
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
 	name: varchar('name', { length: 255 }).notNull(),
 	parentId: varchar('parent_id', { length: 36 }), // Null jika kategori level 1 (Utama)
 	order: int('order').default(0), // Untuk sorting urutan laporan (A, B, C atau I, II, III)

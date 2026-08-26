@@ -37,7 +37,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 // POST: Create a new building record (Multipart/form-data for image)
 export const POST: RequestHandler = async ({ params, request }) => {
 	const { org_slug } = params;
-	
+
 	const org = await db.query.organization.findFirst({
 		where: eq(organization.slug, org_slug)
 	});
@@ -47,7 +47,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
 	}
 
 	const formData = await request.formData();
-	
+
 	const code = formData.get('code') as string;
 	const name = formData.get('name') as string;
 	const location = formData.get('location') as string;

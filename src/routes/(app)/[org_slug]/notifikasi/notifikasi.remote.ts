@@ -11,13 +11,10 @@ export type NotifikasiListData = {
 
 export const getNotifikasiData = query(async (): Promise<NotifikasiListData> => {
 	const { user } = requireAuth();
-	
+
 	const allNotifications = await db.query.notification.findMany({
 		where: (notif, { eq, or }) =>
-			or(
-				eq(notif.userId, user.id),
-				eq(notif.organizationId, user.organization.id)
-			),
+			or(eq(notif.userId, user.id), eq(notif.organizationId, user.organization.id)),
 		orderBy: [desc(notification.createdAt)]
 	});
 

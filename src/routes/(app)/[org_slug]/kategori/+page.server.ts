@@ -167,7 +167,11 @@ export const actions: Actions = {
 					action: 'UPDATE_ITEM_CATEGORY',
 					tableName: 'item_category',
 					recordId: id,
-					oldValue: JSON.stringify({ name: oldData.name, parentId: oldData.parentId, order: oldData.order }),
+					oldValue: JSON.stringify({
+						name: oldData.name,
+						parentId: oldData.parentId,
+						order: oldData.order
+					}),
 					newValue: JSON.stringify({ name, parentId, order })
 				});
 			});
@@ -227,7 +231,11 @@ export const actions: Actions = {
 					action: 'DELETE_ITEM_CATEGORY',
 					tableName: 'item_category',
 					recordId: id,
-					oldValue: JSON.stringify({ name: oldData.name, parentId: oldData.parentId, order: oldData.order })
+					oldValue: JSON.stringify({
+						name: oldData.name,
+						parentId: oldData.parentId,
+						order: oldData.order
+					})
 				});
 			});
 
@@ -237,7 +245,10 @@ export const actions: Actions = {
 			return { success: true, message: 'Kategori berhasil dihapus' };
 		} catch (err: any) {
 			console.error(err);
-			if (err.errno === 1451 || (err.message && err.message.toLowerCase().includes('foreign key'))) {
+			if (
+				err.errno === 1451 ||
+				(err.message && err.message.toLowerCase().includes('foreign key'))
+			) {
 				return fail(400, {
 					message: 'Kategori tidak dapat dihapus karena sedang digunakan oleh data materiil/alat'
 				});

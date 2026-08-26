@@ -50,10 +50,7 @@ async function updatePassword({
 			.update(authSchema.account)
 			.set({ password: hashedPassword })
 			.where(
-				and(
-					eq(authSchema.account.userId, userId),
-					eq(authSchema.account.providerId, 'credential')
-				)
+				and(eq(authSchema.account.userId, userId), eq(authSchema.account.providerId, 'credential'))
 			);
 		console.log(`✅ Password berhasil diperbarui untuk ${usernameValue}`);
 	} catch (e) {
@@ -73,7 +70,9 @@ async function main() {
 	});
 
 	if (parentOrgs.length === 0) {
-		console.error('Tidak ada organisasi pusat (tanpa parentId) ditemukan. Jalankan seeder utama terlebih dahulu.');
+		console.error(
+			'Tidak ada organisasi pusat (tanpa parentId) ditemukan. Jalankan seeder utama terlebih dahulu.'
+		);
 		process.exit(1);
 	}
 
@@ -105,8 +104,7 @@ async function main() {
 			});
 
 			const existingMember = await db.query.member.findFirst({
-				where: (m, { eq, and }) =>
-					and(eq(m.userId, existingUser.id), eq(m.organizationId, org.id))
+				where: (m, { eq, and }) => and(eq(m.userId, existingUser.id), eq(m.organizationId, org.id))
 			});
 
 			if (!existingMember) {

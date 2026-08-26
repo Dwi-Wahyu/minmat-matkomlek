@@ -10,7 +10,7 @@ export type SatuanJajaranListData = {
 
 export const getSatuanJajaranData = query(async (): Promise<SatuanJajaranListData> => {
 	const { user } = requireAuth();
-	
+
 	const units = await db.query.organization.findMany({
 		where: ne(organization.id, user.organization.id),
 		orderBy: (org, { asc }) => [asc(org.name)]

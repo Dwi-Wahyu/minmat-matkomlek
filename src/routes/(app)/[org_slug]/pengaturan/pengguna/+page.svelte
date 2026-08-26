@@ -71,9 +71,15 @@
 
 								<Table.Cell>
 									<div class="text-sm text-muted-foreground">
-										{member.lastLogin ? new Date(member.lastLogin).toLocaleString('id-ID', {
-											day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-										}) : 'Belum pernah login'}
+										{member.lastLogin
+											? new Date(member.lastLogin).toLocaleString('id-ID', {
+													day: 'numeric',
+													month: 'long',
+													year: 'numeric',
+													hour: '2-digit',
+													minute: '2-digit'
+												})
+											: 'Belum pernah login'}
 									</div>
 								</Table.Cell>
 

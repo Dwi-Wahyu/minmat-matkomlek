@@ -253,7 +253,10 @@
 			const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
 			const wb = XLSX.utils.book_new();
 			XLSX.utils.book_append_sheet(wb, ws, 'BTK-16 Report');
-			XLSX.writeFile(wb, `BTK16_${reportType}_${periodStr}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+			XLSX.writeFile(
+				wb,
+				`BTK16_${reportType}_${periodStr}_${new Date().toISOString().slice(0, 10)}.xlsx`
+			);
 			toast.success('Laporan berhasil diekspor ke format XLSX');
 		} catch (error) {
 			console.error(error);

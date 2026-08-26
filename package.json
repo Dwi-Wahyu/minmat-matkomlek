@@ -23,6 +23,8 @@
 		"db:seed-superadmin": "bun run src/lib/server/db/seed/superadmin.ts",
 		"db:seed-pimpinan": "bun run src/lib/server/db/seed/pimpinan.ts",
 		"db:seed-akmil": "bun run src/lib/server/db/seed/akmil.ts",
+		"db:seed-radin-inten": "bun run src/lib/server/db/seed/radin-inten.ts",
+		"db:seed-merdeka": "bun run src/lib/server/db/seed/merdeka.ts",
 		"db:seed-puskomlekad": "bun run src/lib/server/db/seed/puskomlekad.ts",
 		"db:seed-another-missing-satuan": "bun run src/lib/server/db/seed/another-missing-satuan.ts",
 		"db:seed-missing-satuan": "bun run src/lib/server/db/seed/missing-satuan.ts",
@@ -33,6 +35,7 @@
 		"db:seed-category": "bun run src/lib/server/db/seed/categories.ts",
 		"db:clean-mabesad": "bun run src/lib/server/db/scripts/clean-mabesad-inventory.ts",
 		"db:seed-test-org": "bun run src/lib/server/db/seed/test-org.ts",
+		"db:change-password": "bun run src/lib/server/db/seed/change-password.ts",
 		"auth:schema": "better-auth generate --config src/lib/server/auth.ts --output src/lib/server/db/auth.schema.ts --yes"
 	},
 	"overrides": {

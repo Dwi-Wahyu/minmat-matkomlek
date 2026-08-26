@@ -119,7 +119,8 @@ const PARENT_RULES: { pattern: RegExp; category: string }[] = [
 		category: 'LAIN-LAIN'
 	},
 	{
-		pattern: /RADIO|\bRDO\b|\bRIG\b|PRC[\s-]*\d|PRM[\s-]*\d|GM[\s-]*\d|GP[\s-]*\d|TRANSCEIVER|TRANCIEVER|\bDMR\b|RETRANS|MANPACK/,
+		pattern:
+			/RADIO|\bRDO\b|\bRIG\b|PRC[\s-]*\d|PRM[\s-]*\d|GM[\s-]*\d|GP[\s-]*\d|TRANSCEIVER|TRANCIEVER|\bDMR\b|RETRANS|MANPACK/,
 		category: 'ALKOM RADIO'
 	}
 ];
@@ -173,8 +174,7 @@ async function main() {
 		}
 
 		const key = match.category.trim().toUpperCase();
-		const categoryId =
-			match.level === 'leaf' ? leafByName.get(key) : parentByName.get(key);
+		const categoryId = match.level === 'leaf' ? leafByName.get(key) : parentByName.get(key);
 
 		if (!categoryId) {
 			// Rule menunjuk ke kategori yang ternyata belum ada di DB (nama typo / belum di-seed)
@@ -207,7 +207,9 @@ async function main() {
 		}
 		console.log(`\r  ✅ ${done}/${updates.length} item ter-update`);
 	} else if (DRY_RUN) {
-		console.log('\n  ℹ️  Dry run — tidak ada perubahan ditulis. Jalankan tanpa --dry-run untuk eksekusi.');
+		console.log(
+			'\n  ℹ️  Dry run — tidak ada perubahan ditulis. Jalankan tanpa --dry-run untuk eksekusi.'
+		);
 	}
 
 	// Tulis laporan item yang tidak cocok, supaya bisa direview manual / dibuatkan kategori baru

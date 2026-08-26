@@ -96,4 +96,3 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		org_slug: params.org_slug
 	};
 };
-

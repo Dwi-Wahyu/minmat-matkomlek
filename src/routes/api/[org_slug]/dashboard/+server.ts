@@ -72,12 +72,7 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					.select({ count: count() })
 					.from(equipment)
 					.innerJoin(item, eq(equipment.itemId, item.id))
-					.where(
-						and(
-							eq(equipment.organizationId, orgId),
-							equipmentTypeFilter
-						)
-					),
+					.where(and(eq(equipment.organizationId, orgId), equipmentTypeFilter)),
 				db
 					.select({ total: sum(stock.qty) })
 					.from(stock)
@@ -153,12 +148,7 @@ export const GET: RequestHandler = async ({ locals, params, url }) => {
 					})
 					.from(equipment)
 					.innerJoin(item, eq(equipment.itemId, item.id))
-					.where(
-						and(
-							eq(equipment.organizationId, orgId),
-							equipmentTypeFilter
-						)
-					)
+					.where(and(eq(equipment.organizationId, orgId), equipmentTypeFilter))
 					.orderBy(desc(equipment.createdAt))
 					.limit(5)
 			]);

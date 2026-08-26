@@ -56,10 +56,13 @@ export const actions: Actions = {
 
 		try {
 			const randomSuffix = crypto.randomUUID().slice(0, 8);
-			const slug = name
-				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, '-')
-				.replace(/(^-|-$)/g, '') + '-' + randomSuffix;
+			const slug =
+				name
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, '-')
+					.replace(/(^-|-$)/g, '') +
+				'-' +
+				randomSuffix;
 
 			await db.insert(organization).values({
 				id: crypto.randomUUID(),
@@ -123,9 +126,9 @@ export const actions: Actions = {
 		} catch (err) {
 			console.error('Error deleting Satuan Jajaran:', err);
 			return fail(500, {
-				message: 'Gagal menghapus Satuan Jajaran. Pastikan tidak ada data yang terikat dengan satuan ini.'
+				message:
+					'Gagal menghapus Satuan Jajaran. Pastikan tidak ada data yang terikat dengan satuan ini.'
 			});
 		}
 	}
 };
-

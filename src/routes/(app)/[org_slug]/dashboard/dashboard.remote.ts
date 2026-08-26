@@ -38,9 +38,13 @@ export type DashboardData = {
 };
 
 export const getDashboardData = query(
-	async (args?: { orgSlug?: string; period?: string; equipmentType?: string }): Promise<DashboardData> => {
+	async (args?: {
+		orgSlug?: string;
+		period?: string;
+		equipmentType?: string;
+	}): Promise<DashboardData> => {
 		const { user } = requireAuth();
-		
+
 		const orgSlug = args?.orgSlug || user.organization.slug;
 
 		// Resolve organization ID from slug

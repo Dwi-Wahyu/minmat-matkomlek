@@ -47,8 +47,6 @@ export const auth = betterAuth({
 // ─── Konfigurasi ──────────────────────────────────────────────────────────────
 const CSV_DIR = path.resolve(__dirname, '../csv/radin-inten');
 const BATCH_SIZE = 100;
-// slug "RADEN INTEN" yang sudah dibuat di seed utama (index.ts, daftar `daftarSatuan`).
-// BALAKDAM XXI/RI adalah sebutan lain untuk RADEN INTEN — org yang sama, bukan org baru.
 const ROOT_ORG_SLUG = 'raden-inten';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -95,11 +93,6 @@ const validUnits = new Set([
 
 const validConditions = new Set(['BAIK', 'RUSAK_RINGAN', 'RUSAK_BERAT', 'RUSAK_TOTAL']);
 
-/**
- * Username better-auth hanya menerima alfanumerik + underscore, dengan batas panjang.
- * Nama satuan mengandung karakter seperti "/", "." dan bisa sangat panjang
- * (mis. "LANUDAD GATOT SUBROTO (PUSPENERBAD)"), jadi harus disanitasi + dipotong + dibuat unik.
- */
 function toSafeUsername(prefix: string, rawName: string, maxLen = 30): string {
 	const clean = rawName
 		.toLowerCase()
@@ -158,36 +151,62 @@ interface MovementRow {
 	createdAt: string;
 }
 
-// ─── Step 1: Satuan Bawahan (Organization + Warehouse, parentId berjenjang) ───
-/**
- * Struktur satuan hasil ekstraksi Bentuk_16_Komlekdm_XXI_RI_TW_II.xlsx (sheet "Nominatif Alkom"):
- *
- *   RADEN INTEN (BALAKDAM XXI/RI — sudah ada, dari seed utama)
- *     ├─ L1: POMDAM XXI/RI                    (langsung, punya gudang sendiri)
- *     ├─ L1: KOMLEKDAM XXI/RI                 (langsung, punya gudang sendiri — mayoritas alat)
- *     ├─ L0: SATPUR/BANPUR                    (grouping saja, tanpa gudang)
- *     │    └─ L1: DENZIPUR 14/SB, YONIF TP 847/PC, YONIF TP 848/SPC, YONIF 143/TWEJ, YONIF 144/JY
- *     ├─ L0: DENKOMLEKREM                     (grouping saja)
- *     │    └─ L1: DENKOMLEKREM 041, DENKOMLEKREM 043      ← "organisasi sub level" satuan bawahan
- *     ├─ L0: SATKOWIL                         (grouping saja)
- *     │    ├─ L1: KOREM 041/GAMAS
- *     │    │    └─ L2: KODIM 0407/BENGKULU, 0425/SELUMA, 0409/RL, 0408/BS, 0423/BU, 0428/MM
- *     │    └─ L1: KOREM 043/GATAM
- *     │         └─ L2: KODIM 0410/KBL, 0411/LAMPUNG TENGAH, 0412/LAMPUNG UTARA, 0421/LAMSEL,
- *     │              0422/LAMPUNG BARAT, 0424/TANGGAMUS, 0426/TULANG BAWANG, 0427/WAY KANAN,
- *     │              0429/LAMPUNG TIMUR
- *     └─ L0: AREAL SERVIS                     (grouping saja)
- *          └─ L1: SKADRON 12/SERBU, LANUDAD GATOT SUBROTO (PUSPENERBAD)
- *
- * L0 = grouping murni (tidak pernah punya gudang/equipment langsung, hanya organizational bucket).
- * L1 & L2 = satuan pemakai riil, masing-masing mendapat 1 warehouse + 1 user kakomlek,
- * mengikuti pola yang sama dengan seed/index.ts & seed/merdeka.ts.
- *
- * Catatan penamaan: "KODIM 0423/BU" dan "KODIM 0428/MM" tidak memiliki data alat pada laporan
- * TW II ini (0 unit) — satuan tetap dibuat (untuk kelengkapan struktur organisasi & siap dipakai
- * ke depan), hanya tanpa equipment/movement.
- */
-async function seedSatuan(): Promise<Map<string, { orgId: string; warehouseId: string }>> {
+// ─── Step 0: Hapus data lama khusus Raden Inten ─────────────────────────────
+async function cleanupRadenInten(rootOrgId: string) {
+	console.log('\n🧹 Step 0: Membersihkan data Raden Inten lama...');
+
+	// 1. Cari semua organisasi di bawah Raden Inten
+	const allOrgs = await db.query.organization.findMany({
+		columns: { id: true },
+		where: inArray(schema.organization.parentId, [
+			rootOrgId,
+			...(
+				await db.query.organization.findMany({
+					columns: { id: true },
+					where: eq(schema.organization.parentId, rootOrgId)
+				})
+			).map((o) => o.id)
+		])
+	});
+	const orgIds = allOrgs.map((o) => o.id);
+	orgIds.push(rootOrgId);
+
+	// 2. Hapus movement, stock, equipment yang terkait
+	if (orgIds.length > 0) {
+		await db.delete(schema.movement).where(inArray(schema.movement.organizationId, orgIds));
+		await db.delete(schema.stock).where(
+			inArray(
+				schema.stock.warehouseId,
+				(
+					await db.query.warehouse.findMany({
+						columns: { id: true },
+						where: inArray(schema.warehouse.organizationId, orgIds)
+					})
+				).map((w) => w.id)
+			)
+		);
+		await db.delete(schema.equipment).where(inArray(schema.equipment.organizationId, orgIds));
+	}
+
+	// 3. Hapus warehouse satuan bawahan (opsional, bisa dibiarkan)
+	// Kita tidak hapus warehouse karena akan dibuat ulang, tapi lebih aman dihapus
+	const warehouseIds = (
+		await db.query.warehouse.findMany({
+			columns: { id: true },
+			where: inArray(schema.warehouse.organizationId, orgIds)
+		})
+	).map((w) => w.id);
+	if (warehouseIds.length > 0) {
+		await db.delete(schema.warehouse).where(inArray(schema.warehouse.id, warehouseIds));
+	}
+
+	console.log('  ✅ Data lama berhasil dibersihkan (equipment, movement, stock, warehouse).');
+}
+
+// ─── Step 1: Satuan Bawahan ──────────────────────────────────────────────────
+async function seedSatuan(
+	rootOrgId: string
+): Promise<Map<string, { orgId: string; warehouseId: string }>> {
 	console.log('\n🪖 Step 1: Membuat satuan bawahan Raden Inten (BALAKDAM XXI/RI)...');
 	const rows = readCsv<SatuanRow>('satuan.csv');
 
@@ -195,26 +214,19 @@ async function seedSatuan(): Promise<Map<string, { orgId: string; warehouseId: s
 		where: eq(authSchema.organization.slug, ROOT_ORG_SLUG)
 	});
 	if (!rootOrg) {
-		throw new Error(
-			`Organisasi induk RADEN INTEN (slug: ${ROOT_ORG_SLUG}) belum ditemukan. Jalankan seed utama (seed/index.ts) terlebih dahulu.`
-		);
+		throw new Error(`Organisasi induk RADEN INTEN (slug: ${ROOT_ORG_SLUG}) belum ditemukan.`);
 	}
 
 	const globalSuperadmin = await db.query.user.findFirst({
 		where: eq(authSchema.user.username, 'global.superadmin')
 	});
 	if (!globalSuperadmin) {
-		throw new Error('User global.superadmin belum ditemukan. Jalankan seed utama terlebih dahulu.');
+		throw new Error('User global.superadmin belum ditemukan.');
 	}
 
-	// slug -> { orgId, warehouseId (kosong utk L0 grouping) }
 	const slugToOrg = new Map<string, { orgId: string; warehouseId: string }>();
 	slugToOrg.set(ROOT_ORG_SLUG, { orgId: rootOrg.id, warehouseId: '' });
 
-	// Urutan wajib: L0 dulu (parent = RADEN INTEN), lalu L1 (parent = L0 atau RADEN INTEN
-	// langsung), baru L2 (parent = L1, mis. KODIM di bawah KOREM). satuan.csv sudah terurut
-	// sesuai ini, tapi kita filter eksplisit per level supaya urutan pemrosesan pasti benar
-	// walau urutan baris CSV berubah di kemudian hari.
 	const l0Rows = rows.filter((r) => r.level === 'L0');
 	const l1Rows = rows.filter((r) => r.level === 'L1');
 	const l2Rows = rows.filter((r) => r.level === 'L2');
@@ -252,8 +264,7 @@ async function seedSatuan(): Promise<Map<string, { orgId: string; warehouseId: s
 				console.log(`  ✅ Satuan dibuat: ${r.name} (level ${r.level}, parent: ${r.parentSlug})`);
 			}
 
-			// Hanya satuan pemakai (L1 & L2) yang butuh warehouse fisik untuk equipment.
-			// L0 murni grouping organisasi, tidak pernah punya gudang sendiri.
+			// Hanya L1 & L2 yang punya warehouse
 			let warehouseId = '';
 			if (r.level === 'L1' || r.level === 'L2') {
 				const existingWarehouse = await db.query.warehouse.findFirst({
@@ -274,7 +285,7 @@ async function seedSatuan(): Promise<Map<string, { orgId: string; warehouseId: s
 
 			slugToOrg.set(r.slug, { orgId, warehouseId });
 
-			// Buat 1 user kakomlek per satuan pemakai (L1 & L2), sama seperti pola seed/index.ts
+			// Buat user kakomlek untuk L1 & L2
 			if ((r.level === 'L1' || r.level === 'L2') && !existing) {
 				const roleName = 'kakomlek';
 				const userUsername = toSafeUsername(roleName, r.name);
@@ -310,16 +321,7 @@ async function seedSatuan(): Promise<Map<string, { orgId: string; warehouseId: s
 	return slugToOrg;
 }
 
-// ─── Step 2: Kategori Equipment (upsert, tidak menghapus data lama) ───────────
-/**
- * Kategori diambil dari header kategori sheet "Nominatif Alkom" (mis. HT HYBRID, REPEATER UHF,
- * DISPACHER, RAD SSB, SOUND SYSTEM, TELEPON, dst). Label nama satuan (POMDAM, KOMLEKDAM,
- * DENKOMLEKREM 041/043, KOREM, KODIM, SKADRON, LANUDAD, AREAL SERVIS, SATPUR/BANPUR, dll) SUDAH
- * DIPISAHKAN keluar dari daftar ini saat ekstraksi — nama satuan hanya masuk ke satuan.csv
- * (organization hierarchy), tidak dicampur ke kategori alat.
- * Semua diperlakukan sebagai kategori level 1 (Utama, parentId null) — idempotent seperti
- * seed/categories.ts, aman dijalankan berkali-kali.
- */
+// ─── Step 2: Kategori ─────────────────────────────────────────────────────────
 async function upsertCategory(name: string, parentId: string | null, order: number) {
 	const existing = await db.query.itemCategory.findFirst({
 		where: parentId
@@ -350,7 +352,7 @@ async function seedCategories(): Promise<Map<string, string>> {
 	return nameToId;
 }
 
-// ─── Step 3: Items (Katalog Barang, dedup by name lintas satuan) ──────────────
+// ─── Step 3: Items ────────────────────────────────────────────────────────────
 async function seedItems(categoryNameToId: Map<string, string>): Promise<Map<string, string>> {
 	console.log('\n📦 Step 3: Import Items (Katalog Barang)...');
 	const rows = readCsv<ItemRow>('items.csv');
@@ -400,15 +402,15 @@ async function seedItems(categoryNameToId: Map<string, string>): Promise<Map<str
 			.onDuplicateKeyUpdate({ set: { id: sql`id` } })
 	);
 
-	// Map name -> id nyata di DB (termasuk item yang sudah ada sebelumnya dari satuan lain)
 	const allItems = await db.query.item.findMany({ columns: { id: true, name: true } });
 	return new Map(allItems.map((i) => [i.name, i.id]));
 }
 
-// ─── Step 4: Equipment (Unit Fisik per Satuan, lengkap serial & kondisi) ──────
+// ─── Step 4: Equipment ────────────────────────────────────────────────────────
 async function seedEquipment(
 	itemNameToId: Map<string, string>,
-	slugToOrg: Map<string, { orgId: string; warehouseId: string }>
+	slugToOrg: Map<string, { orgId: string; warehouseId: string }>,
+	rootOrgId: string
 ): Promise<Set<string>> {
 	console.log('\n🔧 Step 4: Import Equipment (Unit Fisik per Satuan)...');
 	const rows = readCsv<EquipmentRow>('equipment.csv');
@@ -418,9 +420,6 @@ async function seedEquipment(
 	let skippedNoOrg = 0;
 	let dedupedSerial = 0;
 
-	// Cegah pelanggaran UNIQUE(serial_number) lintas satuan lain yang sudah ada di DB —
-	// pelanggaran unique key akan "diserap" diam-diam oleh onDuplicateKeyUpdate (row baru
-	// gagal dibuat tanpa error), yang akhirnya bikin insert movement berikutnya gagal FK.
 	const existingSerials = new Set(
 		(
 			await db.query.equipment.findMany({
@@ -446,7 +445,7 @@ async function seedEquipment(
 				r.serialNumber && r.serialNumber.trim() !== '' ? r.serialNumber.trim() : null;
 			if (serialNumber && (existingSerials.has(serialNumber) || seenSerials.has(serialNumber))) {
 				dedupedSerial++;
-				serialNumber = null; // simpan sbg unit tanpa SN drpd gagal diam-diam
+				serialNumber = null;
 			} else if (serialNumber) {
 				seenSerials.add(serialNumber);
 			}
@@ -463,7 +462,7 @@ async function seedEquipment(
 					| 'RUSAK_TOTAL',
 				status: 'READY' as const,
 				warehouseId: org.warehouseId,
-				organizationId: org.orgId,
+				organizationId: rootOrgId, // <- MILIK RADEN INTEN
 				createdAt: new Date(r.createdAt)
 			};
 		})
@@ -480,7 +479,7 @@ async function seedEquipment(
 			.onDuplicateKeyUpdate({ set: { id: sql`id` } })
 	);
 
-	// Verifikasi nyata: pastikan semua id yang kita klaim berhasil diinsert benar-benar ada di DB.
+	// Verifikasi inserted IDs
 	const insertedIds = new Set(
 		(
 			await db.query.equipment.findMany({
@@ -503,11 +502,12 @@ async function seedEquipment(
 	return new Set(insertedIds);
 }
 
-// ─── Step 5: Movement (Riwayat RECEIVE awal) ──────────────────────────────────
+// ─── Step 5: Movement ─────────────────────────────────────────────────────────
 async function seedMovements(
 	itemNameToId: Map<string, string>,
 	slugToOrg: Map<string, { orgId: string; warehouseId: string }>,
-	insertedEquipmentIds: Set<string>
+	insertedEquipmentIds: Set<string>,
+	rootOrgId: string
 ) {
 	console.log('\n🚚 Step 5: Import Movement (Riwayat RECEIVE awal)...');
 	const rows = readCsv<MovementRow>('movement_receive.csv');
@@ -522,8 +522,6 @@ async function seedMovements(
 			const itemName = csvIdToName.get(r.itemId);
 			const resolvedItemId = itemName ? itemNameToId.get(itemName) : undefined;
 			if (!resolvedItemId) return null;
-			// Jaga integritas FK: kalau equipment-nya gagal ter-insert, jangan buat movement
-			// yang menunjuk ke equipment_id yang tidak ada.
 			if (r.equipmentId && !insertedEquipmentIds.has(r.equipmentId)) {
 				skippedNoEquipment++;
 				return null;
@@ -540,7 +538,7 @@ async function seedMovements(
 				specificLocationName: r.location || null,
 				fromWarehouseId: null,
 				toWarehouseId: org.warehouseId,
-				organizationId: org.orgId,
+				organizationId: rootOrgId, // <- MILIK RADEN INTEN
 				notes: r.notes || null,
 				picId: null,
 				referenceType: null,
@@ -551,7 +549,9 @@ async function seedMovements(
 		.filter((r): r is NonNullable<typeof r> => r !== null);
 
 	if (skippedNoEquipment > 0) {
-		console.log(`  ℹ️  ${skippedNoEquipment} movement dilewati (equipment terkait tidak ter-insert).`);
+		console.log(
+			`  ℹ️  ${skippedNoEquipment} movement dilewati (equipment terkait tidak ter-insert).`
+		);
 	}
 
 	await batchInsert('movement', mapped, (batch) =>
@@ -559,19 +559,6 @@ async function seedMovements(
 			.insert(schema.movement)
 			.values(batch)
 			.onDuplicateKeyUpdate({ set: { id: sql`id` } })
-	);
-}
-
-// ─── Cleanup: hanya data milik subtree Raden Inten ────────────────────────────
-async function cleanupRadenInten(slugToOrg: Map<string, { orgId: string; warehouseId: string }>) {
-	const orgIds = [...slugToOrg.values()].map((o) => o.orgId).filter(Boolean);
-	if (orgIds.length === 0) return;
-
-	console.log('\n🧹 Step 0: Membersihkan data equipment/movement Raden Inten lama...');
-	await db.delete(schema.movement).where(inArray(schema.movement.organizationId, orgIds));
-	await db.delete(schema.equipment).where(inArray(schema.equipment.organizationId, orgIds));
-	console.log(
-		'  ✅ Data lama berhasil dibersihkan (item & kategori tidak dihapus, hanya di-upsert).'
 	);
 }
 
@@ -598,23 +585,32 @@ async function main() {
 		}
 	}
 
-	// 1) Satuan bawahan (buat jika belum ada, parentId berjenjang: L0 → L1 → L2)
-	const slugToOrg = await seedSatuan();
+	// Pastikan root org ada
+	const rootOrg = await db.query.organization.findFirst({
+		where: eq(authSchema.organization.slug, ROOT_ORG_SLUG)
+	});
+	if (!rootOrg) {
+		throw new Error(`Organisasi induk RADEN INTEN (slug: ${ROOT_ORG_SLUG}) belum ditemukan.`);
+	}
+	const rootOrgId = rootOrg.id;
 
-	// 0) Bersihkan data lama khusus subtree Raden Inten (aman untuk re-run)
-	await cleanupRadenInten(slugToOrg);
+	// 0) Hapus data lama
+	await cleanupRadenInten(rootOrgId);
 
-	// 2) Kategori equipment (upsert)
+	// 1) Satuan bawahan
+	const slugToOrg = await seedSatuan(rootOrgId);
+
+	// 2) Kategori
 	const categoryNameToId = await seedCategories();
 
-	// 3) Items (katalog barang, dedup by name)
+	// 3) Items
 	const itemNameToId = await seedItems(categoryNameToId);
 
-	// 4) Equipment (unit fisik per satuan, lengkap serial & kondisi)
-	const insertedEquipmentIds = await seedEquipment(itemNameToId, slugToOrg);
+	// 4) Equipment (dengan organizationId = rootOrgId)
+	const insertedEquipmentIds = await seedEquipment(itemNameToId, slugToOrg, rootOrgId);
 
-	// 5) Movement RECEIVE awal
-	await seedMovements(itemNameToId, slugToOrg, insertedEquipmentIds);
+	// 5) Movement (dengan organizationId = rootOrgId)
+	await seedMovements(itemNameToId, slugToOrg, insertedEquipmentIds, rootOrgId);
 
 	console.log('\n════════════════════════════════════════════════════');
 	console.log('  ✅  Seeding Raden Inten selesai!');
